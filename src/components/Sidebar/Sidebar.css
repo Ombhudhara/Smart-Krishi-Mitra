@@ -1,0 +1,281 @@
+/* ==========================================================================
+   Sidebar.css - Premium Reusable Sidebar Navigation
+   Smart Krishi Mitra
+   ========================================================================== */
+
+:root {
+  --sb-primary: #2E7D32;
+  --sb-primary-light: #E8F5E9;
+  --sb-bg: #ffffff;
+  --sb-border: #D4EDD4;
+  --sb-text: #1A2B1A;
+  --sb-muted: #6B8C6B;
+  --sb-hover: #F8FFF8;
+  --sb-width-expanded: 230px;
+  --sb-width-collapsed: 80px;
+  --sb-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --sb-shadow: 2px 0 20px rgba(46, 125, 50, 0.05);
+}
+
+.skm-sidebar {
+  position: sticky;
+  top: var(--nav-height, 70px); /* Adjust based on navbar height */
+  height: calc(100vh - var(--nav-height, 70px));
+  background-color: var(--sb-bg);
+  border-right: 1.5px solid var(--sb-border);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--sb-shadow);
+  z-index: 100;
+  overflow-y: auto;
+  overflow-x: hidden;
+  
+  /* Glassmorphism subtle effect */
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+/* Custom Scrollbar */
+.skm-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+.skm-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.skm-sidebar::-webkit-scrollbar-thumb {
+  background-color: var(--sb-border);
+  border-radius: 10px;
+}
+
+.skm-sidebar--expanded {
+  width: var(--sb-width-expanded);
+}
+
+.skm-sidebar--collapsed {
+  width: var(--sb-width-collapsed);
+}
+
+/* ─── Header & Toggle ─────────────────────────────────────────────────── */
+.skm-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 10px 20px;
+  min-height: 50px;
+}
+
+.skm-sidebar--collapsed .skm-sidebar-header {
+  justify-content: center;
+  padding: 20px 0 10px 0;
+}
+
+.skm-sidebar-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sb-muted);
+  letter-spacing: 1.5px;
+  white-space: nowrap;
+  animation: fadeIn 0.3s ease;
+}
+
+.skm-sidebar-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--sb-muted);
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 8px;
+  transition: var(--sb-transition);
+}
+
+.skm-sidebar-toggle-btn:hover {
+  background-color: var(--sb-hover);
+  color: var(--sb-primary);
+  transform: scale(1.05);
+}
+
+/* ─── Navigation Area ─────────────────────────────────────────────────── */
+.skm-sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+}
+
+.skm-sidebar-item-wrapper {
+  position: relative;
+  border-radius: 12px;
+}
+
+.skm-sidebar-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: transparent;
+  border: none;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: var(--sb-text);
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--sb-transition);
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.skm-sidebar--collapsed .skm-sidebar-btn {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+/* Hover Effect */
+.skm-sidebar-btn:hover {
+  background-color: var(--sb-hover);
+  color: var(--sb-primary);
+  transform: translateX(4px);
+}
+
+.skm-sidebar--collapsed .skm-sidebar-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* Active State */
+.skm-sidebar-item-wrapper.active .skm-sidebar-btn {
+  background-color: var(--sb-primary-light);
+  color: var(--sb-primary);
+  font-weight: 600;
+}
+
+/* Active Indicator Line */
+.skm-sidebar-active-indicator {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 4px;
+  height: 60%;
+  background-color: var(--sb-primary);
+  border-radius: 0 4px 4px 0;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.skm-sidebar-item-wrapper.active .skm-sidebar-active-indicator {
+  transform: translateY(-50%) scaleY(1);
+}
+
+/* Icons and Text */
+.skm-sidebar-icon {
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+
+.skm-sidebar-btn:hover .skm-sidebar-icon {
+  transform: scale(1.1);
+}
+
+.skm-sidebar-text {
+  animation: slideRight 0.3s ease;
+}
+
+/* ─── Tooltips for Collapsed State ────────────────────────────────────── */
+.skm-sidebar-tooltip {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-10px);
+  background-color: var(--sb-text);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 200;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  pointer-events: none;
+}
+
+.skm-sidebar-tooltip::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 5px 5px 5px 0;
+  border-style: solid;
+  border-color: transparent var(--sb-text) transparent transparent;
+}
+
+.skm-sidebar-item-wrapper:hover .skm-sidebar-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* ─── Footer / Logout Area ────────────────────────────────────────────── */
+.skm-sidebar-footer {
+  padding: 14px;
+  border-top: 1px solid var(--sb-border);
+  margin-top: auto;
+}
+
+.skm-sidebar-btn--logout {
+  color: #d32f2f;
+}
+
+.skm-sidebar-btn--logout:hover {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.skm-sidebar-item-wrapper:hover .skm-sidebar-tooltip--logout {
+  background-color: #d32f2f;
+}
+.skm-sidebar-tooltip--logout::before {
+  border-color: transparent #d32f2f transparent transparent;
+}
+
+/* ─── Animations ──────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ─── Responsive Drawer (Mobile/Tablet) ───────────────────────────────── */
+@media (max-width: 992px) {
+  .skm-sidebar {
+    position: fixed;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    transform: translateX(0);
+  }
+  
+  /* Mobile Drawer Behavior */
+  .skm-sidebar--collapsed {
+    transform: translateX(-100%);
+    width: var(--sb-width-expanded);
+  }
+}

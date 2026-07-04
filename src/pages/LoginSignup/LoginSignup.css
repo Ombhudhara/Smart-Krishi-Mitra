@@ -1,0 +1,719 @@
+/* ═══════════════════════════════════════════════════
+   Smart Krishi Mitra — SaaS-Style Login & Signup
+   Author: Smart Krishi Mitra Team
+   Inspiration: Linear, Stripe, Framer, Vercel
+   Font: Poppins
+═══════════════════════════════════════════════════ */
+
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap");
+
+:root {
+  --primary-green:    #2E7D32;
+  --secondary-green:  #66BB6A;
+  --accent-gold:      #FFD54F;
+  --bg-color:         #F8FFF8;
+  --text-primary:     #1E293B;
+  --text-muted:       #64748B;
+  --white:            #ffffff;
+  --error-red:        #EF4444;
+  --border-color:     #E2E8F0;
+  --border-focus:     #2E7D32;
+  --radius-sm:        8px;
+  --radius-md:        16px;
+  --radius-lg:        24px;
+  --radius-xl:        32px;
+  --shadow-sm:        0 1px 3px rgba(0,0,0,0.05);
+  --shadow-md:        0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.05);
+  --shadow-lg:        0 20px 50px rgba(46, 125, 50, 0.1);
+  --transition-fast:  0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow:  0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  --font:             "Poppins", sans-serif;
+}
+
+/* ─── GENERAL RESET ─── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.saas-auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-color);
+  font-family: var(--font);
+  position: relative;
+  overflow: hidden;
+  padding: 40px 20px;
+}
+
+/* ─── BLURRED BACKGROUND DECORATIONS ─── */
+.bg-blur-circle {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 0;
+}
+.bg-blur-circle--1 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, var(--secondary-green), var(--primary-green));
+  top: -100px;
+  left: -100px;
+}
+.bg-blur-circle--2 {
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, var(--accent-gold), var(--secondary-green));
+  bottom: -150px;
+  right: -50px;
+}
+
+/* Floating Leaves */
+.floating-leaf {
+  position: absolute;
+  font-size: 1.8rem;
+  opacity: 0.65;
+  pointer-events: none;
+  z-index: 1;
+}
+.leaf-1 {
+  top: 15%; left: 8%;
+  animation: leafFloat 6s ease-in-out infinite;
+}
+.leaf-2 {
+  bottom: 20%; left: 52%;
+  animation: leafFloat 8s ease-in-out 1s infinite;
+}
+.leaf-3 {
+  top: 25%; right: 10%;
+  animation: leafFloat 7s ease-in-out 2s infinite;
+}
+
+@keyframes leafFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  50%       { transform: translateY(-15px) rotate(15deg) scale(1.15); }
+}
+
+/* ─── CONTAINER ─── */
+.saas-auth-container {
+  display: flex;
+  width: 100%;
+  max-width: 1320px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  z-index: 1;
+  overflow: hidden;
+  min-height: 780px;
+}
+
+/* ─── 1. LEFT SECTION (60% HERO) ─── */
+.saas-auth-left {
+  flex: 60;
+  padding: 64px 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-right: 1px solid rgba(226, 232, 240, 0.4);
+  position: relative;
+  background: radial-gradient(circle at 10% 20%, rgba(241, 248, 233, 0.45) 0%, rgba(255, 255, 255, 0) 70%);
+}
+
+.saas-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  width: fit-content;
+  transition: transform var(--transition-fast);
+}
+.saas-brand:hover {
+  transform: translateY(-2px);
+}
+.saas-brand .brand-logo {
+  font-size: 2.2rem;
+}
+.saas-brand .brand-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--primary-green);
+  letter-spacing: -0.5px;
+}
+
+.left-hero-content {
+  margin-top: 40px;
+  max-width: 580px;
+}
+
+.hero-heading {
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  font-weight: 900;
+  line-height: 1.15;
+  color: var(--text-primary);
+  letter-spacing: -1px;
+  margin-bottom: 16px;
+}
+.highlight-green {
+  background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-text {
+  font-size: 0.98rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.feature-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.feature-pills .pill {
+  background: rgba(46, 125, 50, 0.08);
+  border: 1px solid rgba(46, 125, 50, 0.15);
+  color: var(--primary-green);
+  padding: 6px 14px;
+  border-radius: 50px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* 3D Illustration Container */
+.illus-container-3d {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  margin: 40px auto;
+}
+.saas-illus {
+  width: 100%;
+  height: auto;
+}
+
+.illus-farmer, .illus-crop, .illus-tablet {
+  animation: floatingElements 4s ease-in-out infinite;
+}
+.illus-farmer { animation-delay: 0.2s; }
+.illus-crop { animation-delay: 0.5s; }
+.floating-weather-illus {
+  animation: floatingElements 5s ease-in-out 0.8s infinite;
+}
+
+@keyframes floatingElements {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+/* Glassmorphism Floating Cards */
+.illus-glass-card {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+  z-index: 10;
+  max-width: 220px;
+}
+.illus-glass-card .card-emoji {
+  font-size: 1.6rem;
+}
+.illus-glass-card strong {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+.illus-glass-card small {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.glass-card--weather {
+  top: 10%; left: -60px;
+  animation: cardFloatLeft 3.5s ease-in-out infinite;
+}
+.glass-card--market {
+  bottom: 25%; right: -60px;
+  animation: cardFloatRight 4s ease-in-out infinite;
+}
+
+@keyframes cardFloatLeft {
+  0%, 100% { transform: translate(0, 0); }
+  50%       { transform: translate(-6px, -6px); }
+}
+@keyframes cardFloatRight {
+  0%, 100% { transform: translate(0, 0); }
+  50%       { transform: translate(6px, -6px); }
+}
+
+/* Footer row */
+.left-hero-footer {
+  display: flex;
+  gap: 24px;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+  padding-top: 24px;
+}
+.stat-item {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.checkmark {
+  color: var(--primary-green);
+  font-weight: 900;
+}
+
+/* ─── 2. RIGHT SECTION (40% AUTH CARD) ─── */
+.saas-auth-right {
+  flex: 40;
+  padding: 60px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--white);
+}
+
+.auth-card-wrapper {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 1px solid #CBD5E1; /* Distinct gray border defining the card boundaries */
+  border-radius: var(--radius-lg);
+  padding: 40px; /* Internal card padding */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+.auth-card-wrapper:hover {
+  border-color: var(--primary-green);
+  box-shadow: 0 12px 36px rgba(46, 125, 50, 0.08);
+}
+
+/* Logo on top of Right Form */
+.auth-card-logo {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: 24px;
+}
+.auth-card-logo .logo-emoji { font-size: 1.8rem; }
+.auth-card-logo .logo-subtext { font-size: 1.15rem; font-weight: 800; color: var(--primary-green); }
+
+.auth-card-header {
+  margin-bottom: 28px;
+  text-align: left;
+}
+.auth-card-header h2 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+.auth-card-header p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ─── PILL SHAPED TABS ─── */
+.pill-tabs-container {
+  display: flex;
+  position: relative;
+  background: #F1F5F9;
+  border-radius: 50px;
+  padding: 4px;
+  margin-bottom: 30px;
+  border: 1px solid #E2E8F0;
+}
+
+.pill-tab {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border: none;
+  background: none;
+  z-index: 2;
+  transition: color var(--transition-fast);
+  cursor: pointer;
+}
+.pill-tab--active {
+  color: var(--primary-green);
+}
+
+/* Sliding Background Capsule */
+.pill-sliding-capsule {
+  position: absolute;
+  top: 4px; bottom: 4px; left: 4px;
+  width: calc(50% - 4px);
+  background: var(--white);
+  border-radius: 50px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+  z-index: 1;
+  transition: transform var(--transition-slow);
+}
+.pill-sliding-capsule--signup {
+  transform: translateX(100%);
+}
+
+/* ─── FORM AND INPUTS ─── */
+.saas-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.saas-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+.saas-form-group label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.saas-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-leading-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+.saas-input-wrapper input {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: #F8FAFC;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.saas-input-wrapper input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  background: var(--white);
+  box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.12);
+}
+
+.saas-input-wrapper input.input-has-error {
+  border-color: var(--error-red);
+}
+.saas-input-wrapper input.input-has-error:focus {
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+}
+
+.password-reveal-toggle {
+  position: absolute;
+  right: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.saas-error-text {
+  font-size: 0.76rem;
+  color: var(--error-red);
+  font-weight: 500;
+  margin-top: 1px;
+}
+
+.saas-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ─── ROLE SELECT CARDS GRID ─── */
+.role-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.role-select-card {
+  border: 1px solid var(--border-color);
+  background: #F8FAFC;
+  border-radius: var(--radius-md);
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  position: relative;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+.role-select-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary-green);
+  background: var(--white);
+}
+
+.role-card-icon {
+  font-size: 1.6rem;
+}
+.role-card-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Active selector */
+.role-select-card--active {
+  border-color: var(--primary-green);
+  background: rgba(46, 125, 50, 0.04);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.08);
+}
+.role-card-check {
+  position: absolute;
+  top: 6px; right: 8px;
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: var(--primary-green);
+}
+
+/* Checkbox alignment */
+.saas-form-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-green);
+  cursor: pointer;
+}
+
+.checkbox-wrapper {
+  margin-top: 4px;
+}
+
+.forgot-password-link {
+  color: var(--primary-green);
+  font-weight: 600;
+  transition: color var(--transition-fast);
+}
+.forgot-password-link:hover {
+  color: var(--secondary-green);
+}
+
+/* ─── ACTION BUTTONS ─── */
+.btn-primary-gradient {
+  background: linear-gradient(135deg, var(--primary-green), #388E3C);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 4px 15px rgba(46, 125, 50, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.btn-primary-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(46, 125, 50, 0.25);
+  background: linear-gradient(135deg, #388E3C, var(--secondary-green));
+}
+.btn-primary-gradient:active {
+  transform: translateY(0);
+}
+
+.saas-divider {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin: 8px 0;
+}
+.saas-divider::before, .saas-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--border-color);
+}
+.saas-divider span {
+  padding: 0 10px;
+}
+
+.btn-google-outline {
+  background: var(--white);
+  color: #3C4043;
+  border: 1px solid #DADCE0;
+  border-radius: 50px;
+  padding: 11px 24px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: all var(--transition-fast);
+  width: 100%;
+}
+.btn-google-outline:hover {
+  background: #F8F9FA;
+  border-color: #C4C7C5;
+  box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+  transform: translateY(-1px);
+}
+
+.card-footer-prompt {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  text-align: center;
+}
+.card-footer-prompt button {
+  background: none;
+  border: none;
+  color: var(--primary-green);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  transition: color var(--transition-fast);
+}
+.card-footer-prompt button:hover {
+  color: var(--secondary-green);
+}
+
+/* Form switch fade anim */
+.fade-in {
+  animation: saasFadeIn 0.38s ease-out forwards;
+}
+
+@keyframes saasFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.auth-spinner {
+  animation: spinnerRotate 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spinnerRotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ─── RESPONSIVE BREAKPOINTS ─── */
+@media (max-width: 1024px) {
+  .saas-auth-container {
+    max-width: 800px;
+    flex-direction: column;
+    min-height: auto;
+  }
+  .saas-auth-left {
+    border-right: none;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.4);
+    padding: 48px;
+  }
+  .saas-auth-right {
+    padding: 48px;
+  }
+}
+
+@media (max-width: 640px) {
+  .saas-auth-page {
+    padding: 10px;
+  }
+  .saas-auth-container {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+  }
+  
+  /* Flex order reversal for mobile: Form top, illustration below */
+  .saas-auth-container {
+    flex-direction: column-reverse;
+  }
+
+  .saas-auth-left {
+    padding: 32px 20px;
+    background: transparent;
+  }
+  .saas-brand {
+    display: none; /* Hide brand layout inside left section on mobile, we show card logo instead */
+  }
+  .illus-container-3d {
+    margin: 20px auto;
+  }
+  .glass-card--weather, .glass-card--market {
+    display: none; /* Hide floating illustration elements on mobile to save space */
+  }
+  
+  .saas-auth-right {
+    padding: 32px 20px;
+    background: transparent;
+  }
+  
+  /* Show logo in card header on mobile */
+  .auth-card-logo {
+    display: flex;
+  }
+
+  .saas-form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

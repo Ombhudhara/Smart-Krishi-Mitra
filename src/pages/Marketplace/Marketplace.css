@@ -1,0 +1,102 @@
+/* ==========================================================================
+   Marketplace.css - Layout glue for the Marketplace page
+   Navbar, Sidebar, and Footer styles are handled by their own component CSS.
+   ========================================================================== */
+
+.mkt-page-root {
+  min-height: 100vh;
+  background: #F8FFF8;
+  font-family: 'Poppins', sans-serif;
+  color: #1A2B1A;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Layout Body (Sidebar + Main) ─────────────────────────────────────── */
+.mkt-layout {
+  display: flex;
+  margin-top: 70px; /* matches --nav-height */
+  flex: 1;
+}
+
+/* ─── Main Content ──────────────────────────────────────────────────────── */
+.mkt-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #F8FFF8;
+}
+
+/* ─── Welcome Header ────────────────────────────────────────────────────── */
+.mkt-welcome-section {
+  padding: 28px 30px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.mkt-welcome-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mkt-time-greeting {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B8C6B;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.mkt-welcome-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1A2B1A;
+  margin: 0;
+}
+
+.mkt-header-metadata {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mkt-meta-badge {
+  background: #E8F5E9;
+  color: #2E7D32;
+  border: 1px solid #C8E6C9;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mkt-meta-divider {
+  color: #C8E6C9;
+}
+
+.mkt-meta-time,
+.mkt-meta-date {
+  font-size: 12px;
+  color: #6B8C6B;
+  font-weight: 500;
+}
+
+/* ─── Active View Wrapper ───────────────────────────────────────────────── */
+.mkt-active-view-wrap {
+  padding: 24px 30px;
+  flex: 1;
+}
+
+/* ─── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .mkt-welcome-section {
+    padding: 20px 20px 0;
+  }
+  .mkt-active-view-wrap {
+    padding: 16px 20px;
+  }
+}

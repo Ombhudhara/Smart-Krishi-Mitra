@@ -1,0 +1,237 @@
+/* ==========================================================================
+   Footer.css - Premium Reusable Footer Component
+   Smart Krishi Mitra
+   ========================================================================== */
+
+:root {
+  --ft-primary: #2E7D32;
+  --ft-primary-light: #E8F5E9;
+  --ft-bg: #1A2B1A;
+  --ft-bg-bottom: #122112;
+  --ft-text-main: #ffffff;
+  --ft-text-muted: #A0B2A0;
+  --ft-border: #2D422D;
+  --ft-accent: #FFD54F;
+  --ft-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.skm-footer {
+  background-color: var(--ft-bg);
+  color: var(--ft-text-main);
+  font-family: 'Poppins', sans-serif;
+  margin-top: auto;
+  border-top: 4px solid var(--ft-primary);
+}
+
+.skm-footer-top {
+  padding: 30px 40px 20px 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.skm-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.5fr;
+  gap: 30px;
+}
+
+/* ─── Brand Column ────────────────────────────────────────────────────── */
+.skm-footer-brand-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.skm-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.skm-footer-logo-icon {
+  font-size: 28px;
+}
+
+.skm-footer-logo-text {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--ft-text-main);
+}
+
+.skm-footer-desc {
+  color: var(--ft-text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 320px;
+  margin: 0;
+}
+
+.skm-footer-social {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.skm-social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ft-border);
+  border-radius: 50%;
+  color: var(--ft-text-main);
+  font-size: 14px;
+  text-decoration: none;
+  transition: var(--ft-transition);
+}
+
+.skm-social-btn:hover {
+  background-color: var(--ft-primary);
+  border-color: var(--ft-primary);
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+/* ─── Link Columns ────────────────────────────────────────────────────── */
+.skm-footer-heading {
+  font-size: 14.5px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  color: var(--ft-text-main);
+  position: relative;
+  padding-bottom: 8px;
+}
+
+.skm-footer-heading::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 30px;
+  height: 3px;
+  background-color: var(--ft-primary);
+  border-radius: 2px;
+}
+
+.skm-footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skm-footer-links li a {
+  color: var(--ft-text-muted);
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: var(--ft-transition);
+  display: inline-block;
+}
+
+.skm-footer-links li a:hover {
+  color: var(--ft-accent);
+  transform: translateX(4px);
+}
+
+/* ─── Contact Info Column ─────────────────────────────────────────────── */
+.skm-footer-contact {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.skm-footer-contact li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--ft-text-muted);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.skm-contact-icon {
+  color: var(--ft-primary);
+  font-size: 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* ─── Footer Bottom ───────────────────────────────────────────────────── */
+.skm-footer-bottom {
+  background-color: var(--ft-bg-bottom);
+  border-top: 1px solid var(--ft-border);
+  padding: 20px 40px;
+}
+
+.skm-footer-bottom-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.skm-copyright {
+  margin: 0;
+  color: var(--ft-text-muted);
+  font-size: 12.5px;
+}
+
+.skm-footer-badges {
+  display: flex;
+  gap: 12px;
+}
+
+.skm-footer-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ft-primary-light);
+  background-color: rgba(46, 125, 50, 0.2);
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--ft-border);
+}
+
+/* ─── Responsive Adjustments ──────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .skm-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .skm-footer-top {
+    padding: 40px 20px;
+  }
+  
+  .skm-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  
+  .skm-footer-bottom {
+    padding: 20px;
+  }
+  
+  .skm-footer-bottom-inner {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .skm-footer-badges {
+    justify-content: center;
+  }
+}

@@ -1,0 +1,389 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   ChatInput.css
+   Redesigned input container layout — modern floating capsule, z-index elements
+───────────────────────────────────────────────────────────────────────────── */
+
+.ai-input-bar {
+  flex-shrink: 0;
+  background: var(--ai-bg);
+  padding: 16px 28px 24px;
+  z-index: 4;
+  transition: var(--ai-transition);
+}
+
+/* Hide native file input element completely */
+.ai-file-input {
+  display: none !important;
+}
+
+/* ── Attachment Previews ── */
+.ai-attachment-previews {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  animation: fadeIn 0.2s ease both;
+}
+
+.ai-attachment-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(46, 125, 50, 0.06);
+  border: 1px solid rgba(46, 125, 50, 0.12);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: var(--ai-primary);
+  max-width: 200px;
+}
+
+.dark-theme .ai-attachment-item {
+  background: rgba(102, 187, 106, 0.08);
+  border-color: rgba(102, 187, 106, 0.15);
+  color: var(--ai-secondary);
+}
+
+.ai-attachment-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.ai-attachment-doc-icon {
+  width: 24px;
+  height: 24px;
+  background: var(--ai-primary);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.ai-attachment-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.ai-attachment-remove {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--ai-text-secondary);
+  font-size: 12px;
+  line-height: 1;
+  transition: var(--ai-transition);
+  padding: 0;
+}
+
+.ai-attachment-remove:hover {
+  background: #ef5350;
+  color: #ffffff;
+}
+
+/* ── Main Input Container (capsule shape matching mockup) ── */
+.ai-input-container {
+  border: 1.5px solid var(--ai-border);
+  border-radius: 25px;
+  background: var(--ai-surface);
+  box-shadow: var(--ai-shadow-sm);
+  transition: var(--ai-transition);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.ai-input-container:focus-within {
+  border-color: var(--ai-primary);
+  box-shadow: var(--ai-shadow-md), 0 0 0 1px var(--ai-primary);
+}
+
+.dark-theme .ai-input-container:focus-within {
+  border-color: var(--ai-secondary);
+  box-shadow: var(--ai-shadow-md), 0 0 0 1px var(--ai-secondary);
+}
+
+/* Textarea input */
+.ai-textarea {
+  width: 100%;
+  min-height: 48px;
+  max-height: 160px;
+  padding: 14px 22px 6px;
+  border: none;
+  background: transparent;
+  font-size: 0.92rem;
+  font-family: var(--ai-font);
+  color: var(--ai-text-primary);
+  resize: none;
+  outline: none;
+  line-height: 1.5;
+  scrollbar-width: thin;
+}
+
+.ai-textarea::placeholder {
+  color: var(--ai-text-secondary);
+}
+
+/* Inner bottom toolbar */
+.ai-input-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 18px 10px;
+}
+
+.ai-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-toolbar-right {
+  display: flex;
+  align-items: center;
+}
+
+/* Action buttons (Paperclip, Image, Mic) */
+.ai-toolbar-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--ai-text-secondary);
+  transition: var(--ai-transition);
+  padding: 0;
+  position: relative;
+}
+
+.ai-toolbar-btn:hover {
+  background: rgba(46, 125, 50, 0.06);
+  color: var(--ai-primary);
+}
+
+.dark-theme .ai-toolbar-btn:hover {
+  background: rgba(102, 187, 106, 0.08);
+  color: var(--ai-secondary);
+}
+
+.ai-toolbar-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Tooltip on hover */
+.ai-toolbar-btn::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: #1e1e1e;
+  color: #fff;
+  font-size: 0.68rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  font-family: var(--ai-font);
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.ai-toolbar-btn:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Send button matching mockup: green circle */
+.ai-input-send-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--ai-primary);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--ai-transition);
+  flex-shrink: 0;
+  color: #ffffff;
+  padding: 0;
+}
+
+.ai-input-send-btn:hover:not(:disabled) {
+  background: var(--ai-primary-dark);
+  transform: scale(1.05);
+}
+
+.ai-input-send-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.ai-input-send-btn:disabled {
+  background: #f3f3f3;
+  color: var(--ai-text-muted);
+  cursor: not-allowed;
+}
+
+.dark-theme .ai-input-send-btn:disabled {
+  background: #282828;
+}
+
+.ai-input-send-btn svg {
+  width: 15px;
+  height: 15px;
+  transform: translate(1px, -0.5px);
+}
+
+/* ── Bottom Hint Row ── */
+.ai-input-hint-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding: 0 4px;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ai-input-hint-text {
+  font-size: 0.72rem;
+  color: var(--ai-text-secondary);
+  font-family: var(--ai-font);
+}
+
+.ai-input-char-count {
+  font-size: 0.72rem;
+  color: var(--ai-text-secondary);
+  font-family: var(--ai-font);
+}
+
+.ai-input-char-count.near-limit {
+  color: var(--ai-secondary);
+  font-weight: 500;
+}
+
+.ai-input-char-count.at-limit {
+  color: #ef5350;
+  font-weight: 600;
+}
+
+/* ── Voice recorder overlay inside the container ── */
+.ai-voice-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--ai-surface);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 10;
+  animation: fadeIn 0.2s ease-in;
+}
+
+.ai-voice-status {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ef5350; /* Red voice state */
+  font-family: var(--ai-font);
+}
+
+.ai-voice-waves {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+}
+
+.ai-wave-bar {
+  width: 3px;
+  border-radius: 3px;
+  background: #ef5350; /* Red voice animation */
+  animation: waveBounce 0.8s ease infinite;
+}
+
+@keyframes waveBounce {
+  0%, 100% { height: 6px; }
+  50% { height: 18px; }
+}
+
+.ai-wave-bar:nth-child(2) { animation-delay: 0.1s; }
+.ai-wave-bar:nth-child(3) { animation-delay: 0.2s; }
+.ai-wave-bar:nth-child(4) { animation-delay: 0.3s; }
+.ai-wave-bar:nth-child(5) { animation-delay: 0.4s; }
+.ai-wave-bar:nth-child(6) { animation-delay: 0.5s; }
+.ai-wave-bar:nth-child(7) { animation-delay: 0.6s; }
+
+.ai-voice-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-voice-stop-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  background: #ef5350;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--ai-transition);
+}
+
+.ai-voice-stop-btn:hover {
+  background: #d32f2f;
+}
+
+.ai-voice-cancel-btn {
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--ai-text-secondary);
+  border: 1px solid var(--ai-border);
+  border-radius: 20px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: var(--ai-transition);
+}
+
+.ai-voice-cancel-btn:hover {
+  border-color: var(--ai-primary);
+  color: var(--ai-primary);
+}
+
+@media (max-width: 768px) {
+  .ai-input-bar {
+    padding: 10px 16px 14px;
+  }
+}

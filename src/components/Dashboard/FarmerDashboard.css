@@ -1,0 +1,600 @@
+/* ==========================================================================
+   FarmerDashboard.css - Premium Specific Farmer Dashboard styling
+   ========================================================================== */
+
+.fd-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Welcome section */
+.fd-welcome-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  padding: 24px 30px;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  border: 1px solid #E8F5E9;
+}
+
+.fd-welcome-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fd-time-greeting {
+  font-size: 13px;
+  color: #6B8C6B;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.fd-welcome-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: #1A2B1A;
+}
+
+.fd-header-metadata {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #6B8C6B;
+  font-weight: 500;
+}
+
+.fd-meta-badge {
+  background: #E8F5E9;
+  color: #2E7D32;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.fd-welcome-weather-widget {
+  background: #F8FFF8;
+  border: 1.5px solid #D4EDD4;
+  padding: 10px 18px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fd-widget-weather-icon {
+  font-size: 28px;
+}
+
+.fd-widget-weather-temp {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1A2B1A;
+}
+
+.fd-widget-weather-status {
+  font-size: 11px;
+  color: #6B8C6B;
+}
+
+/* Statistics Grid */
+.fd-stats-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fd-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fd-section-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #1A2B1A;
+}
+
+.fd-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.fd-stat-card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.2s;
+}
+
+.fd-stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.fd-stat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fd-stat-label {
+  font-size: 11px;
+  color: #6B8C6B;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.fd-stat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.fd-stat-value {
+  font-size: 24px;
+  font-weight: 900;
+  color: #1A2B1A;
+}
+
+.fd-stat-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  border-top: 1.5px solid #F8FFF8;
+  padding-top: 8px;
+}
+
+.fd-stat-desc {
+  color: #6B8C6B;
+}
+
+.fd-stat-trend {
+  font-weight: 700;
+}
+
+.fd-stat-trend.trend-up { color: #2E7D32; }
+.fd-stat-trend.trend-neutral { color: #E65100; }
+.fd-stat-trend.trend-danger { color: #C62828; }
+
+/* Quick Access Grid */
+.fd-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.fd-quick-card {
+  background: #ffffff;
+  padding: 22px;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  border: 1.5px solid #E8F5E9;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fd-quick-card:hover {
+  border-color: #2E7D32;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(46,125,50,0.08);
+}
+
+.fd-quick-icon-wrap {
+  font-size: 26px;
+}
+
+.fd-quick-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.fd-quick-desc {
+  margin: 0;
+  font-size: 11px;
+  color: #6B8C6B;
+  line-height: 1.5;
+}
+
+/* Dual widgets */
+.fd-dual-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.fd-widget-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  border: 1.5px solid #E8F5E9;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fd-widget-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.fd-widget-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fd-text-link-btn {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  color: #2E7D32;
+  cursor: pointer;
+}
+
+/* Weather details */
+.fd-weather-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fd-weather-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fd-weather-large-icon {
+  font-size: 40px;
+}
+
+.fd-weather-temp-large {
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.fd-weather-location {
+  font-size: 11px;
+  color: #6B8C6B;
+}
+
+.fd-weather-details-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.fd-weather-detail-item {
+  background: #F8FFF8;
+  padding: 10px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.fd-weather-detail-label {
+  font-size: 9px;
+  color: #6B8C6B;
+  display: block;
+}
+
+.fd-weather-detail-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1A2B1A;
+}
+
+.fd-widget-action-btn {
+  background: #F8FFF8;
+  border: 1.5px solid #D4EDD4;
+  padding: 10px;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3D5A3D;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.fd-widget-action-btn:hover {
+  background: #2E7D32;
+  color: #ffffff;
+  border-color: #2E7D32;
+}
+
+/* AI Assistant */
+.fd-ai-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fd-ai-description {
+  font-size: 12px;
+  color: #555;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.fd-ai-features {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.fd-ai-feature-tag {
+  background: #E8F5E9;
+  color: #2E7D32;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+/* Previews Grid */
+.fd-crop-previews-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.fd-crop-preview-card {
+  display: flex;
+  gap: 8px;
+  background: #F8FFF8;
+  border: 1.5px solid #D4EDD4;
+  padding: 8px;
+  border-radius: 12px;
+}
+
+.fd-crop-preview-img {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: crop;
+}
+
+.fd-crop-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fd-crop-preview-name {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.fd-crop-preview-price {
+  font-size: 11px;
+  color: #2E7D32;
+  font-weight: 700;
+}
+
+.fd-crop-preview-seller {
+  font-size: 9px;
+  color: #6B8C6B;
+}
+
+/* Notifications list */
+.fd-notif-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fd-notif-preview-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.fd-notif-preview-icon {
+  font-size: 18px;
+}
+
+.fd-notif-preview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fd-notif-preview-text {
+  margin: 0;
+  font-size: 12px;
+  color: #3D5A3D;
+  font-weight: 500;
+}
+
+.fd-notif-preview-time {
+  font-size: 10px;
+  color: #6B8C6B;
+}
+
+/* News Previews */
+.fd-news-previews-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fd-news-preview-item {
+  display: flex;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.fd-news-preview-img {
+  width: 60px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: crop;
+}
+
+.fd-news-preview-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fd-news-preview-date {
+  font-size: 9px;
+  color: #6B8C6B;
+}
+
+.fd-news-preview-headline {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* Gov schemes */
+.fd-schemes-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fd-scheme-preview-item {
+  background: #F8FFF8;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #D4EDD4;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fd-scheme-preview-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.fd-scheme-preview-name {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.fd-scheme-preview-deadline {
+  font-size: 9px;
+  color: #6B8C6B;
+}
+
+.fd-scheme-preview-benefits {
+  margin: 0;
+  font-size: 11px;
+  color: #555;
+  line-height: 1.4;
+}
+
+/* Transactions list table */
+.fd-transactions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fd-table-card {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  border: 1.5px solid #E8F5E9;
+  overflow-x: auto;
+}
+
+.fd-transactions-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.fd-transactions-table th {
+  background: #F8FFF8;
+  padding: 14px 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6B8C6B;
+  text-transform: uppercase;
+}
+
+.fd-transactions-table td {
+  padding: 14px 20px;
+  font-size: 13px;
+  border-bottom: 1.5px solid #F8FFF8;
+}
+
+.fd-table-cell-bold {
+  font-weight: 700;
+}
+
+.fd-table-cell-amount {
+  font-weight: 800;
+  color: #2E7D32;
+}
+
+.fd-table-status-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.fd-table-status-badge.status-completed { background: #E8F5E9; color: #2E7D32; }
+.fd-table-status-badge.status-pending { background: #FFF3E0; color: #E65100; }
+
+.fd-table-cell-date {
+  color: #6B8C6B;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .fd-dual-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .fd-welcome-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 20px;
+  }
+  .fd-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .fd-crop-previews-grid {
+    grid-template-columns: 1fr;
+  }
+}

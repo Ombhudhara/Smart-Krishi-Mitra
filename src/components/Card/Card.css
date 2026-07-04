@@ -1,0 +1,207 @@
+/* ==========================================================================
+   Card.css - Premium Reusable Card Layout Stylesheet
+   Smart Krishi Mitra - Modern Agricultural SaaS Theme
+   ========================================================================== */
+
+:root {
+  --skm-primary: #2E7D32;
+  --skm-primary-light: #E8F5E9;
+  --skm-secondary: #66BB6A;
+  --skm-accent: #FFD54F;
+  --skm-bg: #F8FFF8;
+  --skm-white: #ffffff;
+  --skm-text: #1A2B1A;
+  --skm-muted: #6B8C6B;
+  --skm-border: #D4EDD4;
+}
+
+.skm-card {
+  background-color: var(--skm-white);
+  border: 1.5px solid var(--skm-border);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+/* Animations */
+.skm-card {
+  animation: skmCardFadeIn 0.3s ease;
+}
+
+@keyframes skmCardFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Modifier: Rounded Corners */
+.skm-card--rounded {
+  border-radius: 20px;
+}
+
+/* Modifier: Soft Shadow */
+.skm-card--shadow {
+  box-shadow: 0 4px 16px rgba(46, 125, 50, 0.04);
+}
+
+/* Modifier: Hover Lift */
+.skm-card--hover:hover {
+  transform: translateY(-4px);
+  border-color: var(--skm-secondary);
+  box-shadow: 0 10px 28px rgba(46, 125, 50, 0.1);
+}
+
+/* Modifier: Clickable */
+.skm-card--clickable {
+  cursor: pointer;
+}
+
+/* ─── Inner Elements ────────────────────────────────────────────────────── */
+
+/* Cover Image */
+.skm-card-cover {
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  position: relative;
+  background-color: #f0f0f0;
+}
+
+.skm-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.skm-card:hover .skm-card-cover img {
+  transform: scale(1.03);
+}
+
+/* Card Header */
+.skm-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 20px 10px 20px;
+}
+
+.skm-card-header-icon {
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: var(--skm-primary-light);
+  border-radius: 10px;
+  color: var(--skm-primary);
+}
+
+.skm-card-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.skm-card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--skm-text);
+  line-height: 1.25;
+}
+
+.skm-card-subtitle {
+  margin: 0;
+  font-size: 11px;
+  color: var(--skm-muted);
+  font-weight: 500;
+}
+
+/* Card Body */
+.skm-card-body {
+  padding: 10px 20px 20px 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #333333;
+  flex: 1;
+}
+
+/* Card Footer */
+.skm-card-footer {
+  padding: 14px 20px;
+  border-top: 1.5px solid #F1F8E9;
+  background-color: #F8FFF8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ─── Variant Modifiers ────────────────────────────────────────────────── */
+
+/* Crop Card Variant */
+.skm-card--crop {
+  border-color: #E8F5E9;
+}
+.skm-card--crop .skm-card-title {
+  color: var(--skm-primary);
+}
+
+/* Farmer Card Variant */
+.skm-card--farmer {
+  border-left: 4px solid var(--skm-primary);
+}
+
+/* Vendor Card Variant */
+.skm-card--vendor {
+  border-left: 4px solid #1565C0;
+}
+.skm-card--vendor .skm-card-header-icon {
+  background-color: #E3F2FD;
+  color: #1565C0;
+}
+
+/* Weather Card Variant */
+.skm-card--weather {
+  background: linear-gradient(185deg, #ffffff 0%, #F1F8E9 100%);
+}
+
+/* Statistics Card Variant */
+.skm-card--statistics {
+  border-top: 4px solid var(--skm-primary);
+}
+.skm-card--statistics .skm-card-title {
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+/* News Card Variant */
+.skm-card--news .skm-card-cover {
+  height: 140px;
+}
+
+/* Profile Card Variant */
+.skm-card--profile {
+  text-align: center;
+}
+.skm-card--profile .skm-card-header {
+  flex-direction: column;
+  text-align: center;
+}
+
+/* Transaction Card Variant */
+.skm-card--transaction {
+  border: 1px solid #D4EDD4;
+}
+
+/* Responsive grid settings when card is placed in generic layout */
+@media (max-width: 768px) {
+  .skm-card-cover {
+    height: 140px;
+  }
+}

@@ -1,0 +1,68 @@
+/* ==========================================================================
+   Dashboard.css - Core layout system for the Parent Dashboard Page
+   This file handles ONLY the structural layout glue.
+   Navbar, Sidebar, and Footer styles live in their own component CSS files.
+   ========================================================================== */
+
+:root {
+  --primary-color: #2E7D32;
+  --primary-light: #E8F5E9;
+  --secondary-color: #66BB6A;
+  --accent-color: #FFD54F;
+  --bg-color: #F8FFF8;
+  --card-bg: #ffffff;
+  --text-main: #1A2B1A;
+  --text-muted: #6B8C6B;
+  --border-color: #D4EDD4;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.03);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.05);
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --sidebar-width: 260px;
+  --navbar-height: 70px;
+  /* Expose navbar height for Sidebar's sticky positioning */
+  --nav-height: 70px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ─── Root Container ──────────────────────────────────────────────────────── */
+.db-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* ─── Layout Body (Sidebar + Main) ────────────────────────────────────────── */
+.db-layout {
+  display: flex;
+  margin-top: var(--navbar-height);
+  flex: 1;
+}
+
+/* ─── Main Content ────────────────────────────────────────────────────────── */
+.db-main {
+  flex: 1;
+  min-width: 0; /* Prevent overflow in flex children */
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-color);
+}
+
+.db-content-area {
+  padding: 30px;
+  flex: 1;
+}
+
+/* ─── Responsive Adjustments ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .db-content-area {
+    padding: 20px;
+  }
+}

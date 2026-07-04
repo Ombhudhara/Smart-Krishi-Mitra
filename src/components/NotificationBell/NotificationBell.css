@@ -1,0 +1,273 @@
+/* ==========================================================================
+   NotificationBell.css - Premium Reusable Component
+   Smart Krishi Mitra
+   ========================================================================== */
+
+:root {
+  --bell-primary: #2E7D32;
+  --bell-primary-light: #E8F5E9;
+  --bell-text-main: #1A2B1A;
+  --bell-text-muted: #6B8C6B;
+  --bell-border: #D4EDD4;
+  --bell-bg: #ffffff;
+  --bell-danger: #D32F2F;
+  --bell-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --bell-radius: 12px;
+  --bell-transition: all 0.2s ease;
+}
+
+/* ─── Wrapper & Button ────────────────────────────────────────────────── */
+.skm-notification-bell-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.skm-notification-bell-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--bell-text-muted);
+  transition: var(--bell-transition);
+}
+
+.skm-notification-bell-btn:hover,
+.skm-notification-bell-btn.active-dropdown {
+  background-color: var(--bell-primary-light);
+  color: var(--bell-primary);
+}
+
+.skm-bell-icon {
+  font-size: 24px;
+}
+
+.skm-bell-icon.active {
+  color: var(--bell-primary);
+}
+
+/* ─── Notification Badge ──────────────────────────────────────────────── */
+.skm-notification-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background-color: var(--bell-danger);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  height: 18px;
+  min-width: 18px;
+  padding: 0 4px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bell-bg);
+  box-sizing: content-box;
+}
+
+.skm-pulse-badge {
+  animation: skmPulseBadge 2s infinite;
+}
+
+@keyframes skmPulseBadge {
+  0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(211, 47, 47, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
+}
+
+/* ─── Dropdown Menu ───────────────────────────────────────────────────── */
+.skm-notification-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: -10px; /* Aligned slightly off-center for visual balance */
+  width: 320px;
+  background-color: var(--bell-bg);
+  border-radius: var(--bell-radius);
+  box-shadow: var(--bell-shadow);
+  border: 1px solid var(--bell-border);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'Poppins', sans-serif;
+  animation: skmDropdownSlide 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  transform-origin: top right;
+}
+
+@keyframes skmDropdownSlide {
+  from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ─── Header ──────────────────────────────────────────────────────────── */
+.skm-notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--bell-border);
+  background-color: var(--bell-bg);
+}
+
+.skm-notification-title-header {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--bell-text-main);
+}
+
+.skm-mark-all-read {
+  background: none;
+  border: none;
+  color: var(--bell-primary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: var(--bell-transition);
+}
+
+.skm-mark-all-read:hover {
+  color: #1b5e20;
+  text-decoration: underline;
+}
+
+.skm-mark-icon {
+  font-size: 14px;
+}
+
+/* ─── List Items ──────────────────────────────────────────────────────── */
+.skm-notification-list {
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom Scrollbar */
+.skm-notification-list::-webkit-scrollbar { width: 4px; }
+.skm-notification-list::-webkit-scrollbar-track { background: transparent; }
+.skm-notification-list::-webkit-scrollbar-thumb {
+  background-color: var(--bell-border);
+  border-radius: 4px;
+}
+
+.skm-notification-item {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: var(--bell-transition);
+  background-color: var(--bell-bg);
+}
+
+.skm-notification-item:last-child {
+  border-bottom: none;
+}
+
+.skm-notification-item:hover {
+  background-color: var(--bell-primary-light);
+}
+
+.skm-notification-item.unread {
+  background-color: #F4FAF4; /* Very light green tint */
+}
+
+.skm-notification-indicator {
+  width: 12px;
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
+}
+
+.skm-unread-dot {
+  color: var(--bell-primary);
+  font-size: 8px;
+}
+
+.skm-notification-content {
+  flex: 1;
+}
+
+.skm-notification-message {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  color: var(--bell-text-main);
+  line-height: 1.4;
+}
+
+.skm-notification-item.unread .skm-notification-message {
+  font-weight: 600;
+}
+
+.skm-notification-time {
+  margin: 0;
+  font-size: 11px;
+  color: var(--bell-text-muted);
+}
+
+/* ─── Empty State ─────────────────────────────────────────────────────── */
+.skm-notification-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--bell-text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.skm-empty-icon {
+  font-size: 32px;
+  color: #c8e6c9;
+}
+
+.skm-notification-empty p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* ─── Footer ──────────────────────────────────────────────────────────── */
+.skm-notification-footer {
+  padding: 12px;
+  border-top: 1px solid var(--bell-border);
+  text-align: center;
+  background-color: #fafafa;
+}
+
+.skm-view-all-btn {
+  background: none;
+  border: none;
+  color: var(--bell-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--bell-transition);
+}
+
+.skm-view-all-btn:hover {
+  color: #1b5e20;
+  text-decoration: underline;
+}
+
+/* ─── Responsive Adjustments ──────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .skm-notification-dropdown {
+    position: fixed;
+    top: 70px; /* Assuming navbar height */
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-width: none;
+    transform-origin: top center;
+  }
+}

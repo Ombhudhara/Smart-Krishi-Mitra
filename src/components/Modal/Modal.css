@@ -1,0 +1,207 @@
+/* ==========================================================================
+   Modal.css - Premium Reusable Modal Dialog
+   Smart Krishi Mitra
+   ========================================================================== */
+
+:root {
+  --modal-overlay-bg: rgba(26, 43, 26, 0.6);
+  --modal-bg: #ffffff;
+  --modal-border: #D4EDD4;
+  --modal-text-main: #1A2B1A;
+  --modal-text-muted: #6B8C6B;
+  
+  /* Status Colors */
+  --modal-primary: #2E7D32;
+  --modal-success: #388E3C;
+  --modal-danger: #D32F2F;
+  --modal-accent: #F9A825;
+  --modal-info: #1976D2;
+
+  --modal-radius: 20px;
+  --modal-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  --modal-transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* ─── Backdrop / Overlay ──────────────────────────────────────────────── */
+.skm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--modal-overlay-bg);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  
+  /* Overlay Animation */
+  animation: modalOverlayFadeIn 0.25s ease forwards;
+}
+
+@keyframes modalOverlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ─── Modal Container ─────────────────────────────────────────────────── */
+.skm-modal-container {
+  background-color: var(--modal-bg);
+  border-radius: var(--modal-radius);
+  box-shadow: var(--modal-shadow);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  width: 100%;
+  position: relative;
+  font-family: 'Poppins', sans-serif;
+  
+  /* Container Animation */
+  animation: modalPopIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes modalPopIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.9) translateY(20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1) translateY(0); 
+  }
+}
+
+/* Sizes */
+.skm-modal-size--sm { max-width: 400px; }
+.skm-modal-size--md { max-width: 560px; }
+.skm-modal-size--lg { max-width: 800px; }
+
+/* ─── Modal Header ────────────────────────────────────────────────────── */
+.skm-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px;
+  border-bottom: 1.5px solid var(--modal-border);
+}
+
+.skm-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skm-modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--modal-text-main);
+}
+
+.skm-modal-icon {
+  font-size: 24px;
+}
+
+.skm-modal-icon--primary { color: var(--modal-primary); }
+.skm-modal-icon--success { color: var(--modal-success); }
+.skm-modal-icon--danger  { color: var(--modal-danger); }
+.skm-modal-icon--accent  { color: var(--modal-accent); }
+.skm-modal-icon--info    { color: var(--modal-info); }
+
+.skm-modal-close-btn {
+  background: rgba(0,0,0,0.04);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--modal-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.skm-modal-close-btn:hover {
+  background: rgba(0,0,0,0.08);
+  color: var(--modal-text-main);
+  transform: rotate(90deg);
+}
+
+/* ─── Variant Theming ─────────────────────────────────────────────────── */
+.skm-modal-variant--delete .skm-modal-header {
+  border-bottom-color: #FFEBEE;
+  background-color: #FFEBEE;
+  border-top-left-radius: var(--modal-radius);
+  border-top-right-radius: var(--modal-radius);
+}
+.skm-modal-variant--delete .skm-modal-title {
+  color: var(--modal-danger);
+}
+
+.skm-modal-variant--success .skm-modal-header {
+  border-bottom-color: #E8F5E9;
+  background-color: #E8F5E9;
+  border-top-left-radius: var(--modal-radius);
+  border-top-right-radius: var(--modal-radius);
+}
+.skm-modal-variant--success .skm-modal-title {
+  color: var(--modal-success);
+}
+
+/* ─── Modal Body ──────────────────────────────────────────────────────── */
+.skm-modal-body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+}
+
+/* Custom Scrollbar for body */
+.skm-modal-body::-webkit-scrollbar { width: 6px; }
+.skm-modal-body::-webkit-scrollbar-track { background: transparent; }
+.skm-modal-body::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 10px;
+}
+
+/* ─── Modal Footer ────────────────────────────────────────────────────── */
+.skm-modal-footer {
+  padding: 20px 28px;
+  border-top: 1.5px solid var(--modal-border);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  background-color: #F8FFF8;
+  border-bottom-left-radius: var(--modal-radius);
+  border-bottom-right-radius: var(--modal-radius);
+}
+
+/* ─── Responsive Adjustments ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .skm-modal-container {
+    width: 100%;
+    margin: 10px;
+  }
+  
+  .skm-modal-header,
+  .skm-modal-body,
+  .skm-modal-footer {
+    padding: 16px 20px;
+  }
+  
+  .skm-modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .skm-modal-footer > * {
+    width: 100%;
+  }
+}

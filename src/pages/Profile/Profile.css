@@ -1,0 +1,70 @@
+/* ==========================================================================
+   Profile.css - Core layout system for the Parent Profile Page
+   This file handles ONLY the structural layout glue.
+   Navbar, Sidebar, and Footer styles live in their own component CSS files.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+/* ─── CSS Variables ─────────────────────────────────────────────────────── */
+:root {
+  --pr-primary: #2E7D32;
+  --pr-primary-light: #43A047;
+  --pr-primary-pale: #E8F5E9;
+  --pr-secondary: #66BB6A;
+  --pr-accent: #FFD54F;
+  --pr-accent-dark: #F9A825;
+  --pr-bg: #F4FBF4;
+  --pr-white: #ffffff;
+  --pr-text-dark: #1A2B1A;
+  --pr-text-mid: #3D5A3D;
+  --pr-text-muted: #6B8C6B;
+  --pr-border: #D4EDD4;
+  --pr-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --pr-shadow-md: 0 4px 20px rgba(46, 125, 50, 0.08);
+  --pr-shadow-lg: 0 8px 40px rgba(46, 125, 50, 0.12);
+  --pr-radius: 20px;
+  --pr-radius-sm: 10px;
+  --pr-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --pr-transition: all 0.22s var(--pr-ease);
+}
+
+/* ─── Reset ────────────────────────────────────────────────────────────── */
+.pr-root *,
+.pr-root *::before,
+.pr-root *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.pr-root {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--pr-bg);
+  color: var(--pr-text-dark);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Layout Body (Sidebar + Main) ─────────────────────────────────────── */
+.pr-layout {
+  display: flex;
+  margin-top: 70px; /* matches --nav-height from reusable navbar */
+  flex: 1;
+}
+
+/* ─── Main Content Pane ─── */
+.pr-main {
+  flex: 1;
+  padding: 30px;
+  transition: margin-left 0.28s var(--pr-ease);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .pr-main { margin-left: 0 !important; padding: 20px; }
+}

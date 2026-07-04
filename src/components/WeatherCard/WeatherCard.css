@@ -1,0 +1,221 @@
+/* ==========================================================================
+   WeatherCard.css - Premium Reusable Weather Component
+   Smart Krishi Mitra
+   ========================================================================== */
+
+:root {
+  --wc-primary: #2E7D32;
+  --wc-bg: linear-gradient(135deg, #1E3B70 0%, #29539B 100%); /* Deep sky theme */
+  --wc-text: #ffffff;
+  --wc-text-muted: rgba(255, 255, 255, 0.7);
+  --wc-panel: rgba(255, 255, 255, 0.1);
+  --wc-panel-border: rgba(255, 255, 255, 0.2);
+  --wc-radius: 20px;
+  --wc-shadow: 0 16px 32px rgba(30, 59, 112, 0.25);
+  --wc-transition: all 0.3s ease;
+}
+
+.skm-weather-card {
+  background: var(--wc-bg);
+  border-radius: var(--wc-radius);
+  color: var(--wc-text);
+  padding: 24px;
+  box-shadow: var(--wc-shadow);
+  font-family: 'Poppins', sans-serif;
+  overflow: hidden;
+  position: relative;
+  transition: var(--wc-transition);
+}
+
+.skm-weather-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(30, 59, 112, 0.35);
+}
+
+/* ─── Header: Location ────────────────────────────────────────────────── */
+.skm-weather-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.skm-weather-loc-icon {
+  font-size: 20px;
+  color: #FFD54F; /* Accent yellow */
+}
+
+.skm-weather-location {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* ─── Main: Temperature & Icon ────────────────────────────────────────── */
+.skm-weather-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+}
+
+.skm-weather-icon-lg {
+  font-size: 80px;
+  line-height: 1;
+  color: #FFD54F; /* Sun color, can be filtered per icon if needed */
+  filter: drop-shadow(0 0 20px rgba(255, 213, 79, 0.4));
+  animation: skmFloat 3s ease-in-out infinite;
+}
+
+@keyframes skmFloat {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0); }
+}
+
+.skm-weather-temp-wrap {
+  text-align: right;
+}
+
+.skm-weather-temp {
+  margin: 0;
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+
+.skm-weather-condition {
+  margin: 8px 0 0 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--wc-text-muted);
+}
+
+/* ─── Metrics Row (Humidity, Wind, Rain) ──────────────────────────────── */
+.skm-weather-metrics {
+  display: flex;
+  justify-content: space-between;
+  background: var(--wc-panel);
+  border: 1px solid var(--wc-panel-border);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 24px;
+  backdrop-filter: blur(10px);
+}
+
+.skm-weather-metric {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.skm-wm-center {
+  justify-content: center;
+  border-left: 1px solid var(--wc-panel-border);
+  border-right: 1px solid var(--wc-panel-border);
+}
+
+.skm-weather-metric:last-child {
+  justify-content: flex-end;
+}
+
+.skm-wm-icon {
+  font-size: 24px;
+  color: #81D4FA; /* Light blue accent */
+}
+
+.skm-wm-data {
+  display: flex;
+  flex-direction: column;
+}
+
+.skm-wm-val {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.skm-wm-label {
+  font-size: 11px;
+  color: var(--wc-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ─── 5-Day Forecast ──────────────────────────────────────────────────── */
+.skm-weather-forecast {
+  background: var(--wc-panel);
+  border: 1px solid var(--wc-panel-border);
+  border-radius: 16px;
+  padding: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.skm-forecast-title {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wc-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.skm-forecast-list {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.skm-forecast-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.skm-forecast-day {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.skm-forecast-icon {
+  font-size: 24px;
+  color: #FFD54F;
+}
+
+.skm-forecast-temp {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* ─── Responsive Adjustments ──────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .skm-weather-metrics {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .skm-wm-center {
+    justify-content: flex-start;
+    border-left: none;
+    border-right: none;
+    border-top: 1px solid var(--wc-panel-border);
+    border-bottom: 1px solid var(--wc-panel-border);
+    padding: 12px 0;
+  }
+  
+  .skm-weather-metric:last-child {
+    justify-content: flex-start;
+  }
+  
+  .skm-forecast-list {
+    overflow-x: auto;
+    gap: 20px;
+    padding-bottom: 8px;
+  }
+  
+  .skm-forecast-item {
+    min-width: 40px;
+  }
+}

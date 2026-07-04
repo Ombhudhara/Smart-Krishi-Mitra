@@ -1,0 +1,47 @@
+.mkt-summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.mkt-stat-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 0 8px 24px rgba(46,125,50,0.08);
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  cursor: default;
+}
+
+.mkt-stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 48px rgba(46,125,50,0.14);
+}
+
+.mkt-stat-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.mkt-stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1A2B1A;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+.mkt-stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6B8C6B;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mkt-stat-sub {
+  font-size: 11px;
+  color: #6B8C6B;
+  margin-top: 4px;
+}

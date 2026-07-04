@@ -1,0 +1,212 @@
+/* ==========================================================================
+   Button.css - Reusable Button Component Styles
+   Smart Krishi Mitra Design System
+   ========================================================================== */
+
+:root {
+  /* Button Design Tokens */
+  --skm-btn-font:           'Poppins', -apple-system, sans-serif;
+  --skm-btn-radius:         30px;
+  --skm-btn-transition:     all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --skm-btn-weight:         600;
+  
+  /* Primary Colors (Green) */
+  --skm-btn-primary-bg:     #2E7D32;
+  --skm-btn-primary-hover:  #388E3C;
+  --skm-btn-primary-text:   #ffffff;
+  
+  /* Secondary Colors (Light Green) */
+  --skm-btn-secondary-bg:    #E8F5E9;
+  --skm-btn-secondary-hover: #C8E6C9;
+  --skm-btn-secondary-text:  #2E7D32;
+  
+  /* Danger Colors (Red) */
+  --skm-btn-danger-bg:      #D32F2F;
+  --skm-btn-danger-hover:   #C62828;
+  --skm-btn-danger-text:    #ffffff;
+  
+  /* Success Colors (Emerald) */
+  --skm-btn-success-bg:     #43A047;
+  --skm-btn-success-hover:  #2E7D32;
+  --skm-btn-success-text:   #ffffff;
+
+  /* Shadows */
+  --skm-btn-shadow:         0 4px 10px rgba(46, 125, 50, 0.15);
+  --skm-btn-shadow-hover:   0 6px 16px rgba(46, 125, 50, 0.25);
+  --skm-btn-danger-shadow:  0 4px 10px rgba(211, 47, 47, 0.15);
+  --skm-btn-danger-shadow-hover: 0 6px 16px rgba(211, 47, 47, 0.25);
+}
+
+/* Core Button Styles */
+.skm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--skm-btn-font);
+  font-weight: var(--skm-btn-weight);
+  border-radius: var(--skm-btn-radius);
+  border: none;
+  cursor: pointer;
+  outline: none;
+  position: relative;
+  text-decoration: none;
+  white-space: nowrap;
+  vertical-align: middle;
+  user-select: none;
+  gap: 8px;
+  transition: var(--skm-btn-transition);
+}
+
+/* Click Active State */
+.skm-btn:active:not(.skm-btn--disabled):not(.skm-btn--loading) {
+  transform: scale(0.97);
+}
+
+/* Size Variants */
+.skm-btn--small {
+  padding: 8px 16px;
+  font-size: 12px;
+}
+.skm-btn--medium {
+  padding: 11px 22px;
+  font-size: 14px;
+}
+.skm-btn--large {
+  padding: 14px 28px;
+  font-size: 16px;
+}
+
+/* Theme Variants */
+
+/* 1. Primary */
+.skm-btn--primary {
+  background-color: var(--skm-btn-primary-bg);
+  color: var(--skm-btn-primary-text);
+  box-shadow: var(--skm-btn-shadow);
+}
+.skm-btn--primary:hover:not(.skm-btn--disabled):not(.skm-btn--loading) {
+  background-color: var(--skm-btn-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--skm-btn-shadow-hover);
+}
+
+/* 2. Secondary */
+.skm-btn--secondary {
+  background-color: var(--skm-btn-secondary-bg);
+  color: var(--skm-btn-secondary-text);
+  border: 1px solid var(--skm-btn-primary-bg);
+}
+.skm-btn--secondary:hover:not(.skm-btn--disabled):not(.skm-btn--loading) {
+  background-color: var(--skm-btn-secondary-hover);
+  transform: translateY(-2px);
+}
+
+/* 3. Outline */
+.skm-btn--outline {
+  background-color: transparent;
+  color: var(--skm-btn-primary-bg);
+  border: 1.5px solid var(--skm-btn-primary-bg);
+}
+.skm-btn--outline:hover:not(.skm-btn--disabled):not(.skm-btn--loading) {
+  background-color: var(--skm-btn-primary-bg);
+  color: var(--skm-btn-primary-text);
+  transform: translateY(-2px);
+  box-shadow: var(--skm-btn-shadow);
+}
+
+/* 4. Danger */
+.skm-btn--danger {
+  background-color: var(--skm-btn-danger-bg);
+  color: var(--skm-btn-danger-text);
+  box-shadow: var(--skm-btn-danger-shadow);
+}
+.skm-btn--danger:hover:not(.skm-btn--disabled):not(.skm-btn--loading) {
+  background-color: var(--skm-btn-danger-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--skm-btn-danger-shadow-hover);
+}
+
+/* 5. Success */
+.skm-btn--success {
+  background-color: var(--skm-btn-success-bg);
+  color: var(--skm-btn-success-text);
+  box-shadow: var(--skm-btn-shadow);
+}
+.skm-btn--success:hover:not(.skm-btn--disabled):not(.skm-btn--loading) {
+  background-color: var(--skm-btn-success-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--skm-btn-shadow-hover);
+}
+
+/* Icon-Only Mode Styling */
+.skm-btn--icon-only {
+  border-radius: 50%;
+  padding: 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.skm-btn--icon-only.skm-btn--small {
+  width: 32px; height: 32px;
+}
+.skm-btn--icon-only.skm-btn--medium {
+  width: 42px; height: 42px;
+  font-size: 16px;
+}
+.skm-btn--icon-only.skm-btn--large {
+  width: 52px; height: 52px;
+  font-size: 20px;
+}
+
+/* Icon Spacing */
+.skm-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Disabled State */
+.skm-btn--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Loading State styles */
+.skm-btn--loading {
+  cursor: wait;
+}
+.skm-btn-loader {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.skm-btn-spinner {
+  animation: skm-btn-spin 0.8s linear infinite;
+}
+.skm-btn--small .skm-btn-spinner {
+  width: 14px; height: 14px;
+}
+.skm-btn--medium .skm-btn-spinner {
+  width: 16px; height: 16px;
+}
+.skm-btn--large .skm-btn-spinner {
+  width: 20px; height: 20px;
+}
+
+.skm-spinner-track {
+  opacity: 0.25;
+}
+.skm-spinner-head {
+  opacity: 1;
+}
+
+/* Spin animation definition */
+@keyframes skm-btn-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
