@@ -5,6 +5,7 @@ import Footer from '../../components/Footer/Footer';
 import Button from '../../components/Button/Button';
 import Card from '../../components/Card/Card';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
+import { saveCalculation as saveCalculationApi } from '../../services/calculatorService';
 import './CostCalculator.css';
 
 // ─── Constants & Dummy Data ───────────────────────────────────────────────────
@@ -329,10 +330,39 @@ export default function CostCalculator() {
     showNotification('Form has been reset.', 'info');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!hasCalculated) { showNotification('Please calculate first before saving.', 'warning'); return; }
-    setIsSaved(true);
-    showNotification('Calculation saved to history!', 'success');
+    try {
+      const otherExpenses = (parseFloat(expenses.pesticide) || 0) +
+                            (parseFloat(expenses.transportation) || 0) +
+                            (parseFloat(expenses.miscellaneous) || 0);
+
+      const payload = {
+        cropName: formData.crop,
+        landArea: parseFloat(formData.landArea) || 1,
+        seedCost: parseFloat(expenses.seed) || 0,
+        fertilizerCost: parseFloat(expenses.fertilizer) || 0,
+        labourCost: parseFloat(expenses.labor) || 0,
+        machineryCost: parseFloat(expenses.machinery) || 0,
+        irrigationCost: parseFloat(expenses.irrigation) || 0,
+        otherCost: otherExpenses,
+        totalCost: results.totalExpenses,
+        expectedYield: parseFloat(formData.expectedYield) || 0,
+        expectedRevenue: results.revenue || 0,
+        expectedProfit: results.profit || 0,
+        season: formData.irrigationType || "",
+        cropVariety: formData.soilType || "",
+      };
+
+      const res = await saveCalculationApi(payload);
+      if (res.data?.success) {
+        setIsSaved(true);
+        showNotification('Calculation saved successfully to MongoDB!', 'success');
+      }
+    } catch (err) {
+      console.error(err);
+      showNotification('Failed to save calculation to backend.', 'error');
+    }
   };
 
   useEffect(() => {

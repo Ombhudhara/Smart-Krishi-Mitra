@@ -1,110 +1,16 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './VendorView.css';
 import SearchBar from './SearchBar';
 import SummaryCards from './SummaryCards';
 import VendorTransactionHistory from './VendorTransactionHistory';
+import { getListings } from '../../services/marketplaceService';
+import { createTransaction as createTransactionApi } from '../../services/transactionService';
 
 // ============================================================================
 // REALISTIC DUMMY DATA FOR THE VENDOR DESK
 // ============================================================================
 
-const INITIAL_FARMER_LISTINGS = [
-  {
-    id: 'fl-1',
-    farmerName: 'Om Bhudhara',
-    farmerAvatar: 'OB',
-    farmerVerified: true,
-    farmerRating: 4.9,
-    farmerReviews: 124,
-    cropName: 'Premium Bt Cotton',
-    cropImage: '☁️',
-    category: 'Cotton',
-    stock: 850,
-    unit: 'Quintal',
-    price: 6500,
-    location: 'Rajkot, Gujarat',
-    harvestDate: '2026-11-15',
-    organic: true,
-    delivery: true,
-    phone: '+91 98765 43210'
-  },
-  {
-    id: 'fl-2',
-    farmerName: 'Raj Patel',
-    farmerAvatar: 'RP',
-    farmerVerified: true,
-    farmerRating: 4.8,
-    farmerReviews: 96,
-    cropName: 'Sharbati Wheat',
-    cropImage: '🌾',
-    category: 'Wheat',
-    stock: 620,
-    unit: 'Quintal',
-    price: 2350,
-    location: 'Nashik, Maharashtra',
-    harvestDate: '2026-04-10',
-    organic: false,
-    delivery: true,
-    phone: '+91 87654 32109'
-  },
-  {
-    id: 'fl-3',
-    farmerName: 'Mahesh Chauhan',
-    farmerAvatar: 'MC',
-    farmerVerified: true,
-    farmerRating: 4.7,
-    farmerReviews: 82,
-    cropName: 'Organic Basmati Rice',
-    cropImage: '🍚',
-    category: 'Rice',
-    stock: 300,
-    unit: 'Quintal',
-    price: 4800,
-    location: 'Karnal, Haryana',
-    harvestDate: '2026-10-05',
-    organic: true,
-    delivery: true,
-    phone: '+91 76543 21098'
-  },
-  {
-    id: 'fl-4',
-    farmerName: 'Ramesh Solanki',
-    farmerAvatar: 'RS',
-    farmerVerified: false,
-    farmerRating: 4.4,
-    farmerReviews: 38,
-    cropName: 'Kharif Groundnut Bold',
-    cropImage: '🥜',
-    category: 'Groundnut',
-    stock: 450,
-    unit: 'Quintal',
-    price: 5200,
-    location: 'Junagadh, Gujarat',
-    harvestDate: '2026-09-20',
-    organic: false,
-    delivery: false,
-    phone: '+91 65432 10987'
-  },
-  {
-    id: 'fl-5',
-    farmerName: 'Raj Patel',
-    farmerAvatar: 'RP',
-    farmerVerified: true,
-    farmerRating: 4.8,
-    farmerReviews: 96,
-    cropName: 'Yellow Maize Dent',
-    cropImage: '🌽',
-    category: 'Maize',
-    stock: 550,
-    unit: 'Quintal',
-    price: 1900,
-    location: 'Nashik, Maharashtra',
-    harvestDate: '2026-12-01',
-    organic: false,
-    delivery: true,
-    phone: '+91 87654 32109'
-  }
-];
+// INITIAL_FARMER_LISTINGS removed — now loaded from API via getListings()
 
 const INITIAL_INVENTORY = [
   {
@@ -185,7 +91,7 @@ const SORT_OPTIONS = ['Latest', 'Lowest Price', 'Highest Rating', 'Most Stock'];
 
 export default function VendorView() {
   // States
-  const [farmersList, setFarmersList] = useState(INITIAL_FARMER_LISTINGS);
+  const [farmersList, setFarmersList] = useState([]);
   const [inventory, setInventory] = useState(INITIAL_INVENTORY);
   const [purchaseRequests, setPurchaseRequests] = useState(INITIAL_PURCHASE_REQUESTS);
   const [activeTab, setActiveTab] = useState('farmers');
@@ -212,13 +118,52 @@ export default function VendorView() {
     setTimeout(() => setToast(null), 3000);
   }, []);
 
+  const fetchFarmersList = async () => {
+    try {
+      const res = await getListings();
+      if (res.data?.success) {
+        const mapped = res.data.listings
+          .filter((l) => l.seller?.role === 'Farmer')
+          .map((l) => ({
+            id: l._id,
+            _id: l._id,
+            farmerName: l.seller?.fullName || 'Farmer',
+            farmerAvatar: l.seller?.fullName ? l.seller.fullName.split(' ').map((n) => n[0]).join('') : 'OB',
+            farmerVerified: true,
+            farmerRating: 4.8,
+            farmerReviews: 64,
+            cropName: l.title || l.cropName,
+            cropImage: l.category === 'Rice' ? '🍚' : (l.category === 'Cotton' ? '☁️' : '🌾'),
+            category: l.category || 'Wheat',
+            stock: l.quantity || 0,
+            unit: l.unit || 'Quintal',
+            price: l.price || 0,
+            location: l.location || '',
+            harvestDate: l.harvestDate ? new Date(l.harvestDate).toISOString().split('T')[0] : '',
+            organic: l.isOrganic || false,
+            delivery: l.deliveryAvailable || false,
+            phone: l.seller?.phone || '',
+            seller: l.seller,
+            sellerId: l.seller?._id,
+          }));
+        setFarmersList(mapped);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchFarmersList();
+  }, []);
+
   // Handlers
   const handleBuyClick = (listing) => {
     setBuyModal(listing);
     setBuyForm({ quantity: '', message: '' });
   };
 
-  const handleBuySubmit = () => {
+  const handleBuySubmit = async () => {
     if (!buyForm.quantity || Number(buyForm.quantity) <= 0) {
       showToast('Please enter a valid quantity.', 'error');
       return;
@@ -228,23 +173,26 @@ export default function VendorView() {
       return;
     }
 
-    // Add to Purchase Requests
-    const newRequest = {
-      id: `req-${Date.now()}`,
-      cropName: buyModal.cropName,
-      cropImage: buyModal.cropImage,
-      qty: Number(buyForm.quantity),
-      price: buyModal.price,
-      farmerName: buyModal.farmerName,
-      status: 'Pending'
-    };
-    setPurchaseRequests(prev => [newRequest, ...prev]);
+    try {
+      const payload = {
+        sellerId: buyModal.seller?._id || buyModal.sellerId,
+        cropName: buyModal.cropName,
+        quantity: Number(buyForm.quantity),
+        price: Number(buyModal.price),
+        listingId: buyModal._id || buyModal.id,
+      };
 
-    // System deduct simulation
-    setFarmersList(prev => prev.map(f => f.id === buyModal.id ? { ...f, stock: f.stock - Number(buyForm.quantity) } : f));
-
-    setBuyModal(null);
-    showToast(`Purchase request for ${buyForm.quantity} Q of ${buyModal.cropName} sent!`);
+      const res = await createTransactionApi(payload);
+      if (res.data?.success) {
+        showToast(`Purchase request for ${buyForm.quantity} Q of ${buyModal.cropName} sent!`);
+        setFarmersList(prev => prev.map(f => f.id === buyModal.id ? { ...f, stock: f.stock - Number(buyForm.quantity) } : f));
+        setBuyModal(null);
+        fetchFarmersList();
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to submit purchase request.', 'error');
+    }
   };
 
   const handleCancelRequest = (reqId) => {

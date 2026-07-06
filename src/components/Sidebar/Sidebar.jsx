@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { 
   MdDashboard, 
   MdStorefront, 
@@ -38,6 +39,20 @@ const Sidebar = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+    if (onLogout) {
+      onLogout();
+    } else {
+      navigate('/login');
+    }
+  };
 
   // If no activeItem prop is provided, try to determine from current path
   const currentActive = activeItem || MENU_ITEMS.find(item => 
@@ -104,7 +119,7 @@ const Sidebar = ({
         <div className="skm-sidebar-item-wrapper" title={collapsed ? "Logout" : ""}>
           <button 
             className="skm-sidebar-btn skm-sidebar-btn--logout"
-            onClick={onLogout}
+            onClick={handleLogout}
           >
             <span className="skm-sidebar-icon"><MdLogout /></span>
             {!collapsed && <span className="skm-sidebar-text">Logout</span>}

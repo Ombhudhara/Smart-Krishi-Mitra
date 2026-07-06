@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import Modal from "../../components/Modal/Modal";
 import "./LoginSignup.css";
 
 export default function LoginSignup({ initialIsLogin = true, onViewChange }) {
+  const navigate = useNavigate();
+  const { login, register } = useAuth();
+
   const [isLogin, setIsLogin] = useState(initialIsLogin);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -28,6 +35,16 @@ export default function LoginSignup({ initialIsLogin = true, onViewChange }) {
 
   // Validation States
   const [errors, setErrors] = useState({});
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+  };
 
   useEffect(() => {
     setIsLogin(initialIsLogin);
@@ -72,11 +89,20 @@ export default function LoginSignup({ initialIsLogin = true, onViewChange }) {
     setIsLoading(false);
   };
 
+  // Brand and Logo click handler
+  const handleBrandClick = () => {
+    if (typeof onViewChange === "function") {
+      onViewChange("landing");
+    } else {
+      navigate("/");
+    }
+  };
+
   // Validators
   const validateEmail = (email) => /\S+@\S+\.\S+/.test(email);
   const validatePhone = (phone) => /^\d{10}$/.test(phone);
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
 
@@ -98,13 +124,23 @@ export default function LoginSignup({ initialIsLogin = true, onViewChange }) {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await login({
+        email: loginData.email,
+        password: loginData.password,
+      });
       alert("Welcome back! Login Successful.");
-    }, 2000);
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Login failed:", error);
+      const backendMessage = error.response?.data?.message || "Invalid credentials or network error.";
+      setErrors({ api: backendMessage });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSignupSubmit = (e) => {
+  const handleSignupSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
 
@@ -158,15 +194,61 @@ export default function LoginSignup({ initialIsLogin = true, onViewChange }) {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const capitalizedRole = signupData.role ? (signupData.role.charAt(0).toUpperCase() + signupData.role.slice(1)) : "Customer";
+      
+      const payload = {
+        fullName: signupData.name,
+        email: signupData.email,
+        phone: signupData.phone,
+        password: signupData.password,
+        role: capitalizedRole,
+        state: signupData.state,
+        city: signupData.city
+      };
+
+      await register(payload);
       alert("Registration Successful! Welcome onboard.");
-    }, 2000);
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Signup failed:", error);
+      const backendMessage = error.response?.data?.message || "";
+      
+      if (error.response?.status === 409) {
+        const newErrors = {};
+        if (backendMessage.toLowerCase().includes("email")) {
+          newErrors.email = "This email is already registered.";
+        }
+        if (backendMessage.toLowerCase().includes("phone")) {
+          newErrors.phone = "This phone number is already registered.";
+        }
+        if (Object.keys(newErrors).length === 0) {
+          newErrors.email = "This email is already registered.";
+          newErrors.phone = "This phone number is already registered.";
+        }
+        setErrors(newErrors);
+        setIsModalOpen(true);
+      } else {
+        setErrors({ api: backendMessage || "Registration failed. Account might already exist." });
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="saas-auth-page">
       
+      {/* Floating Theme Toggle */}
+      <button 
+        onClick={toggleTheme} 
+        className="saas-floating-theme-btn"
+        title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+        aria-label="Toggle theme mode"
+      >
+        {theme === 'light' ? '🌙' : '☀️'}
+      </button>
+
       {/* Background Animated Assets */}
       <div className="bg-blur-circle bg-blur-circle--1" />
       <div className="bg-blur-circle bg-blur-circle--2" />
@@ -174,12 +256,12 @@ export default function LoginSignup({ initialIsLogin = true, onViewChange }) {
       <div className="floating-leaf leaf-2">🍂</div>
       <div className="floating-leaf leaf-3">🌿</div>
 
-      <div className="saas-auth-container">
+      <div className={`saas-auth-container ${!isLogin ? "saas-auth-container--signup" : ""}`}>
         
         {/* ─── LEFT SECTION (60% HERO) ─── */}
         <div className="saas-auth-left">
           
-          <div className="saas-brand" onClick={() => onViewChange("landing")}>
+          <div className="saas-brand" onClick={handleBrandClick}>
             <span className="brand-logo">🌱</span>
             <span className="brand-title">Smart Krishi Mitra</span>
           </div>
@@ -188,10 +270,7 @@ export default function LoginSignup({ initialIsLogin = true, onViewChange }) {
             <h1 className="hero-heading">
               Empowering Farmers with <span className="highlight-green">AI &amp; Smart Tech</span>
             </h1>
-            <p className="hero-text">
-              Transform your agricultural yields. Connect with verified vendors, chat with our 
-              knowledgeable AI assistant, predict cost sheets, and get hyper-local soil reports.
-            </p>
+
 
             {/* Feature Pills */}
             <div className="feature-pills">
@@ -270,22 +349,17 @@ export default function LoginSignup({ initialIsLogin = true, onViewChange }) {
             </div>
           </div>
 
-          {/* Social Proof Stats at the bottom */}
-          <div className="left-hero-footer">
-            <span className="stat-item"><span className="checkmark">✓</span> 10,000+ Farmers</span>
-            <span className="stat-item"><span className="checkmark">✓</span> 500+ Vendors</span>
-            <span className="stat-item"><span className="checkmark">✓</span> 24/7 AI Support</span>
-          </div>
+
 
         </div>
 
         {/* ─── RIGHT SECTION (40% AUTH CARD) ─── */}
         <div className="saas-auth-right">
           
-          <div className="auth-card-wrapper glass-card">
+          <div className={`auth-card-wrapper glass-card ${!isLogin ? "auth-card-wrapper--signup" : ""}`}>
             
             {/* Logo on top of Card */}
-            <div className="auth-card-logo" onClick={() => onViewChange("landing")}>
+            <div className="auth-card-logo" onClick={handleBrandClick}>
               <span className="logo-emoji">🌱</span>
               <span className="logo-subtext">Smart Krishi Mitra</span>
             </div>
@@ -318,6 +392,21 @@ export default function LoginSignup({ initialIsLogin = true, onViewChange }) {
             {/* ────────── LOGIN FORM ────────── */}
             {isLogin ? (
               <form onSubmit={handleLoginSubmit} className="saas-form fade-in">
+                {errors.api && (
+                  <div className="saas-error-text" style={{ 
+                    backgroundColor: '#FEE2E2', 
+                    color: '#991B1B', 
+                    padding: '10px 14px', 
+                    borderRadius: '8px', 
+                    fontSize: '0.85rem', 
+                    marginBottom: '16px',
+                    border: '1px solid #FCA5A5',
+                    width: '100%',
+                    boxSizing: 'border-box'
+                  }}>
+                    ⚠️ {errors.api}
+                  </div>
+                )}
                 
                 {/* Email Field */}
                 <div className="saas-form-group">
@@ -402,193 +491,219 @@ export default function LoginSignup({ initialIsLogin = true, onViewChange }) {
               </form>
             ) : (
               /* ────────── SIGNUP FORM ────────── */
-              <form onSubmit={handleSignupSubmit} className="saas-form fade-in">
+              <form onSubmit={handleSignupSubmit} className="saas-form saas-form--signup fade-in">
+                {errors.api && (
+                  <div className="saas-error-text" style={{ 
+                    backgroundColor: '#FEE2E2', 
+                    color: '#991B1B', 
+                    padding: '10px 14px', 
+                    borderRadius: '8px', 
+                    fontSize: '0.85rem', 
+                    marginBottom: '16px',
+                    border: '1px solid #FCA5A5',
+                    width: '100%',
+                    boxSizing: 'border-box'
+                  }}>
+                    ⚠️ {errors.api}
+                  </div>
+                )}
                 
-                {/* Name */}
-                <div className="saas-form-group">
-                  <label htmlFor="signup-name">Full Name</label>
-                  <div className="saas-input-wrapper">
-                    <span className="input-leading-icon">👤</span>
-                    <input
-                      id="signup-name"
-                      type="text"
-                      name="name"
-                      placeholder="Your full name"
-                      value={signupData.name}
-                      onChange={handleSignupChange}
-                      className={errors.name ? "input-has-error" : ""}
-                    />
-                  </div>
-                  {errors.name && <span className="saas-error-text">{errors.name}</span>}
-                </div>
-
-                {/* Email */}
-                <div className="saas-form-group">
-                  <label htmlFor="signup-email">Email Address</label>
-                  <div className="saas-input-wrapper">
-                    <span className="input-leading-icon">📧</span>
-                    <input
-                      id="signup-email"
-                      type="text"
-                      name="email"
-                      placeholder="name@example.com"
-                      value={signupData.email}
-                      onChange={handleSignupChange}
-                      className={errors.email ? "input-has-error" : ""}
-                    />
-                  </div>
-                  {errors.email && <span className="saas-error-text">{errors.email}</span>}
-                </div>
-
-                {/* Mobile */}
-                <div className="saas-form-group">
-                  <label htmlFor="signup-phone">Mobile Number</label>
-                  <div className="saas-input-wrapper">
-                    <span className="input-leading-icon">📞</span>
-                    <input
-                      id="signup-phone"
-                      type="text"
-                      name="phone"
-                      placeholder="10-digit mobile number"
-                      value={signupData.phone}
-                      onChange={handleSignupChange}
-                      className={errors.phone ? "input-has-error" : ""}
-                    />
-                  </div>
-                  {errors.phone && <span className="saas-error-text">{errors.phone}</span>}
-                </div>
-
-                {/* ROLE CARDS SELECTOR (Replacing default select dropdown) */}
-                <div className="saas-form-group">
-                  <label>Select Profile Role</label>
-                  <div className="role-cards-grid">
-                    {[
-                      { value: "farmer", icon: "🌾", label: "Farmer" },
-                      { value: "vendor", icon: "🛒", label: "Vendor" },
-                      { value: "customer", icon: "👤", label: "Customer" },
-                    ].map((r) => (
-                      <div
-                        key={r.value}
-                        className={`role-select-card ${signupData.role === r.value ? "role-select-card--active" : ""}`}
-                        onClick={() => handleRoleSelect(r.value)}
-                      >
-                        <span className="role-card-icon">{r.icon}</span>
-                        <span className="role-card-label">{r.label}</span>
-                        {signupData.role === r.value && <span className="role-card-check">✓</span>}
+                <div className="saas-signup-grid">
+                  {/* Left Column: Personal Info & Role */}
+                  <div className="saas-signup-column">
+                    {/* Name */}
+                    <div className="saas-form-group">
+                      <label htmlFor="signup-name">Full Name</label>
+                      <div className="saas-input-wrapper">
+                        <span className="input-leading-icon">👤</span>
+                        <input
+                          id="signup-name"
+                          type="text"
+                          name="name"
+                          placeholder="Your full name"
+                          value={signupData.name}
+                          onChange={handleSignupChange}
+                          className={errors.name ? "input-has-error" : ""}
+                        />
                       </div>
-                    ))}
-                  </div>
-                  {errors.role && <span className="saas-error-text">{errors.role}</span>}
-                </div>
-
-                {/* State and City Grid */}
-                <div className="saas-form-row">
-                  <div className="saas-form-group">
-                    <label htmlFor="signup-state">State</label>
-                    <div className="saas-input-wrapper">
-                      <span className="input-leading-icon">📍</span>
-                      <input
-                        id="signup-state"
-                        type="text"
-                        name="state"
-                        placeholder="State"
-                        value={signupData.state}
-                        onChange={handleSignupChange}
-                        className={errors.state ? "input-has-error" : ""}
-                      />
+                      {errors.name && <span className="saas-error-text">{errors.name}</span>}
                     </div>
-                    {errors.state && <span className="saas-error-text">{errors.state}</span>}
-                  </div>
 
-                  <div className="saas-form-group">
-                    <label htmlFor="signup-city">City</label>
-                    <div className="saas-input-wrapper">
-                      <span className="input-leading-icon">🏙️</span>
-                      <input
-                        id="signup-city"
-                        type="text"
-                        name="city"
-                        placeholder="City"
-                        value={signupData.city}
-                        onChange={handleSignupChange}
-                        className={errors.city ? "input-has-error" : ""}
-                      />
+                    {/* Email */}
+                    <div className="saas-form-group">
+                      <label htmlFor="signup-email">Email Address</label>
+                      <div className="saas-input-wrapper">
+                        <span className="input-leading-icon">📧</span>
+                        <input
+                          id="signup-email"
+                          type="text"
+                          name="email"
+                          placeholder="name@example.com"
+                          value={signupData.email}
+                          onChange={handleSignupChange}
+                          className={errors.email ? "input-has-error" : ""}
+                        />
+                      </div>
+                      {errors.email && <span className="saas-error-text">{errors.email}</span>}
                     </div>
-                    {errors.city && <span className="saas-error-text">{errors.city}</span>}
-                  </div>
-                </div>
 
-                {/* Password */}
-                <div className="saas-form-group">
-                  <label htmlFor="signup-password">Password</label>
-                  <div className="saas-input-wrapper">
-                    <span className="input-leading-icon">🔒</span>
-                    <input
-                      id="signup-password"
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      placeholder="••••••••"
-                      value={signupData.password}
-                      onChange={handleSignupChange}
-                      className={errors.password ? "input-has-error" : ""}
-                    />
-                    <button
-                      type="button"
-                      className="password-reveal-toggle"
-                      onClick={() => setShowPassword(!showPassword)}
-                      aria-label="Toggle password visibility"
-                    >
-                      {showPassword ? "👁️" : "🙈"}
+                    {/* Mobile */}
+                    <div className="saas-form-group">
+                      <label htmlFor="signup-phone">Mobile Number</label>
+                      <div className="saas-input-wrapper">
+                        <span className="input-leading-icon">📞</span>
+                        <input
+                          id="signup-phone"
+                          type="text"
+                          name="phone"
+                          placeholder="10-digit mobile number"
+                          value={signupData.phone}
+                          onChange={handleSignupChange}
+                          className={errors.phone ? "input-has-error" : ""}
+                        />
+                      </div>
+                      {errors.phone && <span className="saas-error-text">{errors.phone}</span>}
+                    </div>
+
+                    {/* ROLE CARDS SELECTOR */}
+                    <div className="saas-form-group">
+                      <label>Select Profile Role</label>
+                      <div className="role-cards-grid">
+                        {[
+                          { value: "farmer", icon: "🌾", label: "Farmer" },
+                          { value: "vendor", icon: "🛒", label: "Vendor" },
+                          { value: "customer", icon: "👤", label: "Customer" },
+                        ].map((r) => (
+                          <div
+                            key={r.value}
+                            className={`role-select-card ${signupData.role === r.value ? "role-select-card--active" : ""}`}
+                            onClick={() => handleRoleSelect(r.value)}
+                          >
+                            <span className="role-card-icon">{r.icon}</span>
+                            <span className="role-card-label">{r.label}</span>
+                            {signupData.role === r.value && <span className="role-card-check">✓</span>}
+                          </div>
+                        ))}
+                      </div>
+                      {errors.role && <span className="saas-error-text">{errors.role}</span>}
+                    </div>
+                  </div>
+
+                  {/* Right Column: Location, Password & Submit */}
+                  <div className="saas-signup-column">
+                    {/* State and City Grid */}
+                    <div className="saas-form-row">
+                      <div className="saas-form-group">
+                        <label htmlFor="signup-state">State</label>
+                        <div className="saas-input-wrapper">
+                          <span className="input-leading-icon">📍</span>
+                          <input
+                            id="signup-state"
+                            type="text"
+                            name="state"
+                            placeholder="State"
+                            value={signupData.state}
+                            onChange={handleSignupChange}
+                            className={errors.state ? "input-has-error" : ""}
+                          />
+                        </div>
+                        {errors.state && <span className="saas-error-text">{errors.state}</span>}
+                      </div>
+
+                      <div className="saas-form-group">
+                        <label htmlFor="signup-city">City</label>
+                        <div className="saas-input-wrapper">
+                          <span className="input-leading-icon">🏙️</span>
+                          <input
+                            id="signup-city"
+                            type="text"
+                            name="city"
+                            placeholder="City"
+                            value={signupData.city}
+                            onChange={handleSignupChange}
+                            className={errors.city ? "input-has-error" : ""}
+                          />
+                        </div>
+                        {errors.city && <span className="saas-error-text">{errors.city}</span>}
+                      </div>
+                    </div>
+
+                    {/* Password */}
+                    <div className="saas-form-group">
+                      <label htmlFor="signup-password">Password</label>
+                      <div className="saas-input-wrapper">
+                        <span className="input-leading-icon">🔒</span>
+                        <input
+                          id="signup-password"
+                          type={showPassword ? "text" : "password"}
+                          name="password"
+                          placeholder="••••••••"
+                          value={signupData.password}
+                          onChange={handleSignupChange}
+                          className={errors.password ? "input-has-error" : ""}
+                        />
+                        <button
+                          type="button"
+                          className="password-reveal-toggle"
+                          onClick={() => setShowPassword(!showPassword)}
+                          aria-label="Toggle password visibility"
+                        >
+                          {showPassword ? "👁️" : "🙈"}
+                        </button>
+                      </div>
+                      {errors.password && <span className="saas-error-text">{errors.password}</span>}
+                    </div>
+
+                    {/* Confirm Password */}
+                    <div className="saas-form-group">
+                      <label htmlFor="signup-confirmPassword">Confirm Password</label>
+                      <div className="saas-input-wrapper">
+                        <span className="input-leading-icon">🔒</span>
+                        <input
+                          id="signup-confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          name="confirmPassword"
+                          placeholder="••••••••"
+                          value={signupData.confirmPassword}
+                          onChange={handleSignupChange}
+                          className={errors.confirmPassword ? "input-has-error" : ""}
+                        />
+                        <button
+                          type="button"
+                          className="password-reveal-toggle"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          aria-label="Toggle password confirmation visibility"
+                        >
+                          {showConfirmPassword ? "👁️" : "🙈"}
+                        </button>
+                      </div>
+                      {errors.confirmPassword && <span className="saas-error-text">{errors.confirmPassword}</span>}
+                    </div>
+
+                    {/* Terms and Conditions Checkbox */}
+                    <div className="saas-form-group checkbox-wrapper">
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          name="terms"
+                          checked={signupData.terms}
+                          onChange={handleSignupChange}
+                        />
+                        <span>I agree to the Terms &amp; Conditions</span>
+                      </label>
+                      {errors.terms && <span className="saas-error-text">{errors.terms}</span>}
+                    </div>
+
+                    <button type="submit" className="btn-primary-gradient" disabled={isLoading} style={{ marginTop: '4px' }}>
+                      {isLoading ? <span className="auth-spinner">⌛</span> : "Create Account"}
                     </button>
                   </div>
-                  {errors.password && <span className="saas-error-text">{errors.password}</span>}
                 </div>
 
-                {/* Confirm Password */}
-                <div className="saas-form-group">
-                  <label htmlFor="signup-confirmPassword">Confirm Password</label>
-                  <div className="saas-input-wrapper">
-                    <span className="input-leading-icon">🔒</span>
-                    <input
-                      id="signup-confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      name="confirmPassword"
-                      placeholder="••••••••"
-                      value={signupData.confirmPassword}
-                      onChange={handleSignupChange}
-                      className={errors.confirmPassword ? "input-has-error" : ""}
-                    />
-                    <button
-                      type="button"
-                      className="password-reveal-toggle"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      aria-label="Toggle password confirmation visibility"
-                    >
-                      {showConfirmPassword ? "👁️" : "🙈"}
-                    </button>
-                  </div>
-                  {errors.confirmPassword && <span className="saas-error-text">{errors.confirmPassword}</span>}
-                </div>
-
-                {/* Terms and Conditions Checkbox */}
-                <div className="saas-form-group checkbox-wrapper">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      name="terms"
-                      checked={signupData.terms}
-                      onChange={handleSignupChange}
-                    />
-                    <span>I agree to the Terms &amp; Conditions</span>
-                  </label>
-                  {errors.terms && <span className="saas-error-text">{errors.terms}</span>}
-                </div>
-
-                <button type="submit" className="btn-primary-gradient" disabled={isLoading}>
-                  {isLoading ? <span className="auth-spinner">⌛</span> : "Create Account"}
-                </button>
-
-                
+                <p className="card-footer-prompt" style={{ width: '100%', marginTop: '12px' }}>
+                  Already have an account?{" "}
+                  <button type="button" onClick={() => handleTabSwitch(true)}>Login</button>
+                </p>
 
               </form>
             )}
@@ -597,6 +712,50 @@ export default function LoginSignup({ initialIsLogin = true, onViewChange }) {
         </div>
 
       </div>
+
+      {/* ── Account Already Exists Modal ── */}
+      <Modal
+        isOpen={isModalOpen}
+        title="Account Already Exists"
+        onClose={() => setIsModalOpen(false)}
+        variant="default"
+        size="md"
+        actions={
+          <>
+            <button 
+              type="button" 
+              className="btn-google-outline" 
+              onClick={() => setIsModalOpen(false)}
+              style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer', margin: '0' }}
+            >
+              Stay on Sign Up
+            </button>
+            <button 
+              type="button" 
+              className="btn-primary-gradient" 
+              onClick={() => {
+                setIsModalOpen(false);
+                handleTabSwitch(true); // Switch to Login tab
+              }}
+              style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer', margin: '0', background: 'linear-gradient(135deg, var(--primary-green), var(--secondary-green))', color: '#fff', border: 'none' }}
+            >
+              Go to Login
+            </button>
+          </>
+        }
+      >
+        <div style={{ fontFamily: '"Poppins", sans-serif', color: '#334155' }}>
+          <p style={{ marginBottom: '12px', fontSize: '0.95rem', lineHeight: '1.6' }}>
+            An account with this email address or phone number already exists.
+          </p>
+          <p style={{ marginBottom: '12px', fontSize: '0.95rem', lineHeight: '1.6' }}>
+            Please use a different email address and phone number to create a new account.
+          </p>
+          <p style={{ fontSize: '0.95rem', lineHeight: '1.6' }}>
+            If this is your account, please sign in using your existing credentials.
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 }

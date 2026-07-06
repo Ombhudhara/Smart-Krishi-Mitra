@@ -6,113 +6,9 @@ import Footer from '../../components/Footer/Footer';
 import Card from '../../components/Card/Card';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
 import VendorTransactionHistory from '../../components/Marketplace/VendorTransactionHistory';
+import { getTransactions as getTransactionsApi, downloadInvoice } from '../../services/transactionService';
 import './TransactionHistory.css';
 
-/* ═══════════════════════════════════════════════════════════════════════════════
-   STATIC DATA — Realistic Agricultural Transaction Records
-   Replace with API call: GET /api/transactions (Node/Express/MongoDB)
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-const TRANSACTION_RECORDS = [
-  {
-    id: 'TXN-84920-IND', crop: 'Wheat', emoji: '🌾',
-    image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=200&h=150&fit=crop',
-    quantity: '50 Quintals', price: '₹2,350/Q', totalAmount: 117500,
-    buyer: 'AgroMart Store', buyerRole: 'Vendor', seller: 'Raj Patel (You)', sellerRole: 'Farmer',
-    date: '2026-06-28', paymentStatus: 'Completed', paymentMethod: 'UPI (PhonePe)',
-    deliveryStatus: 'Delivered', location: 'Pune Mandi Yard, Maharashtra',
-    notes: 'Premium HD-3226 organic variety wheat. Packed in 50kg double-lined gunny bags.',
-    activityLog: [
-      { status: 'Order Placed',     time: '2026-06-28 10:15 AM', desc: 'Farmer Raj Patel listed 50Q Wheat and Vendor AgroMart accepted the quote.' },
-      { status: 'Payment Received', time: '2026-06-28 10:20 AM', desc: 'Payment of ₹1,17,500 successfully processed via UPI.' },
-      { status: 'Dispatched',       time: '2026-06-28 01:30 PM', desc: 'Goods picked up by AgroMart logistics truck MH-12-PQ-4589.' },
-      { status: 'Delivered',        time: '2026-06-28 05:45 PM', desc: 'Delivered to Pune Warehouse. Quality check approved (Moisture: 11.2%).' },
-    ],
-  },
-  {
-    id: 'TXN-90210-IND', crop: 'Rice', emoji: '🍚',
-    image: 'https://images.unsplash.com/photo-1536304993881-460e03fa5160?w=200&h=150&fit=crop',
-    quantity: '30 Quintals', price: '₹2,200/Q', totalAmount: 66000,
-    buyer: 'Amit Sharma', buyerRole: 'Customer', seller: 'Raj Patel (You)', sellerRole: 'Farmer',
-    date: '2026-06-27', paymentStatus: 'Completed', paymentMethod: 'Net Banking (SBI)',
-    deliveryStatus: 'Shipped', location: 'Andheri West, Mumbai, 400058',
-    notes: 'Pusa Basmati 1847 long grain rice. Aged for 12 months.',
-    activityLog: [
-      { status: 'Order Placed',     time: '2026-06-27 11:30 AM', desc: 'Customer Amit Sharma placed order for 30Q Basmati Rice.' },
-      { status: 'Payment Received', time: '2026-06-27 11:45 AM', desc: 'Payment verified and credited to farmer account.' },
-      { status: 'Dispatched',       time: '2026-06-28 09:00 AM', desc: 'Shipped via Krishi Express Cargo. Tracking ID: KX-9804.' },
-    ],
-  },
-  {
-    id: 'TXN-71842-IND', crop: 'Cotton', emoji: '🌿',
-    image: 'https://images.unsplash.com/photo-1616431101491-554c0932ea40?w=200&h=150&fit=crop',
-    quantity: '15 Quintals', price: '₹6,800/Q', totalAmount: 102000,
-    buyer: 'TextileCo Industries', buyerRole: 'Vendor', seller: 'Priya Devi', sellerRole: 'Farmer',
-    date: '2026-06-26', paymentStatus: 'Pending', paymentMethod: 'Bank Transfer (NEFT)',
-    deliveryStatus: 'Processing', location: 'Indore Mandi, Madhya Pradesh',
-    notes: 'Long-staple Bt Cotton. Cleaned and baled (10 bales).',
-    activityLog: [
-      { status: 'Order Placed', time: '2026-06-26 03:00 PM', desc: 'Contract signed for 15Q cotton at market MSP premium.' },
-      { status: 'Processing',   time: '2026-06-27 10:00 AM', desc: 'Cotton bales currently being weighed and certified at local mandi lab.' },
-    ],
-  },
-  {
-    id: 'TXN-65109-IND', crop: 'Soybean', emoji: '🫘',
-    image: 'https://images.unsplash.com/photo-1599420186946-7b6fb4e297f0?w=200&h=150&fit=crop',
-    quantity: '40 Quintals', price: '₹4,500/Q', totalAmount: 180000,
-    buyer: 'Jalgaon Oil Millers', buyerRole: 'Vendor', seller: 'Raj Patel (You)', sellerRole: 'Farmer',
-    date: '2026-06-25', paymentStatus: 'Completed', paymentMethod: 'UPI (GPay)',
-    deliveryStatus: 'Delivered', location: 'Jalgaon Processing Hub, Maharashtra',
-    notes: 'JS 20-34 oilseed variety. High oil content grade.',
-    activityLog: [
-      { status: 'Order Placed',     time: '2026-06-25 09:30 AM', desc: 'Bulk purchase order accepted by Farmer Raj Patel.' },
-      { status: 'Payment Received', time: '2026-06-25 09:40 AM', desc: 'Instant UPI settlement done. Amount ₹1,80,000 received.' },
-      { status: 'Dispatched',       time: '2026-06-25 11:00 AM', desc: 'Soybeans loaded into transport truck.' },
-      { status: 'Delivered',        time: '2026-06-25 04:30 PM', desc: 'Delivered, unloaded, and weight slips exchanged.' },
-    ],
-  },
-  {
-    id: 'TXN-54890-IND', crop: 'Tomato', emoji: '🍅',
-    image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=200&h=150&fit=crop',
-    quantity: '10 Quintals', price: '₹1,500/Q', totalAmount: 15000,
-    buyer: 'Fresh Veggies Ltd', buyerRole: 'Vendor', seller: 'Suresh Kumar', sellerRole: 'Farmer',
-    date: '2026-06-24', paymentStatus: 'Cancelled', paymentMethod: 'Cash on Delivery',
-    deliveryStatus: 'Cancelled', location: 'Lucknow Mandi, Uttar Pradesh',
-    notes: 'Hybrid red tomatoes. Cancelled due to transport logistics disruption.',
-    activityLog: [
-      { status: 'Order Placed', time: '2026-06-24 08:00 AM', desc: 'Farmer Suresh listed fresh tomatoes.' },
-      { status: 'Cancelled',    time: '2026-06-24 12:00 PM', desc: 'Order cancelled. Freight truck met with road delays, perishable items could not be sent in time.' },
-    ],
-  },
-  {
-    id: 'TXN-43180-IND', crop: 'Potato', emoji: '🥔',
-    image: 'https://images.unsplash.com/photo-1518977676601-b53f82ber633?w=200&h=150&fit=crop',
-    quantity: '100 Quintals', price: '₹1,100/Q', totalAmount: 110000,
-    buyer: 'SnackBites Crisps', buyerRole: 'Vendor', seller: 'Raj Patel (You)', sellerRole: 'Farmer',
-    date: '2026-06-22', paymentStatus: 'Completed', paymentMethod: 'Bank Transfer (RTGS)',
-    deliveryStatus: 'Delivered', location: 'Gujarat Cold Storage, Deesa',
-    notes: 'Kufri Chipsona variety. Large size, low sugar, ideal for chips.',
-    activityLog: [
-      { status: 'Order Placed',     time: '2026-06-22 10:00 AM', desc: 'Order placed by SnackBites procurement agent.' },
-      { status: 'Payment Received', time: '2026-06-22 11:30 AM', desc: 'RTGS transfer of ₹1,10,000 confirmed by bank.' },
-      { status: 'Dispatched',       time: '2026-06-22 04:00 PM', desc: 'Dispatched to cold chain transit.' },
-      { status: 'Delivered',        time: '2026-06-23 09:30 AM', desc: 'Delivered at Deesa plant. Quality inspection approved.' },
-    ],
-  },
-  {
-    id: 'TXN-32984-IND', crop: 'Onion', emoji: '🧅',
-    image: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=200&h=150&fit=crop',
-    quantity: '60 Quintals', price: '₹1,800/Q', totalAmount: 108000,
-    buyer: 'Metro Supermarket', buyerRole: 'Vendor', seller: 'Raj Patel (You)', sellerRole: 'Farmer',
-    date: '2026-06-20', paymentStatus: 'Pending', paymentMethod: 'Bank Transfer (NEFT)',
-    deliveryStatus: 'Processing', location: 'Lasalgaon Mandi, Nashik',
-    notes: 'Light red summer onion. Sorted and cured properly.',
-    activityLog: [
-      { status: 'Order Placed', time: '2026-06-20 12:00 PM', desc: 'Metro Supermarket procurement confirmed order.' },
-      { status: 'Processing',   time: '2026-06-21 08:00 AM', desc: 'Sorting and quality separation underway.' },
-    ],
-  },
-];
 
 /* Filter & sort option lists */
 const CROPS_FILTER_OPTIONS    = ['All', 'Wheat', 'Rice', 'Cotton', 'Soybean', 'Tomato', 'Potato', 'Onion'];
@@ -152,7 +48,7 @@ function TransactionNotes({ notes }) {
 }
 
 // ── Transaction detail modal ─────────────────────────────────────────────────
-function TransactionDetailModal({ txn, onClose }) {
+function TransactionDetailModal({ txn, onClose, currentUser }) {
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
@@ -160,18 +56,44 @@ function TransactionDetailModal({ txn, onClose }) {
 
   if (!txn) return null;
 
+  const isBuyer = txn.buyer?._id === currentUser?._id;
+  const partner = isBuyer ? txn.seller : txn.buyer;
+
   const detailRows = [
-    { label: 'Crop Name',      value: `${txn.emoji} ${txn.crop}` },
-    { label: 'Quantity',       value: txn.quantity },
-    { label: 'Price Per Unit', value: txn.price },
+    { label: 'Crop Name',      value: txn.cropName },
+    { label: 'Quantity',       value: `${txn.quantity} kg` },
+    { label: 'Price Per Unit', value: `₹${txn.price}/kg` },
     { label: 'Total Amount',   value: `₹${txn.totalAmount.toLocaleString('en-IN')}`, highlight: true },
-    { label: 'Seller (Farmer)', value: txn.seller,          labelBadge: txn.sellerRole },
-    { label: 'Buyer',          value: txn.buyer,            labelBadge: txn.buyerRole },
-    { label: 'Payment Method', value: txn.paymentMethod },
+    { label: 'Seller (Farmer)', value: txn.seller?.fullName,          labelBadge: txn.seller?.role },
+    { label: 'Buyer',          value: txn.buyer?.fullName,            labelBadge: txn.buyer?.role },
+    { label: 'Payment Method', value: 'UPI (Auto-processed)' },
     { label: 'Payment Status', value: txn.paymentStatus,    status: 'payment' },
     { label: 'Delivery Status',value: txn.deliveryStatus,   status: 'delivery' },
-    { label: 'Location Yard',  value: txn.location },
+    { label: 'Location Yard',  value: partner?.district ? `${partner.district}, ${partner.state}` : 'Punjab Mandi' },
   ];
+
+  const activityLog = txn.activityLog || [
+    { status: 'Order Placed', time: new Date(txn.createdAt).toLocaleString(), desc: `Order created. Buyer: ${txn.buyer?.fullName}, Seller: ${txn.seller?.fullName}` },
+    { status: 'Payment Received', time: new Date(txn.createdAt).toLocaleString(), desc: `Payment of ₹${txn.totalAmount.toLocaleString()} completed.` },
+    { status: txn.deliveryStatus, time: new Date(txn.updatedAt || txn.createdAt).toLocaleString(), desc: `Delivery status is: ${txn.deliveryStatus}` }
+  ];
+
+  const handleDownloadInvoice = async () => {
+    try {
+      const response = await downloadInvoice(txn._id);
+      const blob = new Blob([response.data], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `invoice_${txn.invoiceNumber}.txt`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to download invoice.');
+    }
+  };
 
   return (
     <div className="tx-modal-overlay" onClick={onClose}>
@@ -181,12 +103,12 @@ function TransactionDetailModal({ txn, onClose }) {
         <div className="tx-modal-header">
           <div className="tx-modal-title-row">
             <div>
-              <span className="tx-modal-id-badge">{txn.id}</span>
-              <h2 className="tx-modal-title">{txn.emoji} {txn.crop} Sale</h2>
+              <span className="tx-modal-id-badge">{txn.invoiceNumber}</span>
+              <h2 className="tx-modal-title">🌾 {txn.cropName} Sale</h2>
             </div>
             <button className="tx-modal-close-btn" onClick={onClose}>✕</button>
           </div>
-          <p className="tx-modal-subtitle">Transaction processed on {txn.date}</p>
+          <p className="tx-modal-subtitle">Transaction processed on {new Date(txn.createdAt).toLocaleDateString()}</p>
         </div>
 
         {/* Modal body: two-column grid */}
@@ -219,18 +141,18 @@ function TransactionDetailModal({ txn, onClose }) {
                   </div>
                 ))}
               </div>
-              <TransactionNotes notes={txn.notes} />
+              <TransactionNotes notes={txn.notes || "No special instructions."} />
             </div>
 
             {/* Right: Activity timeline */}
             <div className="tx-modal-timeline-col">
               <h3 className="tx-modal-sec-title">⏱️ Shipment &amp; Activity Log</h3>
               <div className="tx-timeline">
-                {txn.activityLog.map((log, i) => (
+                {activityLog.map((log, i) => (
                   <div key={i} className="tx-timeline-step">
                     <div className="tx-timeline-marker">
                       <div className="tx-timeline-dot" />
-                      {i < txn.activityLog.length - 1 && <div className="tx-timeline-line" />}
+                      {i < activityLog.length - 1 && <div className="tx-timeline-line" />}
                     </div>
                     <div className="tx-timeline-content">
                       <div className="tx-timeline-status-row">
@@ -251,7 +173,7 @@ function TransactionDetailModal({ txn, onClose }) {
         <div className="tx-modal-footer">
           <button
             className="tx-modal-btn tx-modal-btn--secondary"
-            onClick={() => alert('Invoice PDF download triggered (UI Stub).')}
+            onClick={handleDownloadInvoice}
           >
             📄 Download Invoice
           </button>
@@ -298,25 +220,6 @@ function HeaderIllustration() {
       <ellipse cx="60" cy="30" rx="24" ry="10" fill="white" opacity="0.8" />
       <ellipse cx="120" cy="40" rx="20" ry="8" fill="white" opacity="0.65" />
       <rect x="0" y="110" width="220" height="50" fill="url(#txField)" />
-      <g transform="translate(85,60)">
-        <rect x="0" y="0" width="50" height="52" rx="6" fill="#ECEFF1" stroke="#CFD8DC" strokeWidth="2" />
-        <rect x="5" y="5" width="40" height="42" rx="4" fill="#CFD8DC" />
-        <circle cx="25" cy="26" r="12" fill="#FFD54F" stroke="#F9A825" strokeWidth="2.5" />
-        <circle cx="25" cy="26" r="6" fill="#FFA000" />
-        <line x1="25" y1="8" x2="25" y2="14" stroke="#F9A825" strokeWidth="2" />
-        <line x1="25" y1="38" x2="25" y2="44" stroke="#F9A825" strokeWidth="2" />
-        <line x1="7" y1="26" x2="13" y2="26" stroke="#F9A825" strokeWidth="2" />
-        <line x1="37" y1="26" x2="43" y2="26" stroke="#F9A825" strokeWidth="2" />
-      </g>
-      {[12, 45, 160, 202].map((x, i) => (
-        <g key={i} transform={`translate(${x},98)`}>
-          <line x1="0" y1="14" x2="0" y2="2" stroke="#1B5E20" strokeWidth="2" />
-          <ellipse cx="0" cy="0" rx="4" ry="7" fill="#43A047" />
-        </g>
-      ))}
-      <rect x="145" y="105" width="62" height="34" rx="8" fill="white" opacity="0.95" />
-      <text x="154" y="119" fontSize="7" fill="#2E7D32" fontWeight="700" fontFamily="Poppins,sans-serif">🛡️ SECURED</text>
-      <text x="154" y="130" fontSize="6.5" fill="#78909C" fontFamily="Poppins,sans-serif">Transactions</text>
     </svg>
   );
 }
@@ -334,20 +237,22 @@ function EmptyState({ onReset }) {
 }
 
 // ── Table row ────────────────────────────────────────────────────────────────
-function TransactionRow({ t, onView }) {
-  const counterparty = t.buyer.includes('You') ? t.seller     : t.buyer;
-  const counterRole  = t.buyer.includes('You') ? t.sellerRole : t.buyerRole;
+function TransactionRow({ t, onView, currentUser }) {
+  const isBuyer = t.buyer?._id === currentUser?._id;
+  const counterpartyObj = isBuyer ? t.seller : t.buyer;
+  const counterparty = counterpartyObj?.fullName || 'Unknown';
+  const counterRole  = counterpartyObj?.role || 'User';
   return (
     <tr className="tx-row">
-      <td className="tx-cell-id">{t.id}</td>
+      <td className="tx-cell-id">{t.invoiceNumber}</td>
       <td>
         <div className="tx-crop-cell">
-          <span className="tx-crop-emoji">{t.emoji}</span>
-          <span className="tx-crop-name">{t.crop}</span>
+          <span className="tx-crop-emoji">🌾</span>
+          <span className="tx-crop-name">{t.cropName}</span>
         </div>
       </td>
-      <td>{t.quantity}</td>
-      <td>{t.price}</td>
+      <td>{t.quantity} kg</td>
+      <td>₹{t.price}/kg</td>
       <td className="tx-cell-amount">₹{t.totalAmount.toLocaleString('en-IN')}</td>
       <td>
         <div className="tx-party-cell">
@@ -355,7 +260,7 @@ function TransactionRow({ t, onView }) {
           <span className={`tx-role-badge tx-role--${counterRole.toLowerCase()}`}>{counterRole}</span>
         </div>
       </td>
-      <td className="tx-cell-date">{t.date}</td>
+      <td className="tx-cell-date">{new Date(t.createdAt).toLocaleDateString()}</td>
       <td><span className={`tx-status-pill tx-status--${t.paymentStatus.toLowerCase()}`}>{t.paymentStatus}</span></td>
       <td><span className={`tx-status-pill tx-status--${t.deliveryStatus.toLowerCase()}`}>{t.deliveryStatus}</span></td>
       <td className="tx-text-center">
@@ -382,18 +287,32 @@ export default function TransactionHistory() {
   const [selectedTxn,    setSelectedTxn]    = useState(null);
   const [isLoading,      setIsLoading]      = useState(true);
   const [notification,   setNotification]   = useState(null);
-
-  /* ── Loading simulation ── */
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1200);
-    return () => clearTimeout(timer);
-  }, []);
+  const [transactions,   setTransactions]   = useState([]);
 
   /* ── Toast helper ── */
   const triggerToast = useCallback((msg, type = 'info') => {
     setNotification({ msg, type });
     setTimeout(() => setNotification(null), 3000);
   }, []);
+
+  /* ── Fetch transactions on mount ── */
+  useEffect(() => {
+    const fetchTx = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getTransactionsApi();
+        if (response.data?.success) {
+          setTransactions(response.data.transactions);
+        }
+      } catch (err) {
+        console.error("Error fetching transactions:", err);
+        triggerToast("Failed to load transaction history.", "error");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTx();
+  }, [triggerToast]);
 
   /* ── Filter reset ── */
   const handleResetFilters = () => {
@@ -412,31 +331,38 @@ export default function TransactionHistory() {
   };
 
   /* ── Filter & sort ── */
-  const filteredTxns = TRANSACTION_RECORDS
+  const filteredTxns = transactions
     .filter((t) => {
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
-        if (!t.id.toLowerCase().includes(q) &&
-            !t.crop.toLowerCase().includes(q) &&
-            !t.buyer.toLowerCase().includes(q) &&
-            !t.seller.toLowerCase().includes(q)) return false;
+        const bName = t.buyer?.fullName || '';
+        const sName = t.seller?.fullName || '';
+        if (!t.invoiceNumber.toLowerCase().includes(q) &&
+            !t.cropName.toLowerCase().includes(q) &&
+            !bName.toLowerCase().includes(q) &&
+            !sName.toLowerCase().includes(q)) return false;
       }
-      if (cropFilter     !== 'All' && t.crop            !== cropFilter)     return false;
+      if (cropFilter     !== 'All' && t.cropName        !== cropFilter)     return false;
       if (paymentFilter  !== 'All' && t.paymentStatus   !== paymentFilter)  return false;
       if (deliveryFilter !== 'All' && t.deliveryStatus  !== deliveryFilter) return false;
-      if (selectedDate   && t.date !== selectedDate) return false;
+      if (selectedDate) {
+        const tDate = new Date(t.createdAt).toISOString().split('T')[0];
+        if (tDate !== selectedDate) return false;
+      }
       return true;
     })
     .sort((a, b) => {
-      if (sortBy === 'Newest First')   return new Date(b.date) - new Date(a.date);
-      if (sortBy === 'Oldest First')   return new Date(a.date) - new Date(b.date);
+      const dateA = new Date(a.createdAt);
+      const dateB = new Date(b.createdAt);
+      if (sortBy === 'Newest First')   return dateB - dateA;
+      if (sortBy === 'Oldest First')   return dateA - dateB;
       if (sortBy === 'Highest Amount') return b.totalAmount - a.totalAmount;
       if (sortBy === 'Lowest Amount')  return a.totalAmount - b.totalAmount;
       return 0;
     });
 
   /* ── Summary statistics ── */
-  const statsSummary = TRANSACTION_RECORDS.reduce(
+  const statsSummary = transactions.reduce(
     (acc, t) => {
       if (t.paymentStatus === 'Completed') {
         acc.totalRevenue       += t.totalAmount;
@@ -450,7 +376,7 @@ export default function TransactionHistory() {
       if (t.deliveryStatus !== 'Cancelled') acc.totalCropsSold  += parseFloat(t.quantity) || 0;
       return acc;
     },
-    { totalRevenue: 0, totalCropsSold: 0, totalTxns: TRANSACTION_RECORDS.length,
+    { totalRevenue: 0, totalCropsSold: 0, totalTxns: transactions.length,
       completedOrders: 0, pendingPayments: 0, completedPayments: 0, cancelledPayments: 0 }
   );
 
@@ -520,7 +446,7 @@ export default function TransactionHistory() {
 
       {/* Details Modal */}
       {selectedTxn && (
-        <TransactionDetailModal txn={selectedTxn} onClose={() => setSelectedTxn(null)} />
+        <TransactionDetailModal txn={selectedTxn} onClose={() => setSelectedTxn(null)} currentUser={user} />
       )}
 
       {/* Navbar */}
@@ -679,7 +605,7 @@ export default function TransactionHistory() {
                   </thead>
                   <tbody>
                     {filteredTxns.map((t) => (
-                      <TransactionRow key={t.id} t={t} onView={setSelectedTxn} />
+                      <TransactionRow key={t._id} t={t} onView={setSelectedTxn} currentUser={user} />
                     ))}
                   </tbody>
                 </table>

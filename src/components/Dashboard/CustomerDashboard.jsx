@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import './CustomerDashboard.css';
 
 // =============================================================================
@@ -42,6 +43,7 @@ const NOTIFICATIONS = [
 
 export default function CustomerDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState('');
   const [currentDate, setCurrentDate] = useState('');
 
@@ -62,9 +64,9 @@ export default function CustomerDashboard() {
       <section className="cd-welcome-section">
         <div className="cd-welcome-left">
           <span className="cd-time-greeting">Customer Procurement Desk</span>
-          <h1 className="cd-welcome-title">Buyer Portal 👋</h1>
+          <h1 className="cd-welcome-title">{user?.fullName || "Buyer"} 👋</h1>
           <div className="cd-header-metadata">
-            <span className="cd-meta-badge">Role: Consumer / Retail Buyer</span>
+            <span className="cd-meta-badge">Role: {user?.role || "Customer"}</span>
             <span className="cd-meta-divider">|</span>
             <span className="cd-meta-time">{currentTime}</span>
             <span className="cd-meta-divider">|</span>

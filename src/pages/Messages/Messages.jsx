@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Sidebar from '../../components/Sidebar/Sidebar';
 import Card from '../../components/Card/Card';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
+import { useAuth } from '../../context/AuthContext';
+import { getConversations, getMessages, sendMessage, markConversationRead } from '../../services/chatService';
 import { 
   FiSearch, FiPhone, FiMoreVertical, FiPaperclip, 
   FiImage, FiSmile, FiSend, FiX, FiCheck, FiFileText,
@@ -22,197 +25,7 @@ const CURRENT_USER = {
   avatar: '👨‍🌾', // Kept for avatar only as assumed
 };
 
-const CONTACTS = [
-  {
-    id: 'c1',
-    name: 'Raj Patel',
-    role: 'Farmer',
-    avatar: '👨‍🌾',
-    online: true,
-    lastSeen: 'Online',
-    phone: '+91 98765 43210',
-    location: 'Nashik, Maharashtra',
-    crops: 'Wheat, Onion, Tomato',
-  },
-  {
-    id: 'c2',
-    name: 'AgroMart Store',
-    role: 'Vendor',
-    avatar: '🏪',
-    online: true,
-    lastSeen: 'Online',
-    phone: '+91 87654 32109',
-    location: 'Pune, Maharashtra',
-    products: 'Seeds, Fertilizers, Pesticides',
-  },
-  {
-    id: 'c3',
-    name: 'Amit Sharma',
-    role: 'Customer',
-    avatar: '🧑‍💼',
-    online: false,
-    lastSeen: 'Last seen 2h ago',
-    phone: '+91 76543 21098',
-    location: 'Mumbai, Maharashtra',
-  },
-  {
-    id: 'c4',
-    name: 'Priya Devi',
-    role: 'Farmer',
-    avatar: '👩‍🌾',
-    online: true,
-    lastSeen: 'Online',
-    phone: '+91 65432 10987',
-    location: 'Indore, MP',
-    crops: 'Soybean, Cotton',
-  },
-  {
-    id: 'c5',
-    name: 'KrishiMart India',
-    role: 'Vendor',
-    avatar: '🛒',
-    online: false,
-    lastSeen: 'Last seen 30m ago',
-    phone: '+91 54321 09876',
-    location: 'Ahmedabad, Gujarat',
-    products: 'Drip Irrigation, Machinery',
-  },
-  {
-    id: 'c6',
-    name: 'Sneha Reddy',
-    role: 'Customer',
-    avatar: '👩',
-    online: false,
-    lastSeen: 'Last seen 5h ago',
-    phone: '+91 43210 98765',
-    location: 'Hyderabad, Telangana',
-  },
-  {
-    id: 'c7',
-    name: 'Suresh Kumar',
-    role: 'Farmer',
-    avatar: '👨‍🌾',
-    online: true,
-    lastSeen: 'Online',
-    phone: '+91 32109 87654',
-    location: 'Lucknow, UP',
-    crops: 'Rice, Sugarcane, Potato',
-  },
-  {
-    id: 'c8',
-    name: 'FertilizeKing',
-    role: 'Vendor',
-    avatar: '🧪',
-    online: true,
-    lastSeen: 'Online',
-    phone: '+91 21098 76543',
-    location: 'Jaipur, Rajasthan',
-    products: 'DAP, Urea, Micronutrients',
-  },
-];
 
-const CONVERSATIONS_DATA = {
-  c1: {
-    lastMessage: 'Thanks bhai, the wheat seeds are excellent quality!',
-    lastTime: '2:30 PM',
-    unread: 0,
-    messages: [
-      { id: 'm1', from: 'c1', text: 'Namaste! I heard you got a great wheat yield this season?', time: '10:15 AM', status: 'read', type: 'text' },
-      { id: 'm2', from: 'self', text: 'Haan bhai! 42 quintals per acre. Used HD-3226 variety with proper irrigation scheduling.', time: '10:18 AM', status: 'read', type: 'text' },
-      { id: 'm3', from: 'c1', text: 'That\'s amazing! What fertilizer ratio did you follow?', time: '10:20 AM', status: 'read', type: 'text' },
-      { id: 'm4', from: 'self', text: 'N:P:K at 120:60:40 kg/ha. Split nitrogen into 3 doses — basal, first irrigation, and second irrigation. Also added 25 kg ZnSO4.', time: '10:22 AM', status: 'read', type: 'text' },
-      { id: 'm5', from: 'c1', text: 'Can you share the seed supplier details? I want to try the same variety next season.', time: '10:25 AM', status: 'read', type: 'text' },
-      { id: 'm6', from: 'self', text: 'Sure! I got it from AgroMart Store in Pune. Very reliable. I\'ll share their contact.', time: '10:28 AM', status: 'read', type: 'text' },
-      { id: 'm7', from: 'self', text: '📱 AgroMart Store: +91 87654 32109 (Pune, Maharashtra)', time: '10:29 AM', status: 'read', type: 'text' },
-      { id: 'm8', from: 'c1', text: 'Perfect! Also, what\'s the current mandi rate for wheat in your area?', time: '2:15 PM', status: 'read', type: 'text' },
-      { id: 'm9', from: 'self', text: 'MSP is ₹2,275/quintal this year. But local mandi is giving ₹2,350 because of high demand.', time: '2:22 PM', status: 'read', type: 'text' },
-      { id: 'm10', from: 'c1', text: 'Thanks bhai, the wheat seeds are excellent quality!', time: '2:30 PM', status: 'read', type: 'text' },
-    ],
-  },
-  c2: {
-    lastMessage: 'Your order of DAP fertilizer is dispatched. Tracking: AGM-7842',
-    lastTime: '1:45 PM',
-    unread: 3,
-    messages: [
-      { id: 'm1', from: 'self', text: 'Namaste! Do you have DAP fertilizer in stock?', time: '9:00 AM', status: 'read', type: 'text' },
-      { id: 'm2', from: 'c2', text: 'Namaste ji! Yes, DAP is available. We have 50 kg bags at ₹1,350 per bag. MRP is ₹1,400.', time: '9:05 AM', status: 'read', type: 'text' },
-      { id: 'm3', from: 'self', text: 'I need 20 bags for my 5-acre wheat field. Can you offer a bulk discount?', time: '9:08 AM', status: 'read', type: 'text' },
-      { id: 'm4', from: 'c2', text: 'For 20 bags, we can give ₹1,300/bag. Total: ₹26,000. Free delivery above ₹25,000!', time: '9:12 AM', status: 'read', type: 'text' },
-      { id: 'm5', from: 'self', text: 'That\'s a good deal. Do you also have Zinc Sulphate?', time: '9:15 AM', status: 'read', type: 'text' },
-      { id: 'm6', from: 'c2', text: 'Yes! ZnSO4 21% available at ₹52/kg. For 25 kg, it\'ll be ₹1,300.', time: '9:18 AM', status: 'read', type: 'text' },
-      { id: 'm7', from: 'self', text: 'Perfect. Add 25 kg ZnSO4 to my order. Total kitna hoga?', time: '9:20 AM', status: 'read', type: 'text' },
-      { id: 'm8', from: 'c2', text: 'Updated Order:\n📦 DAP 50kg x 20 bags = ₹26,000\n📦 ZnSO4 25kg = ₹1,300\n🚚 Delivery: FREE\n💰 Grand Total: ₹27,300\n\nPayment: UPI / Cash on Delivery', time: '9:25 AM', status: 'read', type: 'text' },
-      { id: 'm9', from: 'self', text: 'Order confirmed! I\'ll pay via UPI. When will it be delivered?', time: '9:30 AM', status: 'read', type: 'text' },
-      { id: 'm10', from: 'c2', text: 'Your order of DAP fertilizer is dispatched. Tracking: AGM-7842', time: '1:45 PM', status: 'delivered', type: 'text' },
-      { id: 'm11', from: 'c2', text: '📄 Invoice: INV-2025-0784\nAgroMart Store, Pune\nDate: June 29, 2025\nTotal: ₹27,300', time: '1:46 PM', status: 'delivered', type: 'file', fileName: 'Invoice_AGM_0784.pdf', fileSize: '128 KB' },
-      { id: 'm12', from: 'c2', text: 'Delivery expected by tomorrow 4 PM. Our driver Ramesh will contact you. 🙏', time: '1:48 PM', status: 'delivered', type: 'text' },
-    ],
-  },
-  c3: {
-    lastMessage: 'Can you deliver 50 kg organic wheat to Mumbai?',
-    lastTime: '12:10 PM',
-    unread: 2,
-    messages: [
-      { id: 'm1', from: 'c3', text: 'Hello! I saw your listing for organic wheat on Smart Krishi Mitra.', time: '11:30 AM', status: 'read', type: 'text' },
-      { id: 'm2', from: 'self', text: 'Namaste! Yes, I have organic wheat available. HD-3226 variety, freshly harvested last week.', time: '11:33 AM', status: 'read', type: 'text' },
-      { id: 'm3', from: 'c3', text: 'Is it really organic? Do you have any certification?', time: '11:35 AM', status: 'read', type: 'text' },
-      { id: 'm4', from: 'self', text: 'Yes sir, I have NPOP organic certification. No chemical fertilizers used. Only vermicompost and neem-based pest control. I can share the certificate.', time: '11:38 AM', status: 'read', type: 'text' },
-      { id: 'm5', from: 'self', text: '📄 Organic Certificate — NPOP Certified\nFarm: Patel Organic Farm\nValid until: March 2026', time: '11:39 AM', status: 'read', type: 'file', fileName: 'NPOP_Certificate.pdf', fileSize: '340 KB' },
-      { id: 'm6', from: 'c3', text: 'Excellent! What\'s the price per kg?', time: '11:42 AM', status: 'read', type: 'text' },
-      { id: 'm7', from: 'self', text: 'Organic wheat: ₹45/kg for retail, ₹38/kg for bulk (above 25 kg). Regular market price is ₹28/kg.', time: '11:45 AM', status: 'read', type: 'text' },
-      { id: 'm8', from: 'c3', text: 'I\'d like 50 kg. So that\'s ₹38 x 50 = ₹1,900. Correct?', time: '11:50 AM', status: 'read', type: 'text' },
-      { id: 'm9', from: 'self', text: 'Yes, ₹1,900 + delivery charges based on location. Where do you need delivery?', time: '11:55 AM', status: 'read', type: 'text' },
-      { id: 'm10', from: 'c3', text: 'Can you deliver 50 kg organic wheat to Mumbai?', time: '12:10 PM', status: 'delivered', type: 'text' },
-      { id: 'm11', from: 'c3', text: '📍 Delivery Address: Andheri West, Mumbai 400058', time: '12:11 PM', status: 'delivered', type: 'location', location: 'Andheri West, Mumbai 400058' },
-    ],
-  },
-  c4: {
-    lastMessage: 'My soybean is looking great this year!',
-    lastTime: '11:20 AM',
-    unread: 0,
-    messages: [
-      { id: 'm1', from: 'c4', text: 'Namaste! How is your Kharif season going?', time: '10:00 AM', status: 'read', type: 'text' },
-      { id: 'm2', from: 'self', text: 'Going well! Cotton is growing nicely. How about yours?', time: '10:05 AM', status: 'read', type: 'text' },
-      { id: 'm3', from: 'c4', text: 'My soybean is looking great this year!', time: '11:20 AM', status: 'read', type: 'text' },
-    ],
-  },
-  c5: {
-    lastMessage: 'We have new drip irrigation kits at 30% subsidy.',
-    lastTime: 'Yesterday',
-    unread: 1,
-    messages: [
-      { id: 'm1', from: 'c5', text: 'Namaste! We have new drip irrigation kits at 30% subsidy under PM Krishi Sinchai Yojana. Interested?', time: 'Yesterday 4:30 PM', status: 'read', type: 'text' },
-      { id: 'm2', from: 'self', text: 'Yes! I have 3 acres of cotton. Which kit would you recommend?', time: 'Yesterday 4:35 PM', status: 'read', type: 'text' },
-      { id: 'm3', from: 'c5', text: 'We have new drip irrigation kits at 30% subsidy.', time: 'Yesterday 4:40 PM', status: 'delivered', type: 'text' },
-    ],
-  },
-  c6: {
-    lastMessage: 'Do you have fresh tomatoes available?',
-    lastTime: 'Yesterday',
-    unread: 1,
-    messages: [
-      { id: 'm1', from: 'c6', text: 'Hi! Do you have fresh tomatoes available? I need 10 kg for my restaurant.', time: 'Yesterday 2:00 PM', status: 'read', type: 'text' },
-      { id: 'm2', from: 'self', text: 'Yes! Farm-fresh tomatoes, picked this morning. ₹35/kg for restaurants.', time: 'Yesterday 2:15 PM', status: 'read', type: 'text' },
-      { id: 'm3', from: 'c6', text: 'Do you have fresh tomatoes available?', time: 'Yesterday 2:20 PM', status: 'delivered', type: 'text' },
-    ],
-  },
-  c7: {
-    lastMessage: 'Rice transplanting done. Fingers crossed!',
-    lastTime: 'Mon',
-    unread: 0,
-    messages: [
-      { id: 'm1', from: 'c7', text: 'Rice transplanting done. Fingers crossed!', time: 'Mon 6:30 PM', status: 'read', type: 'text' },
-    ],
-  },
-  c8: {
-    lastMessage: 'New Urea Neem Coated stock available!',
-    lastTime: 'Sun',
-    unread: 0,
-    messages: [
-      { id: 'm1', from: 'c8', text: 'New Urea Neem Coated stock available! ₹266 per 45kg bag. Bulk discounts available.', time: 'Sun 10:00 AM', status: 'read', type: 'text' },
-    ],
-  },
-};
 
 const QUICK_ACTIONS = [
   { icon: <FiBox />, label: 'Product Details', text: 'Can you share the product details?' },
@@ -227,18 +40,7 @@ const QUICK_ACTIONS = [
    SUB-COMPONENTS
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-// ─── Typing Indicator ─────────────────────────────────────────────
-function TypingIndicator() {
-  return (
-    <div className="msg-bubble-row msg-bubble-row--other">
-      <div className="msg-bubble msg-bubble--other msg-typing-bubble" style={{ padding: '12px', minWidth: '50px' }}>
-        <span className="msg-typing-dot" />
-        <span className="msg-typing-dot" />
-        <span className="msg-typing-dot" />
-      </div>
-    </div>
-  );
-}
+
 
 // ─── Message Bubble (WhatsApp Style) ──────────────────────────────
 function MessageBubble({ message, isSelf }) {
@@ -372,13 +174,16 @@ function EmptyChatView({ onQuickContact }) {
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 export default function Messages() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   const [activeChat, setActiveChat] = useState(null);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('All');
   const [showUnread, setShowUnread] = useState(false);
-  const [conversations, setConversations] = useState(CONVERSATIONS_DATA);
-  const [isTyping, setIsTyping] = useState(false);
+  const [conversations, setConversations] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [mobileView, setMobileView] = useState('list'); // 'list' | 'chat'
   const [showQuickActions, setShowQuickActions] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -386,15 +191,52 @@ export default function Messages() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  const activeContact = CONTACTS.find((c) => c.id === activeChat);
-  const activeConv = activeChat ? conversations[activeChat] : null;
+  // Active conversation object
+  const activeConv = conversations.find((c) => c._id === activeChat);
+  const activeContact = activeConv?.participants.find((p) => p._id !== user?._id);
+
+  // Fetch conversations list on mount
+  const loadConversations = async () => {
+    try {
+      const res = await getConversations();
+      if (res.data?.success) {
+        setConversations(res.data.conversations);
+      }
+    } catch (err) {
+      console.error("Error loading conversations:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadConversations();
+  }, []);
+
+  // Fetch messages when activeChat changes
+  useEffect(() => {
+    if (activeChat) {
+      const fetchMessages = async () => {
+        try {
+          const res = await getMessages(activeChat);
+          if (res.data?.success) {
+            setMessages(res.data.messages);
+            await markConversationRead(activeChat);
+          }
+        } catch (err) {
+          console.error("Error loading messages:", err);
+        }
+      };
+      fetchMessages();
+    } else {
+      setMessages([]);
+    }
+  }, [activeChat]);
 
   // Auto-scroll to bottom
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [activeConv?.messages?.length, isTyping]);
+  }, [messages?.length]);
 
   // Focus input when chat changes
   useEffect(() => {
@@ -404,81 +246,45 @@ export default function Messages() {
   }, [activeChat]);
 
   // Filter conversations
-  const filteredContacts = CONTACTS.filter((c) => {
-    if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    if (filterRole !== 'All' && c.role !== filterRole) return false;
-    if (showUnread && (!conversations[c.id] || conversations[c.id].unread === 0)) return false;
+  const filteredConversations = conversations.filter((conv) => {
+    const partner = conv.participants.find((p) => p._id !== user?._id);
+    if (!partner) return false;
+    if (searchQuery && !partner.fullName.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (filterRole !== 'All' && partner.role !== filterRole) return false;
     return true;
   });
 
-  // Sort by unread first, then by time
-  const sortedContacts = [...filteredContacts].sort((a, b) => {
-    const convA = conversations[a.id];
-    const convB = conversations[b.id];
-    if (!convA || !convB) return 0;
-    if (convA.unread > 0 && convB.unread === 0) return -1;
-    if (convA.unread === 0 && convB.unread > 0) return 1;
-    return 0;
-  });
+  const totalUnread = conversations.reduce((acc, conv) => {
+    // If last message exists and is not sent by current user, check read status
+    const isUnread = conv.lastMessage && conv.lastMessage.sender?._id !== user?._id && !conv.lastMessage.isRead;
+    return acc + (isUnread ? 1 : 0);
+  }, 0);
 
-  const totalUnread = Object.values(conversations).reduce((s, c) => s + (c.unread || 0), 0);
-
-  const handleSelectChat = (contactId) => {
-    setActiveChat(contactId);
+  const handleSelectChat = async (convId) => {
+    setActiveChat(convId);
     setMobileView('chat');
-    // Mark as read
-    setConversations((prev) => ({
-      ...prev,
-      [contactId]: { ...prev[contactId], unread: 0 },
-    }));
+    try {
+      await markConversationRead(convId);
+      loadConversations();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!messageInput.trim() || !activeChat) return;
 
-    const newMsg = {
-      id: `m-${Date.now()}`,
-      from: 'self',
-      text: messageInput.trim(),
-      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
-      status: 'delivered',
-      type: 'text',
-    };
-
-    setConversations((prev) => ({
-      ...prev,
-      [activeChat]: {
-        ...prev[activeChat],
-        messages: [...prev[activeChat].messages, newMsg],
-        lastMessage: newMsg.text,
-        lastTime: newMsg.time,
-      },
-    }));
-
-    setMessageInput('');
-
-    // Simulate typing response
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      const autoReply = {
-        id: `m-${Date.now() + 1}`,
-        from: activeChat,
-        text: getAutoReply(activeContact?.role),
-        time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
-        status: 'read',
-        type: 'text',
-      };
-      setConversations((prev) => ({
-        ...prev,
-        [activeChat]: {
-          ...prev[activeChat],
-          messages: [...prev[activeChat].messages, autoReply],
-          lastMessage: autoReply.text,
-          lastTime: autoReply.time,
-        },
-      }));
-    }, 2000 + Math.random() * 1500);
+    try {
+      const text = messageInput.trim();
+      setMessageInput('');
+      const res = await sendMessage({ conversationId: activeChat, text });
+      if (res.data?.success) {
+        setMessages((prev) => [...prev, res.data.message]);
+        loadConversations();
+      }
+    } catch (err) {
+      console.error("Error sending message:", err);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -502,7 +308,7 @@ export default function Messages() {
     <div className="msg-root">
       {/* ═══ NAVBAR ═══════════════════════════════════ */}
       <Navbar 
-        user={{ name: CURRENT_USER.name, role: CURRENT_USER.role }}
+        user={user}
         onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
         notificationSlot={<NotificationBell notifications={[]} />}
       />
@@ -515,6 +321,8 @@ export default function Messages() {
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           activeItem="messages"
+          onNavigate={(item) => navigate(item.path)}
+          onLogout={() => navigate('/login')}
         />
 
         {/* ── Page Content ────────────────────────── */}
@@ -576,20 +384,36 @@ export default function Messages() {
 
               {/* Conversation List */}
               <div className="msg-conv-list">
-                {sortedContacts.length === 0 ? (
+                {filteredConversations.length === 0 ? (
                   <div className="msg-empty-chat" style={{ padding: '20px' }}>
                     <p>No conversations found</p>
                   </div>
                 ) : (
-                  sortedContacts.map((contact) => (
-                    <ConversationCard
-                      key={contact.id}
-                      contact={contact}
-                      conversation={conversations[contact.id]}
-                      isActive={activeChat === contact.id}
-                      onClick={() => handleSelectChat(contact.id)}
-                    />
-                  ))
+                  filteredConversations.map((conv) => {
+                    const partner = conv.participants.find((p) => p._id !== user?._id);
+                    if (!partner) return null;
+                    const contactObj = {
+                      id: conv._id,
+                      name: partner.fullName,
+                      role: partner.role,
+                      avatar: partner.role === 'Farmer' ? '👨‍🌾' : (partner.role === 'Vendor' ? '🏬' : '🤵'),
+                      online: true,
+                    };
+                    const convData = {
+                      lastMessage: conv.lastMessage?.text || 'No messages yet',
+                      lastTime: conv.lastMessage ? new Date(conv.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+                      unread: (conv.lastMessage && conv.lastMessage.sender?._id !== user?._id && !conv.lastMessage.isRead) ? 1 : 0
+                    };
+                    return (
+                      <ConversationCard
+                        key={conv._id}
+                        contact={contactObj}
+                        conversation={convData}
+                        isActive={activeChat === conv._id}
+                        onClick={() => handleSelectChat(conv._id)}
+                      />
+                    );
+                  })
                 )}
               </div>
             </aside>
@@ -597,7 +421,7 @@ export default function Messages() {
             {/* ── RIGHT PANEL — Chat Window ──────────── */}
             <section className={`msg-chat-panel ${mobileView === 'chat' ? 'msg-chat--visible' : ''}`}>
               {!activeChat ? (
-                <EmptyChatView onQuickContact={handleSelectChat} />
+                <EmptyChatView onQuickContact={(contactId) => handleSelectChat(contactId)} />
               ) : (
                 <>
                   {/* Chat Header */}
@@ -607,15 +431,15 @@ export default function Messages() {
                     </button>
                     <div className="msg-chat-user-info">
                       <div className="msg-chat-avatar-wrap">
-                        <span className="msg-chat-avatar">{activeContact.avatar}</span>
+                        <span className="msg-chat-avatar">
+                          {activeContact?.role === 'Farmer' ? '👨‍🌾' : (activeContact?.role === 'Vendor' ? '🏬' : '🤵')}
+                        </span>
                       </div>
                       <div className="msg-chat-user-text">
-                        <div className="msg-chat-user-name">{activeContact.name}</div>
+                        <div className="msg-chat-user-name">{activeContact?.fullName}</div>
                         <div className="msg-chat-user-status">
-                          <span className={`msg-role-badge msg-role--${activeContact.role.toLowerCase()}`}>{activeContact.role}</span>
-                          <span className="msg-chat-last-seen">
-                            {activeContact.online ? 'Online' : activeContact.lastSeen}
-                          </span>
+                          <span className={`msg-role-badge msg-role--${(activeContact?.role || 'Farmer').toLowerCase()}`}>{activeContact?.role}</span>
+                          <span className="msg-chat-last-seen">Online</span>
                         </div>
                       </div>
                     </div>
@@ -629,14 +453,16 @@ export default function Messages() {
                   {/* Messages Area */}
                   <div className="msg-messages-area">
                     <DateDivider text="Today" />
-                    {activeConv?.messages.map((msg) => (
+                    {messages.map((msg) => (
                       <MessageBubble
-                        key={msg.id}
-                        message={msg}
-                        isSelf={msg.from === 'self'}
+                        key={msg._id}
+                        message={{
+                          ...msg,
+                          time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        }}
+                        isSelf={msg.sender?._id === user?._id || msg.sender === user?._id}
                       />
                     ))}
-                    {isTyping && <TypingIndicator />}
                     <div ref={messagesEndRef} />
                   </div>
 
@@ -705,33 +531,4 @@ export default function Messages() {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════════
-   HELPER
-   ═══════════════════════════════════════════════════════════════════════════════ */
 
-function getAutoReply(role) {
-  const farmerReplies = [
-    'I will check and let you know soon. 🙏',
-    'My next harvest is expected in 2 weeks. I will keep you updated!',
-    'Sure! I can arrange that. Let me check with the local transport.',
-    'The weather has been great lately, crop looks very healthy!',
-    'Yes, I use organic farming methods. No chemicals at all.',
-  ];
-  const vendorReplies = [
-    'Thank you for your order! We will process it shortly. 🙏',
-    'Currently we have a special 15% discount on bulk orders above ₹20,000.',
-    'Yes, that product is available. Would you like to add it to your order?',
-    'Your delivery is on track. Expected arrival by tomorrow evening.',
-    'We also have a new range of bio-fertilizers. Very popular this season!',
-  ];
-  const customerReplies = [
-    'Thank you! I will confirm my order quantity today. 🙏',
-    'Can you share photos of the produce? I want to check quality.',
-    'That price works for me. Please proceed with the packing.',
-    'I need delivery to my Mumbai address. Is that possible?',
-    'Your organic certification looks good. I trust your produce!',
-  ];
-
-  const replies = role === 'Vendor' ? vendorReplies : role === 'Customer' ? customerReplies : farmerReplies;
-  return replies[Math.floor(Math.random() * replies.length)];
-}

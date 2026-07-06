@@ -1,68 +1,119 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import * as authService from '../services/authService';
 
 // =============================================================================
 // AUTH CONTEXT — Smart Krishi Mitra
 // =============================================================================
 // Centrally manages user authentication state, roles, and helper functions.
-//
-// Future MERN Integration:
-//   - Replace initial dummy states with API requests to login/logout/profile endpoints.
-//   - Store and retrieve JSON Web Tokens (JWT) in localStorage or HttpOnly Cookies.
-//   - Add response/request interceptors for handling token refreshes.
+// Interacts with Node.js backend using JWT authentication.
 // =============================================================================
 
 const AuthContext = createContext(null);
 
-// Dummy Initial Logged-in User (easy to test role-based components)
-const initialDummyUser = {
-  id: "USR001",
-  name: "Om Bhudhara",
-  email: "om@gmail.com",
-  role: "Farmer", // Possible roles: "Farmer" | "Vendor" | "Customer" | "Admin"
-  profileImage: "/assets/profile.png",
-  language: "English",
-  isAuthenticated: false
-};
-
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(initialDummyUser);
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [token, setToken] = useState(localStorage.getItem("token") || null);
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(!!localStorage.getItem("token"));
 
-  // login(): Simulates user authentication with user details
-  const login = useCallback(async (userData) => {
+  // Auto-login: on page refresh, if token exists, load user profile from backend
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem("token");
+      if (!storedToken) {
+        setIsAuthenticated(false);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setToken(storedToken);
+        const response = await authService.getCurrentUser();
+        if (response?.data?.success && response?.data?.user) {
+          setUser(response.data.user);
+          setIsAuthenticated(true);
+        } else {
+          throw new Error("Invalid profile response");
+        }
+      } catch (error) {
+        console.error("Auto-login failed:", error.message || error);
+        // Clear token since it's expired or invalid
+        localStorage.removeItem("token");
+        setToken(null);
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
+  // login(): Authenticate user details with the backend APIs
+  const login = useCallback(async (credentials) => {
     setLoading(true);
     try {
-      // Future Integration: Make API call to POST /api/auth/login
-      // const response = await api.post('/auth/login', credentials);
-      // const { token, user } = response.data;
-      // localStorage.setItem('token', token);
+      const response = await authService.login(credentials);
+      const { token: receivedToken, user: userData } = response.data;
+
+      localStorage.setItem("token", receivedToken);
+      setToken(receivedToken);
       setUser(userData);
       setIsAuthenticated(true);
+      return response.data;
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("Login API call failed:", error);
+      throw error;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // logout(): Resets user session state
-  const logout = useCallback(() => {
+  // register(): Create user account on backend and automatically log in
+  const register = useCallback(async (signupData) => {
     setLoading(true);
-    // Future Integration: Make API call to POST /api/auth/logout, delete local token
-    // localStorage.removeItem('token');
-    setUser(null);
-    setIsAuthenticated(false);
-    setLoading(false);
+    try {
+      const response = await authService.register(signupData);
+      const { token: receivedToken, user: userData } = response.data;
+
+      localStorage.setItem("token", receivedToken);
+      setToken(receivedToken);
+      setUser(userData);
+      setIsAuthenticated(true);
+      return response.data;
+    } catch (error) {
+      console.error("Registration API call failed:", error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // updateProfile(): Updates specific user profile details
+  // logout(): Resets user session state locally and calls logout endpoint
+  const logout = useCallback(async () => {
+    setLoading(true);
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error("Logout API request failed:", error.message || error);
+    } finally {
+      localStorage.removeItem("token");
+      setToken(null);
+      setUser(null);
+      setIsAuthenticated(false);
+      setLoading(false);
+    }
+  }, []);
+
+  // updateProfile(): Updates specific user profile details locally
   const updateProfile = useCallback((updatedFields) => {
     setUser((prevUser) => {
       if (!prevUser) return null;
       return {
         ...prevUser,
-        ...updatedFields
+        ...updatedFields,
       };
     });
   }, []);
@@ -73,7 +124,7 @@ export const AuthProvider = ({ children }) => {
       if (!prevUser) return null;
       return {
         ...prevUser,
-        role: newRole
+        role: newRole,
       };
     });
   }, []);
@@ -82,6 +133,9 @@ export const AuthProvider = ({ children }) => {
   const hasRole = useCallback((roleName) => {
     return user?.role === roleName;
   }, [user]);
+
+  // Derived role value
+  const role = useMemo(() => user?.role || null, [user]);
 
   // Specific role helper checks
   const isAdmin = useCallback(() => user?.role === 'Admin', [user]);
@@ -92,10 +146,13 @@ export const AuthProvider = ({ children }) => {
   // Memoized value definition to optimize rendering performance
   const contextValue = useMemo(() => ({
     user,
+    token,
+    role,
     isAuthenticated,
     loading,
     login,
     logout,
+    register,
     updateProfile,
     changeRole,
     hasRole,
@@ -105,10 +162,13 @@ export const AuthProvider = ({ children }) => {
     isCustomer
   }), [
     user,
+    token,
+    role,
     isAuthenticated,
     loading,
     login,
     logout,
+    register,
     updateProfile,
     changeRole,
     hasRole,

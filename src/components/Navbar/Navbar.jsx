@@ -22,6 +22,16 @@ const Navbar = ({
 }) => {
   const [selectedLang, setSelectedLang] = useState(defaultLanguage);
   const [searchVal, setSearchVal] = useState('');
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+  };
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -82,6 +92,16 @@ const Navbar = ({
 
       {/* Right Area: Language Selector + Notifications + Avatar */}
       <div className="skm-navbar-right">
+        {/* Theme Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          className="skm-navbar-theme-btn"
+          title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+          aria-label="Toggle dark mode"
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
+
         {/* Language Selector */}
         <div className="skm-navbar-lang-select-wrap">
           <span className="skm-navbar-lang-icon">🌐</span>

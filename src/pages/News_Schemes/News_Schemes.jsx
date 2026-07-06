@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Sidebar from '../../components/Sidebar/Sidebar';
 import Footer from '../../components/Footer/Footer';
@@ -6,200 +7,28 @@ import Button from '../../components/Button/Button';
 import Card from '../../components/Card/Card';
 import Loader from '../../components/Loader/Loader';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
+import { useAuth } from '../../context/AuthContext';
+import { getNews } from '../../services/newsService';
+import { getGovSchemes } from '../../services/governmentService';
 import './News_Schemes.css';
 
 // =============================================================================
 // DUMMY DATA
 // =============================================================================
 
-const NEWS_DATA = [
-  {
-    id: 1,
-    title: 'India Releases New High-Yield Wheat Variety HD-3386 for Rabi 2026',
-    description: 'ICAR researchers have developed HD-3386, a rust-resistant wheat variety with 15% higher yield potential suited for North Indian plains, expected to benefit over 5 million farmers.',
-    category: 'Agriculture', categoryColor: '#2E7D32',
-    date: 'Jun 30, 2026', source: 'ICAR News',
-    image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&h=380&fit=crop',
-    trending: true,
-  },
-  {
-    id: 2,
-    title: 'Cotton Prices Surge 18% Amid Rising Global Textile Demand',
-    description: 'Cotton prices at Rajkot and Nagpur mandis touched Rs 7,800/quintal, the highest in 3 years. Experts attribute this to recovering global demand and lower US cotton output.',
-    category: 'Market Prices', categoryColor: '#1565C0',
-    date: 'Jun 29, 2026', source: 'AgriMarket India',
-    image: 'https://images.unsplash.com/photo-1616431101491-554c0932ea40?w=600&h=380&fit=crop',
-    trending: true,
-  },
-  {
-    id: 3,
-    title: 'Southwest Monsoon Arrives 5 Days Early, Covers Entire Kerala',
-    description: 'IMD confirms the Southwest Monsoon reached Kerala on June 1, five days ahead of schedule. This early onset is expected to boost Kharif sowing across Maharashtra and Karnataka.',
-    category: 'Weather', categoryColor: '#0277BD',
-    date: 'Jun 28, 2026', source: 'IMD India',
-    image: 'https://images.unsplash.com/photo-1561584882-3d0e895e6d9c?w=600&h=380&fit=crop',
-    trending: false,
-  },
-  {
-    id: 4,
-    title: 'Solar-Powered Smart Irrigation Systems Now Available at 40% Subsidy',
-    description: 'The Ministry of Agriculture has partnered with NABARD to offer solar drip irrigation kits at 40% subsidy to small and marginal farmers in drought-prone districts.',
-    category: 'Technology', categoryColor: '#6A1B9A',
-    date: 'Jun 27, 2026', source: 'Ministry of Agriculture',
-    image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&h=380&fit=crop',
-    trending: false,
-  },
-  {
-    id: 5,
-    title: 'Organic Farming Area in India Doubles to 4.5 Million Hectares',
-    description: "India's certified organic farming area has doubled over five years reaching 4.5 million ha. Sikkim remains fully organic; Madhya Pradesh and Rajasthan lead in coverage.",
-    category: 'Organic Farming', categoryColor: '#388E3C',
-    date: 'Jun 26, 2026', source: 'APEDA',
-    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&h=380&fit=crop',
-    trending: false,
-  },
-  {
-    id: 6,
-    title: "India's Agriculture Exports Cross $55 Billion in FY 2025-26",
-    description: 'India achieved record agriculture exports of $55.2 billion in FY26, led by rice ($11.2B), spices ($4.5B), and marine products. Basmati rice saw 22% volume growth.',
-    category: 'Export', categoryColor: '#E65100',
-    date: 'Jun 25, 2026', source: 'APEDA Export Council',
-    image: 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?w=600&h=380&fit=crop',
-    trending: true,
-  },
-  {
-    id: 7,
-    title: 'eNAM Platform Crosses 10 Million Farmers and 2,000 Mandis',
-    description: 'The National Agriculture Market (eNAM) has onboarded 10.2 million farmers and integrated 2,046 mandis. Monthly trade volume crossed Rs 12,000 crore for the first time.',
-    category: 'Government', categoryColor: '#880E4F',
-    date: 'Jun 24, 2026', source: 'SFAC India',
-    image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&h=380&fit=crop',
-    trending: false,
-  },
-  {
-    id: 8,
-    title: 'Drone Spraying Adopted by 5 Lakh Farmers Under SMAM Scheme',
-    description: 'The Sub-Mission on Agricultural Mechanization (SMAM) has enabled 5 lakh farmers to access drone spraying services, reducing pesticide use by 30% and labour costs by 60%.',
-    category: 'Technology', categoryColor: '#6A1B9A',
-    date: 'Jun 23, 2026', source: 'DAC&FW',
-    image: 'https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=600&h=380&fit=crop',
-    trending: false,
-  },
-  {
-    id: 9,
-    title: 'Tomato Prices Crash to Rs 2/kg in Nashik; Farmers Demand MSP',
-    description: 'Bumper production in Nashik and Kolar has pushed wholesale tomato prices to Rs 1.5-2/kg, causing massive losses for farmers. Agriculture ministry is considering MSP for tomatoes.',
-    category: 'Market Prices', categoryColor: '#1565C0',
-    date: 'Jun 22, 2026', source: 'The Hindu Agri',
-    image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600&h=380&fit=crop',
-    trending: true,
-  },
-];
-
-const SCHEMES_DATA = [
-  {
-    id: 1, name: 'PM-KISAN Samman Nidhi', emoji: '\uD83D\uDCB0',
-    department: 'Ministry of Agriculture & Farmers Welfare',
-    benefits: 'Rs 6,000/year direct income support in 3 instalments of Rs 2,000 directly into bank account.',
-    eligibility: 'All landholding farmer families with cultivable land. Excludes income-tax payers and government employees.',
-    deadline: 'Rolling - Register anytime',
-    documents: ['Aadhaar Card', 'Land Records (Khasra/Khatauni)', 'Bank Account (Aadhaar linked)', 'Mobile Number'],
-    status: 'Active', beneficiaries: '11.5 Cr Farmers', budget: 'Rs 60,000 Cr/year',
-  },
-  {
-    id: 2, name: 'Pradhan Mantri Fasal Bima Yojana (PMFBY)', emoji: '\uD83D\uDEE1\uFE0F',
-    department: 'Ministry of Agriculture & Farmers Welfare',
-    benefits: 'Comprehensive crop insurance covering natural calamities, pests, diseases. Premium as low as 1.5% for Rabi crops.',
-    eligibility: 'All farmers growing notified crops in notified areas. Loanee farmers are automatically covered.',
-    deadline: 'Kharif: July 31 | Rabi: Dec 31',
-    documents: ['Aadhaar Card', 'Bank Passbook', 'Land Record / Lease Agreement', 'Sowing Certificate'],
-    status: 'Active', beneficiaries: '5.6 Cr Farmers', budget: 'Rs 15,000 Cr/year',
-  },
-  {
-    id: 3, name: 'Kisan Credit Card (KCC)', emoji: '\uD83D\uDCB3',
-    department: 'NABARD / Ministry of Finance',
-    benefits: 'Short-term credit up to Rs 3 lakh at 4% effective interest. Covers crop production, post-harvest and allied activities.',
-    eligibility: 'All farmer landholders, tenant farmers, sharecroppers, and SHG members engaged in farming.',
-    deadline: 'Rolling - Apply at any bank branch',
-    documents: ['Aadhaar Card', 'Land Records', 'Passport Photo', 'Income/Solvency Certificate'],
-    status: 'Active', beneficiaries: '7.2 Cr Farmers', budget: 'Credit Linked',
-  },
-  {
-    id: 4, name: 'Soil Health Card Scheme', emoji: '\uD83E\uDDEA',
-    department: 'Dept. of Agriculture & Farmers Welfare',
-    benefits: 'Free soil testing and nutrient management advisory. Reduces fertilizer cost by 10-15%. Improves yield by 5-6%.',
-    eligibility: 'Every farmer in India is eligible for one soil health card per 2 hectares every 2 years. Free of cost.',
-    deadline: 'Rolling - Visit nearest soil testing lab',
-    documents: ['Aadhaar Card', 'Land Records', 'Mobile Number for OTP'],
-    status: 'Active', beneficiaries: '22 Cr Cards Issued', budget: 'Rs 368 Cr/year',
-  },
-  {
-    id: 5, name: 'PM Krishi Sinchayee Yojana (PMKSY)', emoji: '\uD83D\uDCA7',
-    department: 'Ministry of Jal Shakti / Ministry of Agriculture',
-    benefits: 'Up to 55% subsidy for drip irrigation. 45% subsidy for sprinkler systems. Covers equipment, installation, and pipeline costs.',
-    eligibility: 'All categories of farmers (Individual, group, cooperatives, SHGs). Land ownership or lease required.',
-    deadline: 'Sep 30, 2026',
-    documents: ['Aadhaar Card', 'Land Ownership/Lease Document', 'Bank Account Details', 'Quotation from approved vendor'],
-    status: 'Active', beneficiaries: '55 Lakh Farmers', budget: 'Rs 93,068 Cr',
-  },
-  {
-    id: 6, name: 'Agriculture Infrastructure Fund (AIF)', emoji: '\uD83C\uDFD7\uFE0F',
-    department: 'Ministry of Agriculture & Farmers Welfare',
-    benefits: 'Loans up to Rs 2 crore at 3% interest subvention for 7 years for cold storage, warehouses, and processing units.',
-    eligibility: 'Farmers, FPOs, PACS, Agri-entrepreneurs, Start-ups, and State Agencies involved in post-harvest management.',
-    deadline: 'Mar 31, 2027',
-    documents: ['Project Report', 'Aadhaar Card', 'Land Documents', 'Bank Statements (6 months)', 'GST Registration'],
-    status: 'Active', beneficiaries: '67,000+ Projects', budget: 'Rs 1 Lakh Cr',
-  },
+const POPULAR_SCHEMES = [
+  { id: 1, name: 'PM-KISAN Samman Nidhi', desc: 'Direct income support of ₹6,000/year to farmer families.', status: 'Active', beneficiaries: '11.8 Cr' },
+  { id: 2, name: 'Fasal Bima Yojana', desc: 'Crop insurance for farmers against natural calamities.', status: 'Active', beneficiaries: '5.5 Cr' },
+  { id: 3, name: 'Soil Health Card Scheme', desc: 'Nutrient-based soil testing and recommendations.', status: 'Active', beneficiaries: '23 Cr' },
+  { id: 4, name: 'eNAM (National Agriculture Market)', desc: 'Online trading platform for agricultural commodities.', status: 'Active', beneficiaries: '1.7 Cr' },
 ];
 
 const AI_RECOMMENDATIONS = [
-  {
-    id: 1, icon: '\uD83C\uDF3E', priority: 'high', action: 'Apply Now',
-    title: 'PM-KISAN Eligibility Detected',
-    desc: 'Based on your profile and land records, you are eligible for PM-KISAN. Receive Rs 6,000/year directly in your bank account.',
-  },
-  {
-    id: 2, icon: '\uD83D\uDCA7', priority: 'high', action: 'Check Eligibility',
-    title: 'Drip Irrigation Subsidy for Your Region',
-    desc: 'Your district (Vidarbha) is listed under PMKSY priority zones. Avail 55% subsidy on drip irrigation - estimated saving of Rs 45,000.',
-  },
-  {
-    id: 3, icon: '\uD83D\uDCC8', priority: 'medium', action: 'View Market Data',
-    title: 'Cotton Prices Rising - Hold Your Stock',
-    desc: 'Cotton prices rose 18% in June. AI analysis suggests an additional 8-10% rise in July. Consider holding current stock if storage is available.',
-  },
-  {
-    id: 4, icon: '\uD83C\uDF26\uFE0F', priority: 'urgent', action: 'View Weather',
-    title: 'Heavy Rain Tomorrow - Delay Pesticide Spraying',
-    desc: 'IMD forecast shows 80% probability of heavy rain tomorrow in your district. Delay pesticide spraying by 2 days to avoid washoff.',
-  },
-  {
-    id: 5, icon: '\uD83E\uDDEA', priority: 'medium', action: 'Schedule Test',
-    title: 'Soil Health Card Due for Renewal',
-    desc: 'Your last soil test was 2 years ago. A new test can help save 12-15% on input costs through updated fertilizer recommendations.',
-  },
-];
-
-const TRENDING_NEWS = [
-  { id: 1, headline: 'MSP for Kharif 2026 Increased by 7%', category: 'Government', date: 'Jun 30, 2026',
-    image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=200&fit=crop' },
-  { id: 2, headline: 'AI Soil Analysis App Launched by IARI', category: 'Technology', date: 'Jun 29, 2026',
-    image: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=300&h=200&fit=crop' },
-  { id: 3, headline: 'Onion Export Ban Lifted - Prices Expected to Rise', category: 'Export', date: 'Jun 28, 2026',
-    image: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=300&h=200&fit=crop' },
-  { id: 4, headline: 'FPO Formation Target: 10,000 New FPOs by 2027', category: 'Government', date: 'Jun 27, 2026',
-    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=300&h=200&fit=crop' },
-  { id: 5, headline: 'Wheat Procurement Crosses 30 Million Tonnes', category: 'Agriculture', date: 'Jun 26, 2026',
-    image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=300&h=200&fit=crop' },
-];
-
-const POPULAR_SCHEMES = [
-  { id: 1, name: 'PM-KISAN', desc: 'Rs 6,000/year income support for all farmers', status: 'Active', beneficiaries: '11.5 Cr' },
-  { id: 2, name: 'PMFBY Crop Insurance', desc: 'Low-premium crop insurance covering all risks', status: 'Active', beneficiaries: '5.6 Cr' },
-  { id: 3, name: 'eNAM Digital Mandi', desc: 'Online mandi trading for better prices', status: 'Active', beneficiaries: '1.8 Cr' },
-  { id: 4, name: 'Kisan Credit Card', desc: '4% interest crop loan up to Rs 3 lakh', status: 'Active', beneficiaries: '7.2 Cr' },
-  { id: 5, name: 'Soil Health Card', desc: 'Free soil testing and advisory service', status: 'Active', beneficiaries: '22 Cr Cards' },
+  { id: 1, icon: '🌾', title: 'Optimal Sowing Window', desc: 'Based on current soil moisture and forecast, the ideal sowing window for Rabi wheat in your region is November 15–30.', action: 'View Details', priority: 'high' },
+  { id: 2, icon: '🧪', title: 'Soil Health Advisory', desc: 'Your soil reports indicate low nitrogen levels. Apply urea at 60 kg/acre before the next irrigation cycle.', action: 'View Plan', priority: 'medium' },
+  { id: 3, icon: '📈', title: 'Market Price Prediction', desc: 'Cotton prices are expected to rise by 12% in the next 3 weeks due to reduced supply from Maharashtra.', action: 'View Forecast', priority: 'high' },
+  { id: 4, icon: '🐛', title: 'Pest Alert – Bollworm', desc: 'Increased bollworm activity detected in your district. Consider biological control methods or neem-based sprays.', action: 'View Advisory', priority: 'critical' },
+  { id: 5, icon: '💧', title: 'Irrigation Scheduling', desc: 'Reduce irrigation frequency by 20% this week — soil moisture is above optimal due to recent rainfall.', action: 'View Schedule', priority: 'low' },
 ];
 
 const WEATHER_ALERTS = [
@@ -458,12 +287,9 @@ function WeatherAlertCard({ alert }) {
 }
 
 // Single bookmarked item with remove action
-function BookmarkItem({ id, onRemove }) {
-  const newsItem   = NEWS_DATA.find((n) => n.id === id);
-  const schemeId   = typeof id === 'string' && id.startsWith('scheme_')
-    ? parseInt(id.replace('scheme_', ''), 10)
-    : null;
-  const schemeItem = schemeId ? SCHEMES_DATA.find((s) => s.id === schemeId) : null;
+function BookmarkItem({ id, onRemove, newsList, schemesList }) {
+  const newsItem   = newsList.find((n) => n._id === id || n.id === id);
+  const schemeItem = schemesList.find((s) => s._id === id || s.id === id);
   if (!newsItem && !schemeItem) return null;
 
   const label    = newsItem ? newsItem.title : schemeItem.name;
@@ -486,22 +312,72 @@ function BookmarkItem({ id, onRemove }) {
 // =============================================================================
 
 export default function NewsSchemes() {
-  // const navigate = useNavigate();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const trendingRef = useRef(null);
 
   // UI state
   const [sidebarOpen,    setSidebarOpen]    = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery,    setSearchQuery]    = useState('');
-  const [bookmarks,      setBookmarks]      = useState([1, 'scheme_1']);
+  const [bookmarks,      setBookmarks]      = useState([]);
   const [isLoading,      setIsLoading]      = useState(true);
   const [notification,   setNotification]   = useState(null);
   const [activeTab,      setActiveTab]      = useState('news');
+  const [newsList,       setNewsList]       = useState([]);
+  const [schemesList,    setSchemesList]    = useState([]);
 
-  // Simulate initial data loading
+  // Fetch news and schemes on mount
   useEffect(() => {
-    const t = setTimeout(() => setIsLoading(false), 1400);
-    return () => clearTimeout(t);
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [newsRes, schemesRes] = await Promise.all([
+          getNews(),
+          getGovSchemes()
+        ]);
+
+        if (newsRes.data?.success) {
+          const mappedNews = newsRes.data.news.map(n => ({
+            id: n._id,
+            _id: n._id,
+            title: n.title,
+            description: n.content || n.description,
+            category: n.category || 'Agriculture',
+            categoryColor: n.category === 'Market Prices' ? '#1565C0' : (n.category === 'Weather' ? '#0277BD' : '#2E7D32'),
+            date: new Date(n.createdAt || Date.now()).toLocaleDateString(),
+            source: n.source || 'News Source',
+            image: n.imageUrl || 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&h=380&fit=crop',
+            trending: n.featured || false,
+            headline: n.title,
+          }));
+          setNewsList(mappedNews);
+        }
+
+        if (schemesRes.data?.success) {
+          const mappedSchemes = schemesRes.data.schemes.map(s => ({
+            id: s._id,
+            _id: s._id,
+            title: s.title,
+            name: s.title,
+            description: s.description,
+            ministry: s.ministry || 'Ministry of Agriculture',
+            budget: s.budgetAllocated || 'Varies',
+            status: s.active ? 'Active' : 'Closed',
+            benefits: s.benefits || 'Financial assistance and support benefits.',
+            eligibility: s.eligibility || 'Small and marginal farmers.',
+            deadline: s.lastDate ? new Date(s.lastDate).toLocaleDateString() : 'N/A',
+            documents: s.documentsRequired || ['Aadhaar Card', 'Land Records', 'Bank Passbook']
+          }));
+          setSchemesList(mappedSchemes);
+        }
+      } catch (err) {
+        console.error("Error fetching news/schemes:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
   // Show a toast notification for 3 seconds
@@ -528,8 +404,7 @@ export default function NewsSchemes() {
     showNotify('Bookmark removed.', 'info');
   }, [showNotify]);
 
-
-  const filteredNews = NEWS_DATA.filter((n) => {
+  const filteredNews = newsList.filter((n) => {
     const matchCat    = activeCategory === 'all' || n.category === activeCategory;
     const matchSearch = searchQuery === '' ||
       n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -564,7 +439,7 @@ export default function NewsSchemes() {
 
       {/* ---- NAVBAR ---- */}
       <Navbar
-        user={{ name: 'OM', role: 'Customer' }}
+        user={user}
         onToggleSidebar={() => setSidebarOpen(o => !o)}
         notificationSlot={<NotificationBell notifications={[]} />}
       />
@@ -577,6 +452,8 @@ export default function NewsSchemes() {
           collapsed={!sidebarOpen}
           onToggleCollapse={() => setSidebarOpen(o => !o)}
           activeItem="news"
+          onNavigate={(item) => navigate(item.path)}
+          onLogout={() => navigate('/login')}
         />
 
         {/* ---- MAIN CONTENT ---- */}
@@ -702,7 +579,7 @@ export default function NewsSchemes() {
                   </div>
                 </div>
                 <div className="ns-trending-scroll" ref={trendingRef}>
-                  {TRENDING_NEWS.map((item) => <TrendingCard key={item.id} item={item} />)}
+                  {newsList.filter(n => n.trending).map((item) => <TrendingCard key={item.id} item={item} />)}
                 </div>
               </section>
 
@@ -724,10 +601,10 @@ export default function NewsSchemes() {
               <section className="ns-section">
                 <div className="ns-section-header">
                   <h2 className="ns-section-title">Government Schemes</h2>
-                  <span className="ns-section-pill">{SCHEMES_DATA.length} active</span>
+                  <span className="ns-section-pill">{schemesList.length} active</span>
                 </div>
                 <div className="ns-schemes-grid">
-                  {SCHEMES_DATA.map((scheme) => (
+                  {schemesList.map((scheme) => (
                     <SchemeCard
                       key={scheme.id}
                       scheme={scheme}
@@ -807,7 +684,7 @@ export default function NewsSchemes() {
               ) : (
                 <div className="ns-bm-grid">
                   {bookmarks.map((id) => (
-                    <BookmarkItem key={id} id={id} onRemove={handleRemoveBookmark} />
+                    <BookmarkItem key={id} id={id} onRemove={handleRemoveBookmark} newsList={newsList} schemesList={schemesList} />
                   ))}
                 </div>
               )}

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { getNotifications, markAsRead, markAllAsRead } from '../../services/notificationService';
 
 // Reusable Layout Components
 import Navbar from '../../components/Navbar/Navbar';
@@ -15,34 +16,49 @@ import CustomerProfile from '../../components/Profile/CustomerProfile';
 
 import './Profile.css';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Dummy notifications
-// TODO: Replace with real API call: GET /api/notifications (JWT protected)
-// ─────────────────────────────────────────────────────────────────────────────
-const DUMMY_NOTIFICATIONS = [
-  { id: 1, message: 'Your profile details were updated successfully.', time: 'Just now', read: false },
-  { id: 2, message: 'New security login detected on your account.', time: '1 day ago', read: true },
-];
-
 export default function Profile() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [notifications, setNotifications] = useState(DUMMY_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await getNotifications();
+        if (response.data?.success) {
+          setNotifications(response.data.notifications);
+        }
+      } catch (err) {
+        console.error("Error loading notifications:", err);
+      }
+    };
+    fetchNotifications();
+  }, []);
 
   // Role detection
   const role = user?.role || 'Farmer';
 
   // ── Notification Handlers ──────────────────────────────────────────────────
-  const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    } catch (err) {
+      console.error("Error marking notifications read:", err);
+    }
   };
 
-  const handleNotificationClick = (notification) => {
-    setNotifications((prev) =>
-      prev.map((n) => n.id === notification.id ? { ...n, read: true } : n)
-    );
+  const handleNotificationClick = async (notification) => {
+    try {
+      await markAsRead(notification._id);
+      setNotifications((prev) =>
+        prev.map((n) => n._id === notification._id ? { ...n, read: true } : n)
+      );
+    } catch (err) {
+      console.error("Error clicking notification:", err);
+    }
   };
 
   // ── Role-based View ────────────────────────────────────────────────────────

@@ -1,58 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import WeatherCard from '../WeatherCard/WeatherCard';
+import { useAuth } from '../../context/AuthContext';
+import { getDashboardSummary } from '../../services/dashboardService';
+import { getNews } from '../../services/newsService';
+import { getGovSchemes } from '../../services/governmentService';
+import { getTransactions } from '../../services/transactionService';
+import { getNotifications } from '../../services/notificationService';
+import { getCurrentWeather } from '../../services/weatherService';
+import { getListings } from '../../services/marketplaceService';
 import './FarmerDashboard.css';
-
-// =============================================================================
-// REALISTIC DUMMY DATA FOR THE FARMER CONTROL CENTER
-// =============================================================================
-
-const STATS_DATA = [
-  {
-    id: 'stat-crops',
-    icon: '🌾',
-    value: '15',
-    label: 'Total Crops',
-    desc: 'Types under cultivation',
-    trend: '+2 this month',
-    trendType: 'up',
-    color: '#2E7D32',
-    bg: '#E8F5E9'
-  },
-  {
-    id: 'stat-earnings',
-    icon: '💰',
-    value: '₹85,000',
-    label: 'Estimated Earnings',
-    desc: 'Total sales this cycle',
-    trend: '+12.4% vs last cycle',
-    trendType: 'up',
-    color: '#1565C0',
-    bg: '#E3F2FD'
-  },
-  {
-    id: 'stat-listings',
-    icon: '📦',
-    value: '8',
-    label: 'Active Listings',
-    desc: 'Crops live in marketplace',
-    trend: 'Stable demand',
-    trendType: 'neutral',
-    color: '#E65100',
-    bg: '#FFF3E0'
-  },
-  {
-    id: 'stat-notifs',
-    icon: '🔔',
-    value: '5',
-    label: 'New Notifications',
-    desc: 'Requires attention',
-    trend: '3 high priority',
-    trendType: 'danger',
-    color: '#6A1B9A',
-    bg: '#F3E5F5'
-  }
-];
 
 const QUICK_ACCESS_ITEMS = [
   { id: 'marketplace', icon: '🛒', title: 'Marketplace', desc: 'Buy and sell crops directly with vendors.', path: '/marketplace' },
@@ -64,86 +21,24 @@ const QUICK_ACCESS_ITEMS = [
   { id: 'transactions', icon: '📜', title: 'Transaction History', desc: 'View past bills, payments, and sales.', path: '/transactions' },
 ];
 
-const MARKETPLACE_PREVIEWS = [
-  {
-    id: 1,
-    name: 'Premium Sharbati Wheat',
-    price: '₹2,450 / Quintal',
-    location: 'Indore, MP',
-    seller: 'Om Bhudhara (You)',
-    image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=300&h=200&fit=crop'
-  },
-  {
-    id: 2,
-    name: 'Organic BT Cotton',
-    price: '₹7,900 / Quintal',
-    location: 'Rajkot, Gujarat',
-    seller: 'Rajesh Patel',
-    image: 'https://images.unsplash.com/photo-1616431101491-554c0932ea40?w=300&h=200&fit=crop'
-  },
-  {
-    id: 3,
-    name: 'Basmati Rice (1121)',
-    price: '₹6,200 / Quintal',
-    location: 'Karnal, Haryana',
-    seller: 'Amit Singh',
-    image: 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?w=300&h=200&fit=crop'
-  },
-  {
-    id: 4,
-    name: 'Desi Groundnut Bold',
-    price: '₹6,800 / Quintal',
-    location: 'Junagadh, Gujarat',
-    seller: 'Manish Vaghela',
-    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=300&h=200&fit=crop'
-  }
-];
-
-const NOTIFICATIONS_PREVIEW = [
-  { id: 1, icon: '⛈️', text: 'Heavy rainfall expected tomorrow in your sub-district.', time: '10 mins ago', type: 'weather' },
-  { id: 2, icon: '💬', text: 'Raj Patel sent you a new message regarding Cotton pricing.', time: '25 mins ago', type: 'message' },
-  { id: 3, icon: '💳', text: 'Payment of ₹14,200 received successfully for Onion sale.', time: '2 hours ago', type: 'payment' },
-  { id: 4, icon: '🤖', text: 'AI recommendation: Delay pesticide spraying until wind speed drops.', time: '3 hours ago', type: 'ai' }
-];
-
-const LATEST_NEWS = [
-  {
-    id: 1,
-    headline: 'Monsoon Update: Normal Rainfall Expected Across North India',
-    date: 'Jun 30, 2026',
-    image: 'https://images.unsplash.com/photo-1561584882-3d0e895e6d9c?w=400&h=250&fit=crop'
-  },
-  {
-    id: 2,
-    headline: 'Cotton Sowing Area Expands by 12% in Gujarat and Punjab',
-    date: 'Jun 28, 2026',
-    image: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=400&h=250&fit=crop'
-  },
-  {
-    id: 3,
-    headline: 'Government Launches Custom Drone Subsidy for Small Farmers',
-    date: 'Jun 26, 2026',
-    image: 'https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=400&h=250&fit=crop'
-  }
-];
-
-const GOVERNMENT_SCHEMES = [
-  { id: 1, name: 'PM-KISAN Samman Nidhi', benefits: 'Direct income support of ₹6,000/year to all landholding families.', deadline: 'Rolling Registration' },
-  { id: 2, name: 'Pradhan Mantri Fasal Bima Yojana (PMFBY)', benefits: 'Comprehensive crop insurance covering yield loss with nominal premium rates.', deadline: 'July 31, 2026' },
-  { id: 3, name: 'Kisan Credit Card (KCC) Loan Subvention', benefits: 'Short term crop loans up to ₹3 Lakhs at 4% effective interest rate.', deadline: 'Rolling Registration' }
-];
-
-const RECENT_TRANSACTIONS = [
-  { id: 'txn-1', crop: 'Cotton (BT)', buyer: 'Rajesh Patel', amount: '₹39,500', status: 'Completed', date: 'Jun 28, 2026' },
-  { id: 'txn-2', crop: 'Wheat (Sharbati)', buyer: 'FreshMart Agri Ltd', amount: '₹24,500', status: 'Pending', date: 'Jun 27, 2026' },
-  { id: 'txn-3', crop: 'Onion Red', buyer: 'Karan Traders', amount: '₹14,200', status: 'Completed', date: 'Jun 26, 2026' },
-  { id: 'txn-4', crop: 'Potatoes (Desi)', buyer: 'Organic Basket', amount: '₹6,800', status: 'Completed', date: 'Jun 24, 2026' }
-];
-
 export default function FarmerDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState('');
   const [currentDate, setCurrentDate] = useState('');
+  
+  const [stats, setStats] = useState({
+    totalCrops: 0,
+    earnings: 0,
+    activeListings: 0,
+    newNotifications: 0
+  });
+  const [recentTx, setRecentTx] = useState([]);
+  const [news, setNews] = useState([]);
+  const [schemes, setSchemes] = useState([]);
+  const [weather, setWeather] = useState({ temp: 31, description: "Mostly Sunny", icon: "🌤️" });
+  const [notifications, setNotifications] = useState([]);
+  const [marketplacePreviews, setMarketplacePreviews] = useState([]);
 
   useEffect(() => {
     const updateTime = () => {
@@ -156,15 +51,128 @@ export default function FarmerDashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        const [sumRes, newsRes, schemeRes, weatherRes, notifRes, txRes, listingsRes] = await Promise.allSettled([
+          getDashboardSummary(),
+          getNews("General"),
+          getGovSchemes(),
+          getCurrentWeather(30.73, 76.77),
+          getNotifications(),
+          getTransactions({ limit: 4 }),
+          getListings({ limit: 4 })
+        ]);
+
+        if (sumRes.status === "fulfilled" && sumRes.value.data?.success) {
+          const d = sumRes.value.data.data;
+          setStats({
+            totalCrops: d.totalListings,
+            earnings: d.totalRevenue,
+            activeListings: d.totalListings,
+            newNotifications: d.unreadNotifications
+          });
+        }
+
+        if (newsRes.status === "fulfilled" && newsRes.value.data?.success) {
+          setNews(newsRes.value.data.news.slice(0, 3));
+        }
+
+        if (schemeRes.status === "fulfilled" && schemeRes.value.data?.success) {
+          setSchemes(schemeRes.value.data.schemes.slice(0, 3));
+        }
+
+        if (weatherRes.status === "fulfilled" && weatherRes.value.data?.success) {
+          const w = weatherRes.value.data.weather;
+          setWeather({
+            temp: w.temp,
+            description: w.description,
+            icon: w.temp > 30 ? "🌤️" : "🌧️"
+          });
+        }
+
+        if (notifRes.status === "fulfilled" && notifRes.value.data?.success) {
+          setNotifications(notifRes.value.data.notifications.slice(0, 4));
+        }
+
+        if (txRes.status === "fulfilled" && txRes.value.data?.success) {
+          setRecentTx(txRes.value.data.transactions.slice(0, 4));
+        }
+
+        if (listingsRes.status === "fulfilled" && listingsRes.value.data?.success) {
+          const mapped = listingsRes.value.data.listings.slice(0, 4).map((listing) => ({
+            id: listing._id,
+            name: listing.cropName,
+            price: `₹${listing.price} / ${listing.unit}`,
+            location: listing.location,
+            seller: listing.seller.fullName,
+            image: listing.image || "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=300&h=200&fit=crop"
+          }));
+          setMarketplacePreviews(mapped);
+        }
+      } catch (err) {
+        console.error("Error loading dashboard data:", err);
+      }
+    };
+    loadDashboardData();
+  }, []);
+
+  const STATS_DATA = [
+    {
+      id: 'stat-crops',
+      icon: '🌾',
+      value: stats.totalCrops,
+      label: 'Total Crops',
+      desc: 'Types under cultivation',
+      trend: 'From your listings',
+      trendType: 'up',
+      color: '#2E7D32',
+      bg: '#E8F5E9'
+    },
+    {
+      id: 'stat-earnings',
+      icon: '💰',
+      value: `₹${stats.earnings.toLocaleString()}`,
+      label: 'Estimated Earnings',
+      desc: 'Total sales this cycle',
+      trend: 'Direct payout revenue',
+      trendType: 'up',
+      color: '#1565C0',
+      bg: '#E3F2FD'
+    },
+    {
+      id: 'stat-listings',
+      icon: '📦',
+      value: stats.activeListings,
+      label: 'Active Listings',
+      desc: 'Crops live in marketplace',
+      trend: 'Visible to buyers',
+      trendType: 'neutral',
+      color: '#E65100',
+      bg: '#FFF3E0'
+    },
+    {
+      id: 'stat-notifs',
+      icon: '🔔',
+      value: stats.newNotifications,
+      label: 'New Notifications',
+      desc: 'Requires attention',
+      trend: 'Unread updates',
+      trendType: 'danger',
+      color: '#6A1B9A',
+      bg: '#F3E5F5'
+    }
+  ];
+
   return (
     <div className="fd-container">
       {/* Welcome Header */}
       <section className="fd-welcome-section">
         <div className="fd-welcome-left">
           <span className="fd-time-greeting">Good Morning, Welcome back</span>
-          <h1 className="fd-welcome-title">Om 👋</h1>
+          <h1 className="fd-welcome-title">{user?.fullName || "Farmer"} 👋</h1>
           <div className="fd-header-metadata">
-            <span className="fd-meta-badge">Role: Farmer</span>
+            <span className="fd-meta-badge">Role: {user?.role || "Farmer"}</span>
             <span className="fd-meta-divider">|</span>
             <span className="fd-meta-time">{currentTime}</span>
             <span className="fd-meta-divider">|</span>
@@ -173,10 +181,10 @@ export default function FarmerDashboard() {
         </div>
         <div className="fd-welcome-right">
           <div className="fd-welcome-weather-widget">
-            <span className="fd-widget-weather-icon">🌤️</span>
+            <span className="fd-widget-weather-icon">{weather.icon}</span>
             <div>
-              <div className="fd-widget-weather-temp">31°C</div>
-              <div className="fd-widget-weather-status">Mostly Sunny</div>
+              <div className="fd-widget-weather-temp">{weather.temp}°C</div>
+              <div className="fd-widget-weather-status">{weather.description}</div>
             </div>
           </div>
         </div>
@@ -229,11 +237,11 @@ export default function FarmerDashboard() {
           <h3 className="fd-widget-title">Today's Weather</h3>
           <WeatherCard
             weather={{
-              location: 'Nagpur, Maharashtra',
-              temperature: 31,
-              condition: 'Mostly Sunny',
-              humidity: 52,
-              wind: 14,
+              location: user?.district ? `${user.district}, ${user.state}` : 'Punjab, India',
+              temperature: weather.temp,
+              condition: weather.description,
+              humidity: 65,
+              wind: 12,
               rain: 10,
               forecast: [
                 { id: 1, day: 'Mon', temp: 31, icon: 'sunny' },
@@ -279,8 +287,10 @@ export default function FarmerDashboard() {
             </button>
           </div>
           <div className="fd-crop-previews-grid">
-            {MARKETPLACE_PREVIEWS.map((crop) => (
-              <div key={crop.id} className="fd-crop-preview-card">
+            {marketplacePreviews.length === 0 ? (
+              <div style={{gridColumn: '1/-1', textAlign: 'center', padding: '20px', color: '#64748b'}}>No listings available.</div>
+            ) : marketplacePreviews.map((crop) => (
+              <div key={crop.id} className="fd-crop-preview-card" style={{ cursor: "pointer" }} onClick={() => navigate('/marketplace')}>
                 <img src={crop.image} alt={crop.name} className="fd-crop-preview-img" />
                 <div className="fd-crop-preview-info">
                   <h4 className="fd-crop-preview-name">{crop.name}</h4>
@@ -301,15 +311,20 @@ export default function FarmerDashboard() {
             </button>
           </div>
           <div className="fd-notif-preview-list">
-            {NOTIFICATIONS_PREVIEW.map((notif) => (
-              <div key={notif.id} className="fd-notif-preview-item">
-                <span className="fd-notif-preview-icon">{notif.icon}</span>
-                <div className="fd-notif-preview-content">
-                  <p className="fd-notif-preview-text">{notif.text}</p>
-                  <span className="fd-notif-preview-time">{notif.time}</span>
+            {notifications.length === 0 ? (
+              <div style={{textAlign: 'center', padding: '20px', color: '#64748b'}}>No new notifications.</div>
+            ) : notifications.map((notif) => {
+              const iconMap = { weather: '⛈️', chat: '💬', order: '💳', scheme: '🏛️', system: '🔔' };
+              return (
+                <div key={notif._id} className="fd-notif-preview-item">
+                  <span className="fd-notif-preview-icon">{iconMap[notif.type] || '🔔'}</span>
+                  <div className="fd-notif-preview-content">
+                    <p className="fd-notif-preview-text">{notif.message}</p>
+                    <span className="fd-notif-preview-time">{new Date(notif.createdAt).toLocaleDateString()}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -325,12 +340,14 @@ export default function FarmerDashboard() {
             </button>
           </div>
           <div className="fd-news-previews-grid">
-            {LATEST_NEWS.map((news) => (
-              <div key={news.id} className="fd-news-preview-item" onClick={() => navigate('/news-schemes')}>
-                <img src={news.image} alt={news.headline} className="fd-news-preview-img" />
+            {news.length === 0 ? (
+              <div style={{gridColumn: '1/-1', textAlign: 'center', padding: '20px', color: '#64748b'}}>No news articles available.</div>
+            ) : news.map((item) => (
+              <div key={item._id} className="fd-news-preview-item" onClick={() => navigate('/news-schemes')}>
+                <img src={item.image || "https://images.unsplash.com/photo-1561584882-3d0e895e6d9c?w=400&h=250&fit=crop"} alt={item.title} className="fd-news-preview-img" />
                 <div className="fd-news-preview-details">
-                  <span className="fd-news-preview-date">{news.date}</span>
-                  <h4 className="fd-news-preview-headline">{news.headline}</h4>
+                  <span className="fd-news-preview-date">{new Date(item.publishedAt).toLocaleDateString()}</span>
+                  <h4 className="fd-news-preview-headline">{item.title}</h4>
                 </div>
               </div>
             ))}
@@ -346,11 +363,13 @@ export default function FarmerDashboard() {
             </button>
           </div>
           <div className="fd-schemes-preview-list">
-            {GOVERNMENT_SCHEMES.map((scheme) => (
-              <div key={scheme.id} className="fd-scheme-preview-item" onClick={() => navigate('/news-schemes')}>
+            {schemes.length === 0 ? (
+              <div style={{textAlign: 'center', padding: '20px', color: '#64748b'}}>No government schemes available.</div>
+            ) : schemes.map((scheme) => (
+              <div key={scheme._id} className="fd-scheme-preview-item" onClick={() => navigate('/news-schemes')}>
                 <div className="fd-scheme-preview-meta">
-                  <h4 className="fd-scheme-preview-name">{scheme.name}</h4>
-                  <span className="fd-scheme-preview-deadline">Ends: {scheme.deadline}</span>
+                  <h4 className="fd-scheme-preview-name">{scheme.title}</h4>
+                  <span className="fd-scheme-preview-deadline">Category: {scheme.category}</span>
                 </div>
                 <p className="fd-scheme-preview-benefits">{scheme.benefits}</p>
               </div>
@@ -372,26 +391,35 @@ export default function FarmerDashboard() {
             <thead>
               <tr>
                 <th>Crop</th>
-                <th>Buyer</th>
+                <th>Buyer/Seller</th>
                 <th>Amount</th>
                 <th>Status</th>
                 <th>Date</th>
               </tr>
             </thead>
             <tbody>
-              {RECENT_TRANSACTIONS.map((txn) => (
-                <tr key={txn.id}>
-                  <td className="fd-table-cell-bold">{txn.crop}</td>
-                  <td>{txn.buyer}</td>
-                  <td className="fd-table-cell-amount">{txn.amount}</td>
-                  <td>
-                    <span className={`fd-table-status-badge status-${txn.status.toLowerCase()}`}>
-                      {txn.status}
-                    </span>
+              {recentTx.length === 0 ? (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: "center", padding: "16px", color: "#64748b" }}>
+                    No recent transactions found.
                   </td>
-                  <td className="fd-table-cell-date">{txn.date}</td>
                 </tr>
-              ))}
+              ) : recentTx.map((txn) => {
+                const isSeller = txn.seller._id === user?._id;
+                return (
+                  <tr key={txn._id}>
+                    <td className="fd-table-cell-bold">{txn.cropName}</td>
+                    <td>{isSeller ? txn.buyer?.fullName : txn.seller?.fullName}</td>
+                    <td className="fd-table-cell-amount">₹{txn.totalAmount.toLocaleString()}</td>
+                    <td>
+                      <span className={`fd-table-status-badge status-${txn.deliveryStatus.toLowerCase()}`}>
+                        {txn.deliveryStatus}
+                      </span>
+                    </td>
+                    <td className="fd-table-cell-date">{new Date(txn.createdAt).toLocaleDateString()}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

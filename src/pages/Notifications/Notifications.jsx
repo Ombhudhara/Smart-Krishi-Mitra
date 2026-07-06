@@ -6,34 +6,14 @@ import Footer from '../../components/Footer/Footer';
 import Button from '../../components/Button/Button';
 import Loader from '../../components/Loader/Loader';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
+import { getNotifications, markAsRead, markAllAsRead, deleteNotification } from '../../services/notificationService';
 import './Notifications.css';
 
 /* ─────────────────────────────────────────────────────────────────────────────
    STATIC DATA
 ───────────────────────────────────────────────────────────────────────────── */
 
-const DUMMY_NOTIFICATIONS = [
-  { id: 1,  category: 'Weather',     priority: 'critical', title: 'Heavy rainfall expected tomorrow', description: 'IMD has forecast heavy downpour exceeding 60mm in your area. Secure harvested crops and ensure proper field drainage.', time: '10 mins ago', group: 'Today',     unread: true  },
-  { id: 2,  category: 'Messages',    priority: 'normal',   title: 'Raj Patel sent you a message', description: '"Hi, I am interested in buying 20 kg of organic Cotton from your latest listing. What is your best price?"', time: '25 mins ago', group: 'Today',     unread: true  },
-  { id: 3,  category: 'Marketplace', priority: 'high',     title: 'Buyer requested 20 kg Cotton', description: 'A new purchase request has been generated for your Cotton listing. Review the offer details in the marketplace panel.', time: '45 mins ago', group: 'Today',     unread: true  },
-  { id: 4,  category: 'Marketplace', priority: 'info',     title: 'Cotton price increased by 8%', description: 'Market rates for premium cotton touched ₹8,200 per quintal in your local APMC mandi today. Highest this season.', time: '1 hour ago',  group: 'Today',     unread: true  },
-  { id: 5,  category: 'Government',  priority: 'high',     title: 'New PM-KISAN Scheme announced', description: 'Government releases registration guidelines for the next instalment subsidy benefit. Check eligibility requirements now.', time: '2 hours ago', group: 'Today',     unread: true  },
-  { id: 6,  category: 'AI',          priority: 'normal',   title: 'AI recommends delaying irrigation', description: 'Based on high soil moisture readings (72%) and the rain forecast for tomorrow, skip watering for the next 24 hours.', time: '3 hours ago', group: 'Today',     unread: true  },
-  { id: 7,  category: 'Marketplace', priority: 'normal',   title: 'Order delivered successfully', description: 'Order #SKM-90234 containing 100 kg Potatoes has been successfully verified and delivered to the merchant hub.', time: '5 hours ago', group: 'Today',     unread: false },
-  { id: 8,  category: 'Marketplace', priority: 'info',     title: 'Your crop listing received 12 new views', description: 'Your Mustard Seed listing is getting higher organic engagement today. Keep crop pictures updated.', time: '6 hours ago', group: 'Today',     unread: false },
-  { id: 9,  category: 'Marketplace', priority: 'normal',   title: 'Payment received successfully', description: 'Payment of ₹14,200 for Order #SKM-88901 has been credited to your linked bank account via escrow.', time: '8 hours ago', group: 'Today',     unread: false },
-  { id: 10, category: 'Weather',     priority: 'info',     title: "Today's weather is ideal for harvesting", description: 'Clear sunny sky with humidity below 45% is expected till evening. Perfect conditions to proceed with harvest.', time: 'Yesterday 4 PM', group: 'Yesterday', unread: false },
-  { id: 11, category: 'Messages',    priority: 'normal',   title: 'New message from Advisor Amit', description: '"I reviewed your soil report. Please apply recommended organic manure quantity before sowing the next crop."', time: 'Yesterday 1 PM', group: 'Yesterday', unread: false },
-  { id: 12, category: 'AI',          priority: 'high',     title: 'Pest risk warning issued by AI', description: 'Rising humidity levels indicate a moderate risk of Aphid infestation in mustard fields. Inspect leaf undersides.', time: '2 days ago',  group: 'This Week', unread: false },
-  { id: 13, category: 'Government',  priority: 'info',     title: 'KCC Loan Interest Subvention extended', description: 'The interest subvention scheme on short-term crop loans via Kisan Credit Card is extended till end of financial year.', time: '2 days ago',  group: 'This Week', unread: false },
-  { id: 14, category: 'Weather',     priority: 'critical', title: 'Thunderstorm warning for tomorrow', description: 'Light to moderate rain accompanied by lightning expected in isolated parts of the district tomorrow afternoon.', time: '3 days ago',  group: 'This Week', unread: false },
-  { id: 15, category: 'Marketplace', priority: 'normal',   title: 'New buyer bid on Onion listing', description: 'A merchant from Pune APMC mandi has placed a bid of ₹2,200 per quintal on your Onion stock.', time: '3 days ago',  group: 'This Week', unread: false },
-  { id: 16, category: 'Marketplace', priority: 'info',     title: 'Escrow payment initiated', description: 'Buyer has deposited ₹9,500 in escrow for your Tomato order #SKM-91022. Funds will release post delivery confirmation.', time: '4 days ago',  group: 'This Week', unread: false },
-  { id: 17, category: 'AI',          priority: 'normal',   title: 'Soil moisture drop alert', description: 'Moisture level in Sector B has dropped to 38%. Sowing conditions will be optimal if irrigated today evening.', time: '4 days ago',  group: 'This Week', unread: false },
-  { id: 18, category: 'Government',  priority: 'info',     title: 'Subsidized tractor scheme registration', description: 'State Agriculture Department is accepting subsidy applications for farm mechanization tools. Apply before standard deadline.', time: '5 days ago',  group: 'Older',     unread: false },
-  { id: 19, category: 'Messages',    priority: 'normal',   title: 'Support representative replied', description: '"Your profile verification is complete. You can now list unlimited crop quantities on the Marketplace platform."', time: '1 week ago',  group: 'Older',     unread: false },
-  { id: 20, category: 'Marketplace', priority: 'info',     title: 'Seed recommendation updated', description: 'Mandi pricing and weather models suggest higher profit yield margins for Gram rabi sowing this cycle.', time: '1 week ago',  group: 'Older',     unread: false },
-];
+
 
 const CATEGORY_META = {
   Weather:     { icon: '🌧', color: '#1976D2' },
@@ -196,7 +176,7 @@ export default function Notifications() {
 
   /* ── State ── */
   const [sidebarOpen, setSidebarOpen]     = useState(true);
-  const [notifications, setNotifications] = useState(DUMMY_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState([]);
   const [searchQuery, setSearchQuery]     = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [activeMenuId, setActiveMenuId]   = useState(null);
@@ -211,33 +191,80 @@ export default function Notifications() {
     return () => document.removeEventListener('click', close);
   }, []);
 
-  /* ── Handlers ── */
-  const handleMarkAllRead = () =>
-    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
-
-  const handleClearAll = () => setNotifications([]);
-
-  const handleDeleteNotification = (id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-    setActiveMenuId(null);
+  /* ── Fetch notifications from API ── */
+  const fetchNotifs = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getNotifications();
+      if (response.data?.success) {
+        const normalized = response.data.notifications.map((n) => ({
+          id: n._id,
+          category: n.type === 'weather' ? 'Weather' : (n.type === 'chat' ? 'Messages' : (n.type === 'order' ? 'Marketplace' : (n.type === 'scheme' ? 'Government' : 'AI'))),
+          priority: n.priority || 'normal',
+          title: n.message,
+          description: n.description || n.message,
+          time: new Date(n.createdAt).toLocaleDateString(),
+          group: 'Today',
+          unread: !n.read,
+        }));
+        setNotifications(normalized);
+      }
+    } catch (err) {
+      console.error("Error loading notifications:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleToggleRead = (id) => {
-    setNotifications(prev =>
-      prev.map(n => (n.id === id ? { ...n, unread: !n.unread } : n))
-    );
-    setActiveMenuId(null);
+  useEffect(() => {
+    fetchNotifs();
+  }, []);
+
+  /* ── Handlers ── */
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleClearAll = () => {
+    setNotifications([]);
+  };
+
+  const handleDeleteNotification = async (id) => {
+    try {
+      await deleteNotification(id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      setActiveMenuId(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleToggleRead = async (id) => {
+    try {
+      await markAsRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, unread: false } : n))
+      );
+      setActiveMenuId(null);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const toggleMenu = (id, e) => {
     if (e) e.stopPropagation();
-    setActiveMenuId(prev => (prev === id ? null : id));
+    setActiveMenuId((prev) => (prev === id ? null : id));
   };
 
   const handleLoadMore = () => {
     setIsLoading(true);
     setTimeout(() => {
-      setVisibleCount(c => c + 5);
+      setVisibleCount((c) => c + 5);
       setIsLoading(false);
     }, 800);
   };

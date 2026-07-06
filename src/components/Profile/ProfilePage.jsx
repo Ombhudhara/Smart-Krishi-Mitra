@@ -1,22 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PROFILE_DATA, RECENT_ACTIVITIES } from './profileData';
+import { useAuth } from '../../context/AuthContext';
+import { updateProfile as updateProfileApi } from '../../services/profileService';
+import { getTransactions } from '../../services/transactionService';
+import { getDashboardSummary } from '../../services/dashboardService';
+import { RECENT_ACTIVITIES } from './profileData';
 
 // ── Reusable UI Components ────────────────────────────────────────────────────
 import Button from '../Button/Button';
 import Card   from '../Card/Card';
 import Modal  from '../Modal/Modal';
-import Loader from '../Loader/Loader';
 
 import '../../pages/Profile/Profile.css';
 import './ProfilePage.css';
-
-// =============================================================================
-// ProfilePage.jsx — Redesigned Tabbed Profile Engine  |  Smart Krishi Mitra
-// =============================================================================
-// Reorganizes components into a clean, tabbed dashboard layout.
-// Uses reusable Card, Button, Modal, and Loader components for UI elements.
-// =============================================================================
 
 const TABS = [
   { id: 'overview',      label: 'Overview',      icon: '👤' },
@@ -35,15 +31,28 @@ const SHORTCUTS = [
 
 export default function ProfilePage({ role }) {
   const navigate = useNavigate();
-  const activeProfile = PROFILE_DATA[role] || PROFILE_DATA.farmer;
+  const { user, updateProfile, logout } = useAuth();
 
   // ── Active Tab State ─────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('overview');
 
   // ── Edit Mode States ─────────────────────────────────────────────────────────
   const [isEditing,    setIsEditing]    = useState(false);
-  const [personalForm, setPersonalForm] = useState(activeProfile.personal);
-  const [roleForm,     setRoleForm]     = useState(activeProfile.roleSpecific);
+  const [personalForm, setPersonalForm] = useState({
+    fullName: '',
+    phone: '',
+    email: '',
+    address: '',
+    state: '',
+    district: '',
+    village: '',
+    preferredLanguage: 'English'
+  });
+  const [roleForm,     setRoleForm]     = useState({
+    farmSize: '',
+    soilType: '',
+    cropsGrown: ''
+  });
 
   // ── Settings Toggles State ───────────────────────────────────────────────────
   const [settings, setSettings] = useState({
@@ -58,13 +67,70 @@ export default function ProfilePage({ role }) {
   const [isSaving,        setIsSaving]        = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
-  // ── Sync states when role changes ───────────────────────────────────────────
+  // ── Dynamic data states ──
+  const [recentTx, setRecentTx] = useState([]);
+  const [stats, setStats] = useState({
+    totalCrops: 0,
+    earnings: 0,
+    activeListings: 0,
+    completedDeals: 0
+  });
+
+  // ── Sync user to form state ──
   useEffect(() => {
-    setPersonalForm(activeProfile.personal);
-    setRoleForm(activeProfile.roleSpecific);
-    setIsEditing(false);
-    setActiveTab('overview');
-  }, [role, activeProfile]);
+    if (user) {
+      setPersonalForm({
+        fullName: user.fullName || '',
+        phone: user.phone || '',
+        email: user.email || '',
+        address: user.address || '',
+        state: user.state || '',
+        district: user.district || '',
+        village: user.village || '',
+        preferredLanguage: user.preferredLanguage || 'English',
+      });
+      setRoleForm({
+        farmSize: user.farmSize || '',
+        soilType: user.soilType || '',
+        cropsGrown: user.cropsGrown?.join(', ') || '',
+      });
+      setSettings({
+        emailNotif: user.notificationSettings?.emailAlerts ?? true,
+        smsNotif: user.notificationSettings?.smsAlerts ?? true,
+        profilePublic: true,
+        allowAiCalls: user.notificationSettings?.weatherAlerts ?? true,
+      });
+    }
+  }, [user]);
+
+  // ── Fetch dynamic profile stats and transactions on tab switch ──
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const [txRes, sumRes] = await Promise.allSettled([
+          getTransactions({ limit: 5 }),
+          getDashboardSummary()
+        ]);
+
+        if (txRes.status === "fulfilled" && txRes.value.data?.success) {
+          setRecentTx(txRes.value.data.transactions);
+        }
+
+        if (sumRes.status === "fulfilled" && sumRes.value.data?.success) {
+          const d = sumRes.value.data.data;
+          setStats({
+            totalCrops: d.totalListings,
+            earnings: d.totalRevenue,
+            activeListings: d.totalListings,
+            completedDeals: d.totalSales
+          });
+        }
+      } catch (err) {
+        console.error("Error loading profile stats:", err);
+      }
+    };
+    fetchProfileData();
+  }, [activeTab]);
 
   // ── Toast Alert Helper ───────────────────────────────────────────────────────
   const showToast = useCallback((msg, type = 'success') => {
@@ -83,39 +149,79 @@ export default function ProfilePage({ role }) {
   };
 
   // ── Profile Updates ──────────────────────────────────────────────────────────
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      PROFILE_DATA[role].personal     = personalForm;
-      PROFILE_DATA[role].roleSpecific = roleForm;
-      setIsEditing(false);
+    try {
+      const payload = {
+        fullName: personalForm.fullName,
+        phone: personalForm.phone,
+        address: personalForm.address,
+        state: personalForm.state,
+        district: personalForm.district,
+        village: personalForm.village,
+        preferredLanguage: personalForm.preferredLanguage,
+        farmSize: roleForm.farmSize,
+        soilType: roleForm.soilType,
+        cropsGrown: roleForm.cropsGrown ? roleForm.cropsGrown.split(',').map((c) => c.trim()) : [],
+        notificationSettings: {
+          emailAlerts: settings.emailNotif,
+          smsAlerts: settings.smsNotif,
+          weatherAlerts: settings.allowAiCalls,
+        },
+      };
+
+      const response = await updateProfileApi(payload);
+      if (response.data?.success) {
+        updateProfile(response.data.user);
+        setIsEditing(false);
+        showToast('Profile updated successfully!', 'success');
+      }
+    } catch (err) {
+      console.error(err);
+      const errMsg = err.response?.data?.message || 'Error updating profile details.';
+      showToast(errMsg, 'error');
+    } finally {
       setIsSaving(false);
-      showToast('Profile updated successfully!', 'success');
-    }, 600);
+    }
   };
 
   // ── Toggles Save ─────────────────────────────────────────────────────────────
-  const handleSettingToggle = (key) => {
-    setSettings((prev) => {
-      const updated = { ...prev, [key]: !prev[key] };
-      showToast(`Preference updated.`, 'success');
-      return updated;
-    });
+  const handleSettingToggle = async (key) => {
+    const updatedSettings = { ...settings, [key]: !settings[key] };
+    setSettings(updatedSettings);
+
+    try {
+      const payload = {
+        notificationSettings: {
+          emailAlerts: updatedSettings.emailNotif,
+          smsAlerts: updatedSettings.smsNotif,
+          weatherAlerts: updatedSettings.allowAiCalls,
+        },
+      };
+      const response = await updateProfileApi(payload);
+      if (response.data?.success) {
+        updateProfile(response.data.user);
+        showToast('Preference updated.', 'success');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to update preference.', 'error');
+    }
   };
 
   // ── Logout Handler ───────────────────────────────────────────────────────────
-  const handleLogout = () => {
+  const handleLogout = async () => {
     showToast('Logging out… redirecting.', 'info');
-    setTimeout(() => navigate('/'), 1200);
+    await logout();
+    setTimeout(() => navigate('/login'), 1000);
   };
 
-  // ── Deletion Handler ─────────────────────────────────────────────────────────
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     setDeleteModalOpen(false);
-    showToast('Account deletion restricted in demo.', 'error');
+    showToast('Simulating account deletion... redirecting.', 'info');
+    await logout();
+    setTimeout(() => navigate('/register'), 1500);
   };
-
-  if (isSaving) return <Loader variant="page" text="Saving details…" />;
 
   // ─── TAB CONTENT RENDERERS ────────────────────────────────────────────────────
 
@@ -140,10 +246,14 @@ export default function ProfilePage({ role }) {
           {isEditing ? (
             <>
               {[
-                { label: 'Full Name',       name: 'fullName', val: personalForm.fullName || personalForm.name || '' },
+                { label: 'Full Name',       name: 'fullName', val: personalForm.fullName || '' },
                 { label: 'Phone Number',    name: 'phone',    val: personalForm.phone || '' },
                 { label: 'Email Address',   name: 'email',    val: personalForm.email || '' },
                 { label: 'Primary Address', name: 'address',  val: personalForm.address || '' },
+                { label: 'State',           name: 'state',    val: personalForm.state || '' },
+                { label: 'District',        name: 'district', val: personalForm.district || '' },
+                { label: 'Village',         name: 'village',  val: personalForm.village || '' },
+                { label: 'Language',        name: 'preferredLanguage', val: personalForm.preferredLanguage || '' },
               ].map(({ label, name, val }) => (
                 <div key={name} className="pp-field">
                   <label className="pp-label">{label}</label>
@@ -157,10 +267,14 @@ export default function ProfilePage({ role }) {
             </>
           ) : (
             [
-              { label: 'Full Name',       val: activeProfile.personal.fullName || activeProfile.personal.name },
-              { label: 'Phone Number',    val: activeProfile.personal.phone },
-              { label: 'Email Address',   val: activeProfile.personal.email },
-              { label: 'Primary Address', val: activeProfile.personal.address },
+              { label: 'Full Name',       val: personalForm.fullName || user?.fullName },
+              { label: 'Phone Number',    val: personalForm.phone || user?.phone },
+              { label: 'Email Address',   val: personalForm.email || user?.email },
+              { label: 'Primary Address', val: personalForm.address || 'Not Provided' },
+              { label: 'State',           val: personalForm.state || 'Not Provided' },
+              { label: 'District',        val: personalForm.district || 'Not Provided' },
+              { label: 'Village',         val: personalForm.village || 'Not Provided' },
+              { label: 'Language',        val: personalForm.preferredLanguage || 'English' },
             ].map(({ label, val }) => (
               <div key={label} className="pp-info-item">
                 <span className="pp-info-label">{label}</span>
@@ -177,7 +291,7 @@ export default function ProfilePage({ role }) {
           <div className="pp-section-title-group">
             <span className="pp-section-icon">🏷️</span>
             <div>
-              <h2 className="pp-section-title">{activeProfile.role} Details</h2>
+              <h2 className="pp-section-title">{user?.role || "User"} Details</h2>
               <p className="pp-section-sub">Role-specific verification and profile settings</p>
             </div>
           </div>
@@ -194,10 +308,10 @@ export default function ProfilePage({ role }) {
               </div>
             ))
           ) : (
-            Object.keys(activeProfile.roleSpecific).map((key) => (
+            Object.keys(roleForm).map((key) => (
               <div key={key} className="pp-role-item">
                 <span className="pp-role-label">{key.replace(/([A-Z])/g, ' $1')}</span>
-                <span className="pp-role-value">{activeProfile.roleSpecific[key]}</span>
+                <span className="pp-role-value">{roleForm[key] || 'Not Provided'}</span>
               </div>
             ))
           )}
@@ -261,28 +375,28 @@ export default function ProfilePage({ role }) {
           <div className="pp-txn-table-head">
             <span>Item</span>
             <span>Date</span>
-            <span>ID</span>
+            <span>Invoice No</span>
             <span className="pp-txn-col-right">Amount</span>
             <span className="pp-txn-col-right">Status</span>
           </div>
-          {(activeProfile.recentTransactions || []).length === 0 ? (
+          {recentTx.length === 0 ? (
             <div className="pp-empty-state">
               <span>📭</span>
               <p>No transactions recorded yet</p>
             </div>
           ) : (
-            (activeProfile.recentTransactions || []).map((txn) => (
-              <div key={txn.id} className="pp-txn-row">
+            recentTx.map((txn) => (
+              <div key={txn._id} className="pp-txn-row">
                 <div className="pp-txn-item-cell">
-                  <span className="pp-txn-emoji">{txn.emoji || '📦'}</span>
-                  <span className="pp-txn-name">{txn.crop || txn.action}</span>
+                  <span className="pp-txn-emoji">🌾</span>
+                  <span className="pp-txn-name">{txn.cropName}</span>
                 </div>
-                <span className="pp-txn-date">{txn.date}</span>
-                <span className="pp-txn-id">{txn.id}</span>
-                <span className="pp-txn-amt pp-txn-col-right">{txn.amount}</span>
+                <span className="pp-txn-date">{new Date(txn.createdAt).toLocaleDateString()}</span>
+                <span className="pp-txn-id">{txn.invoiceNumber}</span>
+                <span className="pp-txn-amt pp-txn-col-right">₹{txn.totalAmount.toLocaleString()}</span>
                 <div className="pp-txn-col-right">
-                  <span className={`pp-status-pill pp-status--${txn.status.toLowerCase()}`}>
-                    {txn.status}
+                  <span className={`pp-status-pill pp-status--${txn.deliveryStatus.toLowerCase()}`}>
+                    {txn.deliveryStatus}
                   </span>
                 </div>
               </div>
@@ -338,31 +452,10 @@ export default function ProfilePage({ role }) {
           </div>
         </div>
 
-        {(!activeProfile.reviews || activeProfile.reviews.length === 0) ? (
-          <div className="pp-empty-state">
-            <span>💬</span>
-            <p>No feedback reviews recorded yet</p>
-          </div>
-        ) : (
-          <div className="pp-reviews-grid">
-            {activeProfile.reviews.map((rev, i) => (
-              <div key={i} className="pp-review-card">
-                <div className="pp-review-header">
-                  <div className="pp-reviewer-avatar">{rev.user?.[0] || '?'}</div>
-                  <div className="pp-reviewer-meta">
-                    <span className="pp-reviewer-name">{rev.user}</span>
-                    <div className="pp-stars">
-                      {[...Array(5)].map((_, si) => (
-                        <span key={si} className={si < rev.stars ? 'pp-star pp-star--on' : 'pp-star'}>★</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <p className="pp-review-text">"{rev.comment}"</p>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="pp-empty-state">
+          <span>💬</span>
+          <p>No feedback reviews recorded yet</p>
+        </div>
       </Card>
 
       {/* Badges Card */}
@@ -377,7 +470,10 @@ export default function ProfilePage({ role }) {
           </div>
         </div>
         <div className="pp-badges-grid">
-          {activeProfile.achievements.map((badge, i) => (
+          {[
+            { name: '🌱 Verified Member', desc: 'Active account on platform' },
+            { name: '🏆 Eco-Farmer', desc: 'Promoting organic farming solutions' }
+          ].map((badge, i) => (
             <div key={i} className="pp-badge-card" title={badge.desc}>
               <span className="pp-badge-name">{badge.name}</span>
               <span className="pp-badge-desc">{badge.desc}</span>
@@ -406,7 +502,6 @@ export default function ProfilePage({ role }) {
           {[
             { key: 'emailNotif',    label: 'Email transactional receipts',     desc: 'Send digital receipts and invoice copies directly' },
             { key: 'smsNotif',      label: 'SMS price alert notifications',     desc: 'Get fast local mandi alerts on crop price changes' },
-            { key: 'profilePublic', label: 'Public directory profile search',   desc: 'List your profile in the searchable mandi directory' },
             { key: 'allowAiCalls',  label: 'Enable AI rotation suggestions',    desc: 'Receive AI smart-farm crop advisory tips' },
           ].map((s) => (
             <div key={s.key} className="pp-toggle-row">
@@ -490,6 +585,13 @@ export default function ProfilePage({ role }) {
     settings:     renderSettings(),
   };
 
+  const profileStats = [
+    { label: 'Crops Listed', value: `${stats.totalCrops} Items`, icon: '🌾', trend: 'From active listings' },
+    { label: 'Total Earnings', value: `₹${stats.earnings.toLocaleString()}`, icon: '💰', trend: 'Platform payouts' },
+    { label: 'Seller Rating', value: '4.8 / 5', icon: '⭐', trend: 'Verified partner' },
+    { label: 'Completed Deals', value: `${stats.completedDeals} Orders`, icon: '📦', trend: '100% fulfillment' },
+  ];
+
   return (
     <div className="pp-root">
       {/* ── Toast notifications ── */}
@@ -526,7 +628,7 @@ export default function ProfilePage({ role }) {
       <div className="pp-hero">
         <div
           className="pp-banner"
-          style={{ backgroundImage: `url(${activeProfile.banner})` }}
+          style={{ backgroundImage: `url("https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1000&h=300&fit=crop")` }}
         >
           <button
             className="pp-banner-btn"
@@ -538,7 +640,13 @@ export default function ProfilePage({ role }) {
 
         <div className="pp-profile-card">
           <div className="pp-avatar-wrap">
-            <div className="pp-avatar">{activeProfile.avatar}</div>
+            <div className="pp-avatar">
+              {user?.profileImage ? (
+                <img src={user.profileImage} alt="" style={{width: '100%', height: '100%', borderRadius: '50%'}} />
+              ) : (
+                user?.role === "Farmer" ? "👨‍🌾" : (user?.role === "Vendor" ? "🏬" : "🤵")
+              )}
+            </div>
             <button
               className="pp-avatar-edit-btn"
               title="Change Avatar"
@@ -550,18 +658,16 @@ export default function ProfilePage({ role }) {
 
           <div className="pp-identity">
             <div className="pp-name-row">
-              <h1 className="pp-name">{activeProfile.name}</h1>
-              {activeProfile.verified && (
-                <span className="pp-verified-chip">✓ Verified</span>
-              )}
-              <span className={`pp-role-chip pp-role-chip--${role.toLowerCase()}`}>
-                {activeProfile.role}
+              <h1 className="pp-name">{personalForm.fullName || user?.fullName}</h1>
+              <span className="pp-verified-chip">✓ Verified</span>
+              <span className={`pp-role-chip pp-role-chip--${(user?.role || 'Farmer').toLowerCase()}`}>
+                {user?.role || 'Farmer'}
               </span>
             </div>
             <div className="pp-meta-row">
-              <span>📍 {activeProfile.location}</span>
+              <span>📍 {user?.district ? `${user.district}, ${user.state}` : 'Punjab, India'}</span>
               <span className="pp-meta-dot">·</span>
-              <span>📅 Member since {activeProfile.memberSince}</span>
+              <span>📅 Member since {new Date(user?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
             </div>
           </div>
 
@@ -582,7 +688,7 @@ export default function ProfilePage({ role }) {
           STATISTICS Cards Strip
          ═══════════════════════════════════════════════════════════════ */}
       <div className="pp-stats-strip">
-        {activeProfile.stats.map((stat, i) => (
+        {profileStats.map((stat, i) => (
           <Card key={i} hover={true} shadow={true} rounded={true} className="pp-stat-card">
             <div className="pp-stat-head">
               <span className="pp-stat-icon">{stat.icon}</span>

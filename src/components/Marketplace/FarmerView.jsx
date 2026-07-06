@@ -1,66 +1,18 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Modal from '../Modal/Modal';
 import './FarmerView.css';
 import SearchBar from './SearchBar';
 import FilterBar from './FilterBar';
 import SummaryCards from './SummaryCards';
 import CropCard from './CropCard';
+import { getMyListings, createListing, updateListing, deleteListing } from '../../services/mylistingService';
 
 // ============================================================================
 // DUMMY DATA — Replace with API calls when Node.js + MongoDB backend is ready
 // JWT token will provide farmer identity; Socket.IO for real-time updates
 // ============================================================================
 
-const CROP_LISTINGS = [
-  {
-    id: 1, name: 'Premium Bt Cotton', category: 'Cotton', emoji: '☁️',
-    stock: 850, unit: 'Quintal', price: 6500, harvestDate: '2026-11-15',
-    organic: true, delivery: true, views: 342, likes: 28,
-    location: 'Rajkot, Gujarat', status: 'Active',
-    farmerName: 'Om Bhudhara', quality: 'Grade A',
-    desc: 'Certified Bt Cotton from NPOP-standard organic farm.',
-  },
-  {
-    id: 2, name: 'Sharbati Wheat', category: 'Wheat', emoji: '🌾',
-    stock: 620, unit: 'Quintal', price: 2350, harvestDate: '2026-04-10',
-    organic: false, delivery: true, views: 215, likes: 19,
-    location: 'Nashik, Maharashtra', status: 'Active',
-    farmerName: 'Raj Patel', quality: 'Grade A',
-    desc: 'Premium Sharbati variety, ideal for flour & export.',
-  },
-  {
-    id: 3, name: 'Organic Basmati Rice', category: 'Rice', emoji: '🍚',
-    stock: 300, unit: 'Quintal', price: 4800, harvestDate: '2026-10-05',
-    organic: true, delivery: true, views: 189, likes: 34,
-    location: 'Karnal, Haryana', status: 'Active',
-    farmerName: 'Mahesh Chauhan', quality: 'Premium',
-    desc: 'Long-grain Basmati, NPOP organic certified.',
-  },
-  {
-    id: 4, name: 'Kharif Groundnut', category: 'Groundnut', emoji: '🥜',
-    stock: 0, unit: 'Quintal', price: 5200, harvestDate: '2026-09-20',
-    organic: false, delivery: false, views: 98, likes: 8,
-    location: 'Junagadh, Gujarat', status: 'Sold Out',
-    farmerName: 'Om Bhudhara', quality: 'Grade B',
-    desc: 'High-oil Kharif groundnut, good for oil extraction.',
-  },
-  {
-    id: 5, name: 'Yellow Maize', category: 'Maize', emoji: '🌽',
-    stock: 440, unit: 'Quintal', price: 1900, harvestDate: '2026-12-01',
-    organic: false, delivery: true, views: 134, likes: 11,
-    location: 'Davangere, Karnataka', status: 'Active',
-    farmerName: 'Raj Patel', quality: 'Grade A',
-    desc: 'Yellow Dent hybrid maize, suited for animal feed & starch.',
-  },
-  {
-    id: 6, name: 'Desi Cotton', category: 'Cotton', emoji: '☁️',
-    stock: 200, unit: 'Quintal', price: 5900, harvestDate: '2026-11-30',
-    organic: true, delivery: false, views: 76, likes: 14,
-    location: 'Surendranagar, Gujarat', status: 'Active',
-    farmerName: 'Mahesh Chauhan', quality: 'Grade A',
-    desc: 'Traditional Desi cotton variety, low pesticide input.',
-  },
-];
+// CROP_LISTINGS removed — listings now loaded from API via getMyListings()
 
 const VENDOR_REQUESTS = [
   {
@@ -323,7 +275,7 @@ const ViewDetailsModal = ({ crop, onClose }) => (
 // ============================================================================
 
 export default function FarmerView() {
-  const [crops, setCrops] = useState(CROP_LISTINGS);
+  const [crops, setCrops] = useState([]);
   const [vendorReqs, setVendorReqs] = useState(VENDOR_REQUESTS);
   const [customerReqs, setCustomerReqs] = useState(CUSTOMER_REQUESTS);
   const [activeTab, setActiveTab] = useState('listings');
@@ -336,6 +288,7 @@ export default function FarmerView() {
   const [editCrop, setEditCrop] = useState(null);
   const [viewCrop, setViewCrop] = useState(null);
   const [toast, setToast] = useState(null);
+  const [, setIsLoading] = useState(true);
 
   const totalStock = crops.reduce((s, c) => s + c.stock, 0);
   const totalRevenue = crops.reduce((s, c) => s + c.stock * c.price, 0);
@@ -348,29 +301,96 @@ export default function FarmerView() {
     setTimeout(() => setToast(null), 3200);
   }, []);
 
-  const handleSaveCrop = (form) => {
+  const fetchCrops = async () => {
+    try {
+      const res = await getMyListings();
+      if (res.data?.success) {
+        const normalized = res.data.listings.map((l) => ({
+          id: l._id,
+          _id: l._id,
+          name: l.title || l.cropName,
+          cropName: l.cropName,
+          title: l.title,
+          category: l.category || 'Wheat',
+          emoji: l.category === 'Rice' ? '🍚' : (l.category === 'Cotton' ? '☁️' : '🌾'),
+          stock: l.quantity || 0,
+          unit: l.unit || 'kg',
+          price: l.price || 0,
+          harvestDate: l.harvestDate ? new Date(l.harvestDate).toISOString().split('T')[0] : '',
+          organic: l.isOrganic || false,
+          delivery: l.deliveryAvailable || false,
+          views: l.views || 0,
+          likes: l.likes || 0,
+          location: l.location || '',
+          status: l.status || 'Active',
+          farmerName: l.seller?.fullName || 'You',
+          quality: l.quality || 'Grade A',
+          desc: l.description || '',
+        }));
+        setCrops(normalized);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCrops();
+  }, []);
+
+  const handleSaveCrop = async (form) => {
     if (!form.name || !form.stock || !form.price) {
       showToast('Please fill all required fields.', 'error');
       return;
     }
-    if (editCrop) {
-      setCrops(prev => prev.map(c => c.id === editCrop.id ? { ...c, ...form, stock: Number(form.stock), price: Number(form.price) } : c));
-      showToast(`"${form.name}" updated successfully!`);
-    } else {
-      const newCrop = {
-        ...form, id: Date.now(), stock: Number(form.stock), price: Number(form.price),
-        views: 0, likes: 0, status: 'Active', farmerName: 'Om Bhudhara', emoji: '🌾',
-      };
-      setCrops(prev => [newCrop, ...prev]);
-      showToast(`"${form.name}" listed successfully!`);
+    const payload = {
+      title: form.name,
+      cropName: form.name,
+      category: form.category,
+      quantity: Number(form.stock),
+      unit: form.unit,
+      price: Number(form.price),
+      harvestDate: form.harvestDate,
+      quality: form.quality,
+      isOrganic: form.organic,
+      deliveryAvailable: form.delivery,
+      location: form.location,
+      description: form.desc,
+    };
+    try {
+      if (editCrop) {
+        const res = await updateListing(editCrop._id, payload);
+        if (res.data?.success) {
+          showToast(`"${form.name}" updated successfully!`);
+          fetchCrops();
+        }
+      } else {
+        const res = await createListing(payload);
+        if (res.data?.success) {
+          showToast(`"${form.name}" listed successfully!`);
+          fetchCrops();
+        }
+      }
+      setShowAddModal(false);
+      setEditCrop(null);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to save crop listing.', 'error');
     }
-    setShowAddModal(false);
-    setEditCrop(null);
   };
 
-  const handleDelete = (id) => {
-    setCrops(prev => prev.filter(c => c.id !== id));
-    showToast('Crop listing removed.', 'error');
+  const handleDelete = async (id) => {
+    try {
+      const res = await deleteListing(id);
+      if (res.data?.success) {
+        setCrops((prev) => prev.filter((c) => c.id !== id));
+        showToast('Crop listing removed.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleAccept = (id, type) => {

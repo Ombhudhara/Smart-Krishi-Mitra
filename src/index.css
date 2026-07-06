@@ -11,3 +11,403 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* ==========================================================================
+   Global Theme Stylesheet — Smart Krishi Mitra
+   ========================================================================== */
+
+/* Theme Variables Definition */
+:root {
+  /* Light Theme (Defaults) */
+  --bg-color: #F8FFF8;
+  --card-bg: #ffffff;
+  --text-primary: #1A2B1A;
+  --text-muted: #6B8C6B;
+  --border-color: #D4EDD4;
+  --white: #ffffff;
+}
+
+body[data-theme="dark"],
+html[data-theme="dark"],
+[data-theme="dark"] {
+  /* Core Variables Override */
+  --bg-color: #0f172a !important;
+  --card-bg: #1e293b !important;
+  --text-primary: #f8fafc !important;
+  --text-main: #f8fafc !important;
+  --text-muted: #94a3b8 !important;
+  --border-color: #334155 !important;
+  --white: #1e293b !important;
+  --border-focus: #4caf50 !important;
+  
+  /* Overrides for Weather page variables (--wt2-) */
+  --wt2-bg: #0f172a !important;
+  --wt2-surface: #1e293b !important;
+  --wt2-text: #f8fafc !important;
+  --wt2-text-mid: #cbd5e1 !important;
+  --wt2-text-muted: #94a3b8 !important;
+  --wt2-border: #334155 !important;
+  --wt2-green-pale: rgba(46, 125, 50, 0.15) !important;
+  
+  /* Overrides for CostCalculator variables (--cc-) */
+  --cc-bg: #0f172a !important;
+  --cc-white: #1e293b !important;
+  --cc-text-dark: #f8fafc !important;
+  --cc-text-mid: #cbd5e1 !important;
+  --cc-text-muted: #94a3b8 !important;
+  --cc-border: #334155 !important;
+  --cc-primary-pale: rgba(46, 125, 50, 0.15) !important;
+  
+  /* Overrides for News & Schemes variables (--ns-) */
+  --ns-bg: #0f172a !important;
+  --ns-white: #1e293b !important;
+  --ns-text-dk: #f8fafc !important;
+  --ns-text-mid: #cbd5e1 !important;
+  --ns-text-muted: #94a3b8 !important;
+  --ns-border: #334155 !important;
+  --ns-primary-pale: rgba(46, 125, 50, 0.15) !important;
+  
+  /* Overrides for Navbar variables (--nav-) */
+  --nav-bg: #1e293b !important;
+  --nav-border: #334155 !important;
+  --nav-text: #f8fafc !important;
+  --nav-muted: #94a3b8 !important;
+  --nav-hover: #334155 !important;
+  
+  /* Overrides for Sidebar variables (--sb-) */
+  --sb-bg: #1e293b !important;
+  --sb-border: #334155 !important;
+  --sb-text: #f8fafc !important;
+  --sb-muted: #94a3b8 !important;
+  --sb-hover: #334155 !important;
+  --sb-primary-light: rgba(46, 125, 50, 0.15) !important;
+
+  /* Overrides for Profile variables (--pr-) */
+  --pr-bg: #0f172a !important;
+  --pr-white: #1e293b !important;
+  --pr-text-dark: #f8fafc !important;
+  --pr-text-mid: #cbd5e1 !important;
+  --pr-text-muted: #94a3b8 !important;
+  --pr-border: #334155 !important;
+  --pr-primary-pale: rgba(46, 125, 50, 0.15) !important;
+
+  /* Overrides for TransactionHistory variables (--tx-) */
+  --tx-bg: #0f172a !important;
+  --tx-white: #1e293b !important;
+  --tx-text-dark: #f8fafc !important;
+  --tx-text-mid: #cbd5e1 !important;
+  --tx-text-muted: #94a3b8 !important;
+  --tx-border: #334155 !important;
+  --tx-primary-pale: rgba(46, 125, 50, 0.15) !important;
+
+  /* Overrides for Messages variables (--msg-) */
+  --msg-bg-chat: #0f172a !important;
+  --msg-bg-list: #1e293b !important;
+  --msg-white: #1e293b !important;
+  --msg-text-dark: #f8fafc !important;
+  --msg-text-mid: #cbd5e1 !important;
+  --msg-text-muted: #94a3b8 !important;
+  --msg-border: #334155 !important;
+  --msg-primary-pale: rgba(46, 125, 50, 0.15) !important;
+
+  /* Overrides for Notifications variables (--nc-) */
+  --nc-bg: #0f172a !important;
+  --nc-white: #1e293b !important;
+  --nc-text-dark: #f8fafc !important;
+  --nc-text-mid: #cbd5e1 !important;
+  --nc-text-muted: #94a3b8 !important;
+  --nc-border: #334155 !important;
+  --nc-border-soft: #334155 !important;
+  --nc-primary-pale: rgba(46, 125, 50, 0.15) !important;
+
+  /* Overrides for Landing variables */
+  --off-white: #0f172a !important;
+  --gray-50: #1e293b !important;
+  --gray-100: #1e293b !important;
+  --gray-600: #cbd5e1 !important;
+  --gray-800: #f8fafc !important;
+  --text-dark: #f8fafc !important;
+  --text-body: #cbd5e1 !important;
+  
+  /* General Variables override */
+  --primary-light: rgba(46, 125, 50, 0.15) !important;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.25) !important;
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.3) !important;
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ==========================================================================
+   GLOBAL DARK MODE OVERRIDES (HIGH SPECIFICITY ENGINE)
+   ========================================================================== */
+
+/* Page background & general wrappers */
+body[data-theme="dark"] {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] body,
+[data-theme="dark"] .db-main,
+[data-theme="dark"] .db-root,
+[data-theme="dark"] .db-layout,
+[data-theme="dark"] .mkt-main,
+[data-theme="dark"] .mkt-layout,
+[data-theme="dark"] .mkt-page-root,
+[data-theme="dark"] .cc-root,
+[data-theme="dark"] .cc-layout,
+[data-theme="dark"] .cc-main,
+[data-theme="dark"] .ns-root,
+[data-theme="dark"] .ns-layout,
+[data-theme="dark"] .ns-main,
+[data-theme="dark"] .wt2-root,
+[data-theme="dark"] .wt2-layout,
+[data-theme="dark"] .wt2-main,
+[data-theme="dark"] .msg-root,
+[data-theme="dark"] .msg-main,
+[data-theme="dark"] .notif-root,
+[data-theme="dark"] .notif-main,
+[data-theme="dark"] .tx-root,
+[data-theme="dark"] .tx-main,
+[data-theme="dark"] .pr-root,
+[data-theme="dark"] .pr-layout,
+[data-theme="dark"] .pr-main,
+[data-theme="dark"] .landing-page-root {
+  background-color: #0f172a !important;
+  background: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+/* Card, panel and chip components (overrides hardcoded white backgrounds) */
+[data-theme="dark"] div[class*="-card"],
+[data-theme="dark"] div[class*="card-"],
+[data-theme="dark"] .card,
+[data-theme="dark"] .glass-card,
+[data-theme="dark"] .auth-card-wrapper,
+[data-theme="dark"] .mkt-crop-card,
+[data-theme="dark"] .mkt-farmer-card,
+[data-theme="dark"] .mkt-vendor-card,
+[data-theme="dark"] .mkt-summary-card,
+[data-theme="dark"] .mkt-stat-chip,
+[data-theme="dark"] .mkt-filter-bar,
+[data-theme="dark"] .mkt-search-bar-container,
+[data-theme="dark"] .mkt-transaction-table-wrap,
+[data-theme="dark"] .role-select-card,
+[data-theme="dark"] .skm-sidebar,
+[data-theme="dark"] .skm-navbar,
+[data-theme="dark"] .skm-footer,
+[data-theme="dark"] .cc-select,
+[data-theme="dark"] .cc-input-group,
+[data-theme="dark"] .cc-stat-chip,
+[data-theme="dark"] .cc-expense-card,
+[data-theme="dark"] .cc-step-badge,
+[data-theme="dark"] .cc-form-section,
+[data-theme="dark"] .cc-results-card,
+[data-theme="dark"] .cc-history-card,
+[data-theme="dark"] .ns-select,
+[data-theme="dark"] .ns-input-group,
+[data-theme="dark"] .ns-scheme-card,
+[data-theme="dark"] .ns-featured-card,
+[data-theme="dark"] .ns-news-card,
+[data-theme="dark"] .ns-detail-panel,
+[data-theme="dark"] .ns-filter-btn,
+[data-theme="dark"] .ns-search-input,
+[data-theme="dark"] .wt2-select,
+[data-theme="dark"] .wt2-input-group,
+[data-theme="dark"] .wt2-hourly-card,
+[data-theme="dark"] .wt2-weekly-card,
+[data-theme="dark"] .wt2-detail-card,
+[data-theme="dark"] .wt2-main-card,
+[data-theme="dark"] .conversations-sidebar,
+[data-theme="dark"] .chat-area,
+[data-theme="dark"] .notifications-container,
+[data-theme="dark"] .transactions-container,
+[data-theme="dark"] .profile-container,
+[data-theme="dark"] .profile-card,
+[data-theme="dark"] .profile-details-panel,
+[data-theme="dark"] .landing-card,
+[data-theme="dark"] .feature-card,
+[data-theme="dark"] .pricing-card,
+[data-theme="dark"] .testimonial-card {
+  background-color: #1e293b !important;
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25) !important;
+}
+
+/* Select options */
+[data-theme="dark"] .cc-select option,
+[data-theme="dark"] .ns-select option,
+[data-theme="dark"] .wt2-select option,
+[data-theme="dark"] .mkt-select option,
+[data-theme="dark"] select option {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+/* Headers text contrast */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6,
+[data-theme="dark"] strong,
+[data-theme="dark"] b {
+  color: #f8fafc !important;
+}
+
+/* Text details contrast (excludes generic divs to avoid breaking bubbles color inheritance) */
+[data-theme="dark"] p,
+[data-theme="dark"] span,
+[data-theme="dark"] label,
+[data-theme="dark"] small,
+[data-theme="dark"] li,
+[data-theme="dark"] a,
+[data-theme="dark"] td {
+  color: #cbd5e1;
+}
+
+/* Ensure checkmarks, active icons, and high-visibility titles retain color */
+[data-theme="dark"] .highlight-green,
+[data-theme="dark"] .checkmark,
+[data-theme="dark"] .logo-emoji,
+[data-theme="dark"] .skm-navbar-logo-icon,
+[data-theme="dark"] .brand-logo,
+[data-theme="dark"] .input-leading-icon,
+[data-theme="dark"] .skm-navbar-hamburger span,
+[data-theme="dark"] .skm-sidebar-icon {
+  color: inherit;
+}
+
+/* Form inputs & controls (overrides hardcoded white backgrounds) */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #0f172a !important;
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #64748b !important;
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus {
+  border-color: #2e7d32 !important;
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.25) !important;
+}
+
+/* List & tables borders */
+[data-theme="dark"] ul,
+[data-theme="dark"] table,
+[data-theme="dark"] tr,
+[data-theme="dark"] th,
+[data-theme="dark"] td,
+[data-theme="dark"] hr,
+[data-theme="dark"] div[class*="-divider"],
+[data-theme="dark"] span[class*="-divider"] {
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] th {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+/* Modals & popup dynamic cards */
+[data-theme="dark"] div[class*="modal"],
+[data-theme="dark"] div[class*="-popup"],
+[data-theme="dark"] div[class*="dialog"],
+[data-theme="dark"] div[class*="dropdown-menu"],
+[data-theme="dark"] div[class*="-dropdown"] {
+  background-color: #1e293b !important;
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+}
+
+/* Primary buttons text color safety */
+[data-theme="dark"] .btn-primary-gradient,
+[data-theme="dark"] button[class*="primary"],
+[data-theme="dark"] button[class*="success"],
+[data-theme="dark"] input[type="submit"] {
+  color: #ffffff !important; /* Keep text white on primary active gradient buttons */
+}
+
+/* AI Floating Chat widget alignment */
+[data-theme="dark"] .skm-chat-box,
+[data-theme="dark"] .skm-chat-header,
+[data-theme="dark"] .skm-chat-sidebar,
+[data-theme="dark"] .skm-chat-input-area,
+[data-theme="dark"] .skm-chat-welcome-box {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .skm-message-bubble--assistant {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .skm-message-bubble--user {
+  background-color: #2e7d32 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .skm-navbar-avatar {
+  border-color: #334155 !important;
+}
+
+/* ==========================================================================
+   SPECIFIC COMPONENT ADJUSTMENTS (MESSAGES / CHAT OVERRIDES)
+   ========================================================================== */
+
+/* Messages Bubble Overrides in Dark Mode */
+[data-theme="dark"] .msg-bubble--self {
+  background: #056162 !important; /* WhatsApp dark green self bubble */
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .msg-bubble--other {
+  background: #202c33 !important; /* WhatsApp dark gray other bubble */
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .msg-bubble--self *,
+[data-theme="dark"] .msg-bubble--other * {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .msg-time {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .msg-date-divider span {
+  background: #202c33 !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .msg-sidebar-search {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .msg-conv-card:hover {
+  background: #334155 !important;
+}
+
+[data-theme="dark"] .msg-conv-card--active {
+  background: rgba(46, 125, 50, 0.25) !important;
+}
+
+[data-theme="dark"] .msg-role--farmer { background: rgba(27, 94, 32, 0.25) !important; color: #81C784 !important; }
+[data-theme="dark"] .msg-role--vendor { background: rgba(13, 71, 161, 0.25) !important; color: #64B5F6 !important; }
+[data-theme="dark"] .msg-role--customer { background: rgba(230, 81, 0, 0.25) !important; color: #FFB74D !important; }

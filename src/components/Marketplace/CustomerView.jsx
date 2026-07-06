@@ -1,136 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './CustomerView.css';
 import SearchBar from './SearchBar';
 import SummaryCards from './SummaryCards';
+import { getListings } from '../../services/marketplaceService';
+import { createTransaction as createTransactionApi } from '../../services/transactionService';
 
 // ============================================================================
 // DUMMY DATA FOR THE CUSTOMER MARKETPLACE
 // ============================================================================
+// DUMMY_FARMER_LISTINGS and DUMMY_VENDOR_LISTINGS removed — now loaded from API via getListings()
 
-const DUMMY_FARMER_LISTINGS = [
-  {
-    id: 'f-list-1',
-    cropImage: '🌾',
-    cropName: 'Sharbati Wheat',
-    farmerName: 'Raj Patel',
-    farmerAvatar: 'RP',
-    farmerVerified: true,
-    rating: 4.9,
-    reviews: 120,
-    likes: 42,
-    location: 'Nashik, MH',
-    stock: 450,
-    price: 2350, // Per Quintal
-    organic: true,
-    delivery: true,
-    phone: '+91 98765 43210'
-  },
-  {
-    id: 'f-list-2',
-    cropImage: '☁️',
-    cropName: 'Premium Bt Cotton',
-    farmerName: 'Om Bhudhara',
-    farmerAvatar: 'OB',
-    farmerVerified: true,
-    rating: 4.9,
-    reviews: 145,
-    likes: 88,
-    location: 'Rajkot, GJ',
-    stock: 450,
-    price: 7200,
-    organic: true,
-    delivery: true,
-    phone: '+91 87654 32109'
-  },
-  {
-    id: 'f-list-3',
-    cropImage: '🍚',
-    cropName: 'Basmati Rice (1121)',
-    farmerName: 'Mahesh Chauhan',
-    farmerAvatar: 'MC',
-    farmerVerified: true,
-    rating: 4.7,
-    reviews: 74,
-    likes: 31,
-    location: 'Karnal, HR',
-    stock: 200,
-    price: 4800,
-    organic: true,
-    delivery: true,
-    phone: '+91 76543 21098'
-  },
-  {
-    id: 'f-list-4',
-    cropImage: '🥜',
-    cropName: 'Kharif Groundnut',
-    farmerName: 'Ramesh Solanki',
-    farmerAvatar: 'RS',
-    farmerVerified: false,
-    rating: 4.3,
-    reviews: 29,
-    likes: 15,
-    location: 'Junagadh, GJ',
-    stock: 300,
-    price: 5200,
-    organic: false,
-    delivery: false,
-    phone: '+91 65432 10987'
-  }
-];
 
-const DUMMY_VENDOR_LISTINGS = [
-  {
-    id: 'v-list-1',
-    vendorLogo: 'KA',
-    vendorName: 'Krishna Agro Traders',
-    verified: true,
-    rating: 4.8,
-    reviews: 98,
-    likes: 54,
-    location: 'Ahmedabad, GJ',
-    cropName: 'Bt Cotton',
-    cropImage: '☁️',
-    stock: 600,
-    price: 7300,
-    delivery: true,
-    businessHours: '9 AM – 7 PM',
-    phone: '+91 99887 76655'
-  },
-  {
-    id: 'v-list-2',
-    vendorLogo: 'GH',
-    vendorName: 'Green Harvest Agro',
-    verified: true,
-    rating: 4.6,
-    reviews: 62,
-    likes: 38,
-    location: 'Rajkot, GJ',
-    cropName: 'Sharbati Wheat',
-    cropImage: '🌾',
-    stock: 500,
-    price: 2400,
-    delivery: true,
-    businessHours: '8 AM – 6 PM',
-    phone: '+91 88776 65544'
-  },
-  {
-    id: 'v-list-3',
-    vendorLogo: 'AG',
-    vendorName: 'AgroMart Gujarat',
-    verified: true,
-    rating: 4.7,
-    reviews: 110,
-    likes: 72,
-    location: 'Surat, GJ',
-    cropName: 'Basmati Rice',
-    cropImage: '🍚',
-    stock: 400,
-    price: 4900,
-    delivery: true,
-    businessHours: '9 AM – 9 PM',
-    phone: '+91 77665 54433'
-  }
-];
 
 const DUMMY_ORDER_HISTORY = [
   {
@@ -179,10 +59,10 @@ const SORT_OPTIONS = ['Latest', 'Lowest Price', 'Highest Rating', 'Nearest Selle
 // ============================================================================
 
 export default function CustomerView() {
-  const [farmersList, setFarmersList] = useState(DUMMY_FARMER_LISTINGS);
-  const [vendorsList, setVendorsList] = useState(DUMMY_VENDOR_LISTINGS);
+  const [farmersList, setFarmersList] = useState([]);
+  const [vendorsList, setVendorsList] = useState([]);
   const [wishlist, setWishlist] = useState([]);
-  const [orders, setOrders] = useState(DUMMY_ORDER_HISTORY);
+  const [orders] = useState(DUMMY_ORDER_HISTORY);
   const [activeTab, setActiveTab] = useState('browse');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -206,6 +86,46 @@ export default function CustomerView() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const fetchAllListings = async () => {
+    try {
+      const res = await getListings();
+      if (res.data?.success) {
+        const mapped = res.data.listings.map((l) => ({
+          id: l._id,
+          _id: l._id,
+          cropImage: l.category === 'Rice' ? '🍚' : (l.category === 'Cotton' ? '☁️' : '🌾'),
+          cropName: l.title || l.cropName,
+          farmerName: l.seller?.fullName || 'Seller',
+          farmerAvatar: l.seller?.fullName ? l.seller.fullName.split(' ').map((n) => n[0]).join('') : 'OB',
+          farmerVerified: true,
+          rating: 4.8,
+          reviews: 42,
+          likes: l.likes || 0,
+          location: l.location || '',
+          stock: l.quantity || 0,
+          price: l.price || 0,
+          organic: l.isOrganic || false,
+          delivery: l.deliveryAvailable || false,
+          phone: l.seller?.phone || '',
+          seller: l.seller,
+          sellerId: l.seller?._id,
+        }));
+
+        const farmers = mapped.filter((m) => m.seller?.role === 'Farmer');
+        const vendors = mapped.filter((m) => m.seller?.role === 'Vendor');
+
+        setFarmersList(farmers);
+        setVendorsList(vendors);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllListings();
+  }, []);
+
   // Like & Wishlist Actions
   const handleWishlistToggle = (item, type) => {
     const isSaved = wishlist.some(w => w.id === item.id);
@@ -223,7 +143,7 @@ export default function CustomerView() {
     setBuyForm({ quantity: '', address: '' });
   };
 
-  const handleBuySubmit = () => {
+  const handleBuySubmit = async () => {
     if (!buyForm.quantity || Number(buyForm.quantity) <= 0) {
       showToast('Please enter a valid quantity.', 'error');
       return;
@@ -233,33 +153,30 @@ export default function CustomerView() {
       return;
     }
 
-    const price = buyModal.price;
-    const sellerName = buyModal.farmerName || buyModal.vendorName;
-    const sellerType = buyModal.type === 'farmer' ? 'Farmer' : 'Vendor';
+    try {
+      const payload = {
+        sellerId: buyModal.seller?._id || buyModal.sellerId,
+        cropName: buyModal.cropName,
+        quantity: Number(buyForm.quantity),
+        price: Number(buyModal.price),
+        listingId: buyModal._id || buyModal.id,
+      };
 
-    const newOrder = {
-      id: `TXN-O-${Date.now().toString().slice(-5)}`,
-      cropName: buyModal.cropName || 'Agriculture Product',
-      sellerName,
-      sellerType,
-      quantity: Number(buyForm.quantity),
-      totalPrice: price * Number(buyForm.quantity),
-      date: new Date().toISOString().split('T')[0],
-      paymentStatus: 'Paid',
-      deliveryStatus: 'Pending'
-    };
-
-    setOrders(prev => [newOrder, ...prev]);
-
-    // Simulate stock deduction
-    if (buyModal.type === 'farmer') {
-      setFarmersList(prev => prev.map(f => f.id === buyModal.id ? { ...f, stock: Math.max(0, f.stock - Number(buyForm.quantity)) } : f));
-    } else {
-      setVendorsList(prev => prev.map(v => v.id === buyModal.id ? { ...v, stock: Math.max(0, v.stock - Number(buyForm.quantity)) } : v));
+      const res = await createTransactionApi(payload);
+      if (res.data?.success) {
+        showToast('Purchase completed successfully! Delivery dispatch scheduled.');
+        if (buyModal.type === 'farmer') {
+          setFarmersList(prev => prev.map(f => f.id === buyModal.id ? { ...f, stock: Math.max(0, f.stock - Number(buyForm.quantity)) } : f));
+        } else {
+          setVendorsList(prev => prev.map(v => v.id === buyModal.id ? { ...v, stock: Math.max(0, v.stock - Number(buyForm.quantity)) } : v));
+        }
+        setBuyModal(null);
+        fetchAllListings();
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to place order on backend.', 'error');
     }
-
-    setBuyModal(null);
-    showToast('Purchase completed successfully! Delivery dispatch scheduled.');
   };
 
   const handleReviewClick = (item, type) => {

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { getNotifications, markAsRead, markAllAsRead } from '../../services/notificationService';
 
 // Reusable Layout Components
 import Navbar from '../../components/Navbar/Navbar';
@@ -15,37 +16,56 @@ import CustomerDashboard from '../../components/Dashboard/CustomerDashboard';
 
 import './Dashboard.css';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Dummy notifications
-// TODO: Replace with real API call: GET /api/notifications (JWT protected)
-// ─────────────────────────────────────────────────────────────────────────────
-const DUMMY_NOTIFICATIONS = [
-  { id: 1, message: 'Heavy rainfall expected tomorrow in your sub-district.', time: '10 mins ago', read: false },
-  { id: 2, message: 'Raj Patel sent a new message regarding Cotton pricing.', time: '25 mins ago', read: false },
-  { id: 3, message: 'Payment of ₹14,200 received for Onion sale.', time: '2 hours ago', read: true },
-  { id: 4, message: 'AI: Delay pesticide spraying until wind speed drops.', time: '3 hours ago', read: true },
-];
-
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [notifications, setNotifications] = useState(DUMMY_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState([]);
+
+  // Load real notifications
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await getNotifications();
+        if (response.data?.success) {
+          const mapped = response.data.notifications.map((n) => ({
+            id: n._id,
+            message: n.message,
+            time: new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            read: n.isRead,
+          }));
+          setNotifications(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load notifications:", err);
+      }
+    };
+    fetchNotifications();
+  }, []);
 
   // Role detection
-  // TODO: Decode from JWT token when backend is integrated
   const role = user?.role || 'Farmer';
 
   // ── Notification Handlers ──────────────────────────────────────────────────
-  const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    } catch (err) {
+      console.error("Error marking all read:", err);
+    }
   };
 
-  const handleNotificationClick = (notification) => {
-    setNotifications((prev) =>
-      prev.map((n) => n.id === notification.id ? { ...n, read: true } : n)
-    );
+  const handleNotificationClick = async (notification) => {
+    try {
+      await markAsRead(notification.id);
+      setNotifications((prev) =>
+        prev.map((n) => n.id === notification.id ? { ...n, read: true } : n)
+      );
+    } catch (err) {
+      console.error("Error marking read:", err);
+    }
   };
 
   // ── Role-based View ────────────────────────────────────────────────────────

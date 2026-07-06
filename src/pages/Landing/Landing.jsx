@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Landing.css";
 
 /* ─────────────────────────────────────────────
@@ -119,7 +120,16 @@ function StatCard({ value, suffix, label, animate }) {
    MAIN LANDING COMPONENT
 ───────────────────────────────────────────── */
 export default function Landing({ onViewChange }) {
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
+
+  const handleViewChange = (view) => {
+    if (typeof onViewChange === "function") {
+      onViewChange(view);
+    } else {
+      navigate(`/${view}`);
+    }
+  };
   const [menuOpen, setMenuOpen] = useState(false);
   const [statsVisible, setStatsVisible] = useState(false);
   const statsRef = useRef(null);
@@ -182,8 +192,8 @@ export default function Landing({ onViewChange }) {
               </li>
             ))}
             <li className="nav-actions">
-              <button className="btn-outline" onClick={() => onViewChange("login")}>Login</button>
-              <button className="btn-primary" onClick={() => onViewChange("signup")}>Sign Up</button>
+              <button className="btn-outline" onClick={() => handleViewChange("login")}>Login</button>
+              <button className="btn-primary" onClick={() => handleViewChange("signup")}>Sign Up</button>
             </li>
           </ul>
 
@@ -220,7 +230,7 @@ export default function Landing({ onViewChange }) {
               access, and cost estimation — all in one place.
             </p>
             <div className="hero-buttons">
-              <button className="btn-primary btn-lg" onClick={() => onViewChange("signup")}>
+              <button className="btn-primary btn-lg" onClick={() => handleViewChange("signup")}>
                 Get Started →
               </button>
               <button className="btn-outline btn-lg" onClick={() => scrollTo("features")}>
@@ -411,7 +421,7 @@ export default function Landing({ onViewChange }) {
             earn better, and farm sustainably.
           </p>
           <div className="cta-buttons">
-            <button className="btn-white btn-lg" onClick={() => onViewChange("signup")}>🚀 Join Now — It's Free</button>
+            <button className="btn-white btn-lg" onClick={() => handleViewChange("signup")}>🚀 Join Now — It's Free</button>
             <button className="btn-outline-white btn-lg" onClick={() => scrollTo("contact")}>
               📞 Contact Us
             </button>

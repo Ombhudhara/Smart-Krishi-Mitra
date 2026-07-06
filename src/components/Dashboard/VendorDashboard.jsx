@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import './VendorDashboard.css';
 
 // =============================================================================
@@ -15,7 +16,7 @@ const STATS_DATA = [
 
 const INVENTORY_SUMMARY = [
   { crop: 'Bt Cotton', stock: '600 Q', value: '₹43,80,000', price: '₹7,300/Q' },
-  { crop: 'Sharbati Wheat', stock: '500 Q', value: '₹12,00,000', price: '₹2,400/Q' },
+  { crop: 'Sharbati Wheat', stock: '500 Q', value: '₹12,0,000', price: '₹2,400/Q' },
   { crop: 'Basmati Rice', stock: '400 Q', value: '₹19,60,000', price: '₹4,900/Q' }
 ];
 
@@ -48,6 +49,7 @@ const SCHEMES = [
 
 export default function VendorDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState('');
   const [currentDate, setCurrentDate] = useState('');
 
@@ -68,9 +70,9 @@ export default function VendorDashboard() {
       <section className="vd-welcome-section">
         <div className="vd-welcome-left">
           <span className="vd-time-greeting">Commercial Partner Desk</span>
-          <h1 className="vd-welcome-title">Vendor Dashboard 👋</h1>
+          <h1 className="vd-welcome-title">{user?.fullName || "Vendor"} 👋</h1>
           <div className="vd-header-metadata">
-            <span className="vd-meta-badge">Role: Partner Vendor</span>
+            <span className="vd-meta-badge">Role: {user?.role || "Vendor"}</span>
             <span className="vd-meta-divider">|</span>
             <span className="vd-meta-time">{currentTime}</span>
             <span className="vd-meta-divider">|</span>

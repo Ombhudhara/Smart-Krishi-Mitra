@@ -1,5 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import Loader from '../components/Loader/Loader';
 
 // =============================================================================
 // PUBLIC ROUTE — Smart Krishi Mitra
@@ -7,17 +9,15 @@ import { Navigate, Outlet } from 'react-router-dom';
 // Prevents logged-in users from accessing public pages (Landing, Login, Signup).
 // If authenticated → redirect to /dashboard.
 // If not authenticated → render public page.
-//
-// DUMMY AUTH (current):  const isAuthenticated = true;
-// FUTURE (JWT + MERN):   Replace with token check from AuthContext
-//   → const { isAuthenticated } = useAuth();
-//
-// Works with Node.js + Express.js + MongoDB + JWT when backend is ready.
 // =============================================================================
 
 const PublicRoute = ({ children }) => {
-  // ── Dummy authentication (replace with JWT later) ──────────────
-  const isAuthenticated = true;
+  const { isAuthenticated, loading } = useAuth();
+
+  // If session status is still loading, display Loader
+  if (loading) {
+    return <Loader variant="page" text="Verifying session..." />;
+  }
 
   // Already logged in → redirect away from public pages
   if (isAuthenticated) {
