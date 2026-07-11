@@ -7,20 +7,18 @@ import Button from '../../components/Button/Button';
 import Card from '../../components/Card/Card';
 import Loader from '../../components/Loader/Loader';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
+import { useAuth } from '../../context/AuthContext';
 import { getCurrentWeather } from '../../services/weatherService';
+import { getNews } from '../../services/newsService';
 import './Weather.css';
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    AGRICULTURAL WEATHER NEWS
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-const WEATHER_NEWS = [
-  { id: 1, source: 'AgriNews India', title: 'IMD predicts normal monsoon arrival in Maharashtra', date: 'June 28, 2026', snippet: 'Indian Meteorological Department projects steady rain distributions across Konkan and central regions.', emoji: '🌧️' },
-  { id: 2, source: 'Krishi Patrika', title: 'How to save cotton crops during unexpected summer hail storms', date: 'June 25, 2026', snippet: 'Expert guidelines on crop protection, physical covers, and foliar sprays for recovery.', emoji: '🌿' },
-  { id: 3, source: 'Mandi Board', title: 'Onion prices surge due to unseasonal rain damage in Nashik storage yards', date: 'June 22, 2026', snippet: 'Post-harvest curing steps to safeguard stored onions from rotting and moisture molds.', emoji: '📦' }
-];
 
-const SEARCH_HISTORY_DEFAULT = ['Nashik District', 'Pune Region', 'Nagpur East'];
+
+const SEARCH_HISTORY_DEFAULT = ['Ahmedabad, Gujarat', 'Nashik, Maharashtra', 'Pune, Maharashtra'];
 const CHART_LABELS = ['Now', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM'];
 
 // ─── Compact SVG Chart ───────────────────────────────────────────────────────
@@ -37,7 +35,9 @@ function WeatherTrendChart({ data, type, color, label }) {
   const range = maxVal - minVal || 1;
 
   const pts = chartData.map((val, idx) => {
-    const x = pad.left + (idx * (iW / (chartData.length - 1)));
+    const x = chartData.length > 1
+      ? pad.left + (idx * (iW / (chartData.length - 1)))
+      : pad.left + iW / 2;
     const y = pad.top + iH - (((val - minVal) / range) * iH);
     return `${x},${y}`;
   }).join(' ');
@@ -107,11 +107,16 @@ function WeatherTrendChart({ data, type, color, label }) {
 
 export default function Weather() {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
 
   const [collapsed, setCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [weatherData, setWeatherData] = useState(null);
   const [recentLocations, setRecentLocations] = useState(SEARCH_HISTORY_DEFAULT);
+  const [newsList, setNewsList] = useState([
+    { id: 1, source: 'AgriNews India', title: 'IMD predicts normal monsoon arrival in Maharashtra', date: 'June 28, 2026', snippet: 'Indian Meteorological Department projects steady rain distributions across Konkan and central regions.', emoji: '🌧️' },
+    { id: 2, source: 'Krishi Patrika', title: 'How to save cotton crops during unexpected summer hail storms', date: 'June 25, 2026', snippet: 'Expert guidelines on crop protection, physical covers, and foliar sprays for recovery.', emoji: '🌿' }
+  ]);
   const [isLoading, setIsLoading] = useState(true);
   const [notification, setNotification] = useState(null);
 
@@ -130,12 +135,33 @@ export default function Weather() {
     pressure: '1010 hPa',
     sunrise: '06:00 AM',
     sunset: '07:00 PM',
-    hourly: [],
-    daily: [],
+    hourly: [
+      { time: 'Now', temp: '30°C', icon: '☀️', rain: '0%', wind: '10km/h' },
+      { time: '+1h', temp: '29°C', icon: '☀️', rain: '0%', wind: '9km/h' },
+      { time: '+2h', temp: '28°C', icon: '🌙', rain: '0%', wind: '8km/h' },
+      { time: '+3h', temp: '28°C', icon: '🌙', rain: '0%', wind: '8km/h' },
+      { time: '+4h', temp: '29°C', icon: '☀️', rain: '0%', wind: '9km/h' },
+      { time: '+5h', temp: '30°C', icon: '☀️', rain: '0%', wind: '10km/h' },
+      { time: '+6h', temp: '31°C', icon: '☀️', rain: '0%', wind: '11km/h' },
+    ],
+    daily: [
+      { day: 'Today', icon: '☀️', min: '28°C', max: '36°C', rain: '5%', wind: '18km/h' },
+      { day: 'Mon', icon: '⛅', min: '27°C', max: '34°C', rain: '10%', wind: '15km/h' },
+      { day: 'Tue', icon: '🌦️', min: '26°C', max: '33°C', rain: '20%', wind: '20km/h' },
+      { day: 'Wed', icon: '☁️', min: '25°C', max: '31°C', rain: '30%', wind: '22km/h' },
+      { day: 'Thu', icon: '🌧️', min: '24°C', max: '29°C', rain: '60%', wind: '25km/h' },
+      { day: 'Fri', icon: '🌦️', min: '25°C', max: '31°C', rain: '25%', wind: '18km/h' },
+      { day: 'Sat', icon: '⛅', min: '27°C', max: '33°C', rain: '15%', wind: '16km/h' },
+    ],
     alerts: [],
-    cropSuitability: [],
+    cropSuitability: [
+      { name: '🌾 Wheat', pct: 75, status: 'Good', color: '#43A047', desc: 'Suitable sowing conditions. Moderate humidity expected.' },
+      { name: '🌿 Cotton', pct: 60, status: 'Average', color: '#FFB300', desc: 'Watch for excess moisture. Ensure drainage before sowing.' },
+      { name: '🍅 Tomato', pct: 85, status: 'Excellent', color: '#43A047', desc: 'Ideal temperature & humidity. Good time to transplant.' },
+      { name: '🧅 Onion', pct: 50, status: 'Average', color: '#FFB300', desc: 'Rain probability moderate. Delay spraying if rain expected.' },
+    ],
     aiSuggestions: [],
-    charts: { temp: [30], humidity: [50], rain: [0] }
+    charts: { temp: [30, 29, 28, 28, 29, 30, 31], humidity: [50, 52, 55, 54, 51, 50, 48], rain: [0, 0, 0, 0, 0, 0, 0] }
   };
 
   const showToast = useCallback((msg, type = 'info') => {
@@ -199,32 +225,104 @@ export default function Weather() {
     }
   };
 
-  // Get location on mount
-  useEffect(() => {
-    const handleSuccess = (position) => {
-      const { latitude, longitude } = position.coords;
-      console.log(`[Geolocation] Permission granted: ${latitude}, ${longitude}`);
-      showToast("Current location detected.", "success");
-      fetchWeather(latitude, longitude);
-    };
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [locationBlocked, setLocationBlocked] = useState(false);
 
-    const handleError = (error) => {
-      console.warn(`[Geolocation] Error (${error.code}): ${error.message}. Defaulting to Ahmedabad, Gujarat.`);
-      showToast("Location access denied or unavailable. Loading Ahmedabad.", "info");
-      fetchWeather(23.0225, 72.5714);
-    };
-
+  const handleGrantPermission = () => {
+    setShowLocationModal(false);
     if (navigator.geolocation) {
-      console.log("[Geolocation] Requesting browser location permission...");
-      navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
-        enableHighAccuracy: true,
-        timeout: 8000,
-        maximumAge: 0
-      });
+      setIsLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          showToast("Location detected successfully.", "success");
+          fetchWeather(latitude, longitude);
+        },
+        (error) => {
+          console.warn("[Geolocation] Error:", error.message);
+          showToast("Location access denied. Loading Ahmedabad.", "info");
+          setLocationBlocked(true);
+          fetchWeather(23.0225, 72.5714);
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      );
     } else {
-      console.log("[Geolocation] Browser does not support geolocation. Defaulting to Ahmedabad.");
+      showToast("Geolocation not supported. Loading Ahmedabad.", "info");
       fetchWeather(23.0225, 72.5714);
     }
+  };
+
+  const handleUseDefault = () => {
+    setShowLocationModal(false);
+    showToast("Loading default weather profile.", "info");
+    fetchWeather(23.0225, 72.5714);
+  };
+
+  // Get location on mount using permission checks
+  useEffect(() => {
+    const checkPermissionsAndLoad = async () => {
+      try {
+        if (navigator.permissions && navigator.permissions.query) {
+          const result = await navigator.permissions.query({ name: 'geolocation' });
+          console.log("[Geolocation Permission Status]:", result.state);
+          
+          if (result.state === 'granted') {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+              () => {
+                setLocationBlocked(true);
+                fetchWeather(23.0225, 72.5714);
+              }
+            );
+          } else if (result.state === 'prompt') {
+            setIsLoading(false);
+            setShowLocationModal(true);
+          } else {
+            setLocationBlocked(true);
+            fetchWeather(23.0225, 72.5714);
+          }
+        } else {
+          setShowLocationModal(true);
+        }
+      } catch (err) {
+        console.warn("[Permission API error]:", err);
+        setShowLocationModal(true);
+      }
+    };
+    checkPermissionsAndLoad();
+  }, []);
+
+  useEffect(() => {
+    const fetchRealNews = async () => {
+      try {
+        const res = await getNews("Weather");
+        if (res.data?.success && res.data?.news?.length > 0) {
+          setNewsList(res.data.news.slice(0, 3).map(n => ({
+            id: n._id,
+            source: n.source || "Smart Krishi",
+            title: n.title,
+            date: new Date(n.publishedAt || n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            snippet: n.content ? (n.content.length > 120 ? n.content.substring(0, 120) + "..." : n.content) : "No description available.",
+            emoji: n.category === "Weather" ? "🌧️" : (n.category === "Market" ? "📈" : "🌿")
+          })));
+        } else {
+          const resAll = await getNews();
+          if (resAll.data?.success && resAll.data?.news?.length > 0) {
+            setNewsList(resAll.data.news.slice(0, 3).map(n => ({
+              id: n._id,
+              source: n.source || "Smart Krishi",
+              title: n.title,
+              date: new Date(n.publishedAt || n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+              snippet: n.content ? (n.content.length > 120 ? n.content.substring(0, 120) + "..." : n.content) : "No description available.",
+              emoji: n.category === "Weather" ? "🌧️" : (n.category === "Market" ? "📈" : "🌿")
+            })));
+          }
+        }
+      } catch (err) {
+        console.error("Error loading news in weather page:", err);
+      }
+    };
+    fetchRealNews();
   }, []);
 
   const todayStats = [
@@ -247,23 +345,61 @@ export default function Weather() {
         </div>
       )}
 
-      {/* ── Navbar ─────────────────────────────────────── */}
-      <Navbar
-        user={{ name: 'OM', role: 'Farmer' }}
-        onToggleSidebar={() => setCollapsed(!collapsed)}
-        notificationSlot={<NotificationBell notifications={[]} />}
-      />
+      {/* ── Navbar — only for logged-in users ─────────── */}
+      {isAuthenticated ? (
+        <Navbar
+          user={user || { name: 'User', role: 'Farmer' }}
+          onToggleSidebar={() => setCollapsed(!collapsed)}
+          notificationSlot={<NotificationBell notifications={[]} />}
+        />
+      ) : (
+        /* Minimal public header for non-logged-in visitors */
+        <header style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 24px', background: '#fff',
+          boxShadow: '0 1px 8px rgba(0,0,0,0.08)', position: 'sticky', top: 0, zIndex: 100
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+            onClick={() => navigate('/')}>
+            <span style={{ fontSize: '22px' }}>🌱</span>
+            <span style={{ fontWeight: 700, fontSize: '15px', color: '#2E7D32' }}>Smart Krishi Mitra</span>
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={() => navigate('/login')} style={{
+              padding: '7px 18px', borderRadius: '8px', border: '1.5px solid #2E7D32',
+              background: 'transparent', color: '#2E7D32', fontWeight: 600, cursor: 'pointer', fontSize: '13px'
+            }}>Login</button>
+            <button onClick={() => navigate('/signup')} style={{
+              padding: '7px 18px', borderRadius: '8px', border: 'none',
+              background: 'linear-gradient(135deg, #2E7D32, #43A047)', color: '#fff',
+              fontWeight: 600, cursor: 'pointer', fontSize: '13px'
+            }}>Sign Up</button>
+          </div>
+        </header>
+      )}
 
       {/* ── Layout ─────────────────────────────────────── */}
       <div className="wt2-layout">
 
-        <Sidebar
-          collapsed={collapsed}
-          onToggleCollapse={() => setCollapsed(!collapsed)}
-          activeItem="weather"
-        />
+        {/* Sidebar — only for logged-in users */}
+        {isAuthenticated && (
+          <Sidebar
+            collapsed={collapsed}
+            onToggleCollapse={() => setCollapsed(!collapsed)}
+            activeItem="weather"
+          />
+        )}
 
         <main className="wt2-main">
+          {locationBlocked && (
+            <div className="wt2-warning-banner">
+              <span>⚠️</span>
+              <div>
+                <strong>Location access is blocked.</strong> Smart Krishi Mitra needs your location to display local forecasts. Please enable location permission in your browser address bar settings, or use the search box to find your town.
+              </div>
+              <button className="wt2-warning-close" onClick={() => setLocationBlocked(false)}>×</button>
+            </div>
+          )}
 
           {/* ══ COMPACT HERO ══════════════════════════════ */}
           <section className="wt2-hero">
@@ -418,7 +554,7 @@ export default function Weather() {
                   <Card className="wt2-card">
                     <h2 className="wt2-section-title">📰 Agriculture Weather News</h2>
                     <div className="wt2-news-grid">
-                      {WEATHER_NEWS.map((news) => (
+                      {newsList.map((news) => (
                         <div key={news.id} className="wt2-news-card">
                           <div className="wt2-news-thumb">{news.emoji}</div>
                           <div className="wt2-news-body">
@@ -441,13 +577,22 @@ export default function Weather() {
                 {/* RIGHT COLUMN */}
                 <div className="wt2-col-side">
 
-                  {/* 7-Day Forecast */}
+                  {/* 7-Day Forecast — NEXT 7 days starting from TODAY */}
                   <Card className="wt2-card">
-                    <h2 className="wt2-section-title">📅 7-Day Forecast</h2>
+                    <div className="wt2-card-head">
+                      <h2 className="wt2-section-title">📅 Next 7-Day Forecast</h2>
+                      <span className="wt2-badge-sub">Today + next 6 days</span>
+                    </div>
                     <div className="wt2-daily-list">
                       {activeWeather.daily.map((day, i) => (
                         <div key={i} className={`wt2-daily-row ${i === 0 ? 'wt2-daily-row--today' : ''}`}>
-                          <span className="wt2-daily-day">{day.day}</span>
+                          <span className="wt2-daily-day">
+                            {i === 0 ? (
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                📍 <strong>Today</strong>
+                              </span>
+                            ) : day.day}
+                          </span>
                           <span className="wt2-daily-ico">{day.icon}</span>
                           <div className="wt2-daily-bar-wrap">
                             <span className="wt2-daily-min">{day.min}</span>
@@ -521,6 +666,26 @@ export default function Weather() {
         🤖
         <span className="wt2-fab-label">AI</span>
       </button>
+
+      {showLocationModal && (
+        <div className="wt2-modal-overlay">
+          <div className="wt2-modal-card">
+            <div className="wt2-modal-icon">📍</div>
+            <h3 className="wt2-modal-title">Enable Local Weather</h3>
+            <p className="wt2-modal-desc">
+              Smart Krishi Mitra needs your location permission to show real-time weather forecasts, dynamic crop suitability ratings, and AI agronomy suggestions for your farm.
+            </p>
+            <div className="wt2-modal-actions">
+              <Button variant="primary" onClick={handleGrantPermission}>
+                Allow Location Access
+              </Button>
+              <Button variant="outline" onClick={handleUseDefault} style={{ marginTop: "5px" }}>
+                Use Ahmedabad (Default)
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

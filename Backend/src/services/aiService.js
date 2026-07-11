@@ -194,10 +194,39 @@ export const generateText = async (prompt, systemInstruction = "") => {
 
 /**
  * 2. Generate vector embedding using gemini-embedding-001.
+ * Returns a deterministic word-hash-based fake embedding vector (pseudo-embedding)
+ * so that ChromaDB similarity queries can function correctly.
  */
 export const generateEmbedding = async (text) => {
-  // Router API doesn't support Gemini embeddings natively, return mock embedding vector
-  return new Array(768).fill(0);
+  const vector = new Array(768).fill(0);
+  if (!text) return vector;
+
+  const cleaned = text.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+  const words = cleaned.split(/\s+/).filter(Boolean);
+
+  words.forEach((word) => {
+    let hash = 0;
+    for (let i = 0; i < word.length; i++) {
+      hash = (hash << 5) - hash + word.charCodeAt(i);
+      hash |= 0;
+    }
+    const index = Math.abs(hash) % 768;
+    const val = Math.sin(hash) * 0.5;
+    vector[index] = (vector[index] || 0) + val;
+  });
+
+  // L2 normalization
+  let norm = 0;
+  for (let i = 0; i < 768; i++) {
+    norm += vector[i] * vector[i];
+  }
+  norm = Math.sqrt(norm);
+  if (norm > 0) {
+    for (let i = 0; i < 768; i++) {
+      vector[i] /= norm;
+    }
+  }
+  return vector;
 };
 
 /**
@@ -220,6 +249,43 @@ export const translateText = async (text, targetLanguage) => {
   } catch (error) {
     console.warn(`[AI Service] Translation failed to "${targetLanguage}". Returning original text:`, error.message);
     return text;
+  }
+};
+
+/**
+ * Helper to extract location name from user query using the LLM
+ */
+const extractLocationFromQuery = async (query, defaultLocation) => {
+  try {
+    const prompt = `Analyze this user query and extract any city, town, village, district, or state name mentioned.
+Query: "${query}"
+Respond with ONLY the name of the location. If no specific location is mentioned in the query, respond with "${defaultLocation}".`;
+    const response = await generateText(prompt);
+    const cleaned = response.replace(/['"“”\.]/g, "").trim();
+    return cleaned || defaultLocation;
+  } catch (error) {
+    console.error("[AI Service] Failed to extract location from query:", error);
+    return defaultLocation;
+  }
+};
+
+/**
+ * Helper to auto-detect language of user query using LLM (returns English, Hindi, or Gujarati)
+ */
+const detectLanguageFromQuery = async (query, defaultLanguage) => {
+  try {
+    const prompt = `Analyze the language of the following query. It will be either English, Hindi, or Gujarati.
+Query: "${query}"
+Respond with ONLY the name of the language ("English", "Hindi", or "Gujarati"). If the query is mixed or you are unsure, respond with "${defaultLanguage}".`;
+    const response = await generateText(prompt);
+    const cleaned = response.trim().replace(/['"“”\.]/g, "");
+    if (["English", "Hindi", "Gujarati"].includes(cleaned)) {
+      return cleaned;
+    }
+    return defaultLanguage;
+  } catch (error) {
+    console.error("[AI Service] Failed to detect query language:", error);
+    return defaultLanguage;
   }
 };
 
@@ -285,6 +351,10 @@ export const queryRAG = async (userQuery, userLanguage = "English", userId = nul
     };
     const mappedLanguage = langMap[userLanguage.toLowerCase()] || "English";
 
+    // Auto-detect query language to answer in the same language
+    const queryLanguage = await detectLanguageFromQuery(userQuery, mappedLanguage);
+    console.log(`[RAG Flow] User query language detected: "${queryLanguage}"`);
+
     // Initialize Chroma collection reference
     const collectionName = "agricultural_knowledge";
     const chromaCollectionId = await getOrCreateChromaCollection(collectionName);
@@ -310,6 +380,25 @@ export const queryRAG = async (userQuery, userLanguage = "English", userId = nul
       }
     }
 
+    // Step 2.5: Extract dynamic location and coordinates from query if weather or shop intent matches
+    let targetLocation = userLocation;
+    if (intents.includes("weather") || intents.includes("shop")) {
+      targetLocation = await extractLocationFromQuery(englishQuery, userLocation);
+      console.log(`[RAG Flow] Location extracted from query: "${targetLocation}"`);
+
+      // If different from default userLocation, geocode it using mapService
+      if (targetLocation.toLowerCase() !== userLocation.toLowerCase()) {
+        const geoRes = await mapService.searchLocation(targetLocation);
+        if (geoRes.success && geoRes.data && geoRes.data.length > 0) {
+          coordinates = {
+            lat: geoRes.data[0].latitude,
+            lon: geoRes.data[0].longitude
+          };
+          console.log(`[RAG Flow] Geocoded "${targetLocation}" to: ${coordinates.lat}, ${coordinates.lon}`);
+        }
+      }
+    }
+
     // Step 3: Call external APIs in parallel based on query intent
     let weatherSnapshot = null;
     let marketSnapshot = null;
@@ -318,7 +407,7 @@ export const queryRAG = async (userQuery, userLanguage = "English", userId = nul
     const apiCallsUsed = [];
 
     const weatherPromise = intents.includes("weather")
-      ? weatherService.getCompleteWeather(userLocation).then(res => {
+      ? weatherService.getCompleteWeather(targetLocation).then(res => {
           weatherSnapshot = res;
           apiCallsUsed.push("WeatherAPI");
         }).catch(() => null)
@@ -384,7 +473,7 @@ export const queryRAG = async (userQuery, userLanguage = "English", userId = nul
     
     // Inject API Snapshots into the context
     if (weatherSnapshot) {
-      contextText += `\n\n[Live Weather API Snapshot] Location: ${userLocation}, Temp: ${weatherSnapshot.current?.temp}°C, Humidity: ${weatherSnapshot.current?.humidity}%, Rain Chance: ${weatherSnapshot.forecast?.[0]?.chanceOfRain || 0}%, Condition: ${weatherSnapshot.current?.condition}`;
+      contextText += `\n\n[Live Weather API Snapshot] Location: ${targetLocation}, Temp: ${weatherSnapshot.current?.temp}°C, Humidity: ${weatherSnapshot.current?.humidity}%, Rain Chance: ${weatherSnapshot.forecast?.[0]?.chanceOfRain || 0}%, Condition: ${weatherSnapshot.current?.condition}`;
     }
     if (marketSnapshot) {
       contextText += `\n\n[Live Mandi Market Snapshot] Overall Avg Price: ₹${marketSnapshot.overallAveragePrice || 0}/Quintal, Active Mandis Count: ${marketSnapshot.activeMandisCount || 0}, Highest Price Crop: ${marketSnapshot.highestPriceCrop?.cropName || "N/A"}`;
@@ -410,7 +499,7 @@ If context documents are matched, provide references. Maintain an encouraging, p
     const rawAnswer = await generateText(modelPrompt, systemPrompt);
 
     // Translate answer back
-    const finalResponse = await translateText(rawAnswer, mappedLanguage);
+    const finalResponse = await translateText(rawAnswer, queryLanguage);
     const responseTime = Date.now() - startTime;
 
     // Compile Programmatic citations and confidence metrics
@@ -446,7 +535,7 @@ If context documents are matched, provide references. Maintain an encouraging, p
       await AIHistory.create({
         conversationId: resolvedConvId,
         user: userId,
-        language: mappedLanguage,
+        language: queryLanguage,
         prompt: userQuery,
         response: finalResponse,
         retrievedDocuments: matchedDocs.map(d => ({ title: d.title, category: d.category, content: d.content })),
@@ -454,7 +543,7 @@ If context documents are matched, provide references. Maintain an encouraging, p
         apiCallsUsed,
         weatherSnapshot,
         marketSnapshot,
-        location: userLocation,
+        location: targetLocation,
         confidenceScore,
         sources,
         responseTime

@@ -5,14 +5,15 @@ import {
   getWeeklyForecast,
   getAirQuality,
 } from "../controller/weatherController.js";
-import authMiddleware from "../middleware/authMiddleware.js";
+import { optionalAuth } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Weather can be checked with optional authorization to store history
-router.get("/", authMiddleware, getCurrentWeather);
-router.get("/hourly", authMiddleware, getHourlyForecast);
-router.get("/weekly", authMiddleware, getWeeklyForecast);
-router.get("/aqi", authMiddleware, getAirQuality);
+// Weather routes use optional auth — works for all users,
+// but logs history only when a user is logged in
+router.get("/", optionalAuth, getCurrentWeather);
+router.get("/hourly", optionalAuth, getHourlyForecast);
+router.get("/weekly", optionalAuth, getWeeklyForecast);
+router.get("/aqi", optionalAuth, getAirQuality);
 
 export default router;

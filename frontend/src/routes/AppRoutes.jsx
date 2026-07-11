@@ -213,13 +213,10 @@ const AppRoutes = () => {
       />
 
       {/* ── Weather ───────────────────────────────────────────────────── */}
+      {/* Public route — anyone can view weather without logging in */}
       <Route
         path="/weather"
-        element={
-          <PrivateRoute>
-            <Weather />
-          </PrivateRoute>
-        }
+        element={<Weather />}
       />
 
       {/* ── Messages ──────────────────────────────────────────────────── */}

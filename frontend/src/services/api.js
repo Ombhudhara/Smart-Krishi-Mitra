@@ -14,7 +14,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Don't redirect to login from public pages (e.g. /weather)
+    const publicPaths = ['/weather'];
+    const isPublicPage = publicPaths.some(p => window.location.pathname.startsWith(p));
+    if (error.response?.status === 401 && !isPublicPage) {
       localStorage.removeItem("token");
       window.location.href = "/login";
     }

@@ -61,4 +61,31 @@ export const authMiddleware = async (req, res, next) => {
     });
   }
 };
+
+/**
+ * Optional auth middleware — attaches req.user if a valid token is found,
+ * but does NOT block the request if no token is present (used for public routes).
+ */
+export const optionalAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer")) {
+      const token = authHeader.split(" ")[1];
+      try {
+        const decoded = verifyToken(token);
+        const user = await User.findById(decoded.id).select("-password");
+        if (user && user.accountStatus === "Active") {
+          req.user = user;
+        }
+      } catch (err) {
+        // Token invalid — just skip, don't block
+      }
+    }
+    next();
+  } catch (error) {
+    console.error("Error in optionalAuth:", error.message || error);
+    next(); // Always continue even on unexpected error
+  }
+};
+
 export default authMiddleware;

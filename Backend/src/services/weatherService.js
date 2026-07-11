@@ -260,11 +260,16 @@ export const getCompleteWeather = async (location) => {
   if (data.forecast && Array.isArray(data.forecast.forecastday)) {
     forecast = data.forecast.forecastday.map(mapForecastDay);
     
-    // Map hourly forecast from first day
+    // FIX: declare firstDay before using it
     const firstDay = data.forecast.forecastday[0];
-    if (firstDay && Array.isArray(firstDay.hour)) {
-      hourly = firstDay.hour.map(mapHour);
-    }
+    
+    // Map hourly forecasts from all available forecast days to allow rolling lists
+    hourly = [];
+    data.forecast.forecastday.forEach((day) => {
+      if (day && Array.isArray(day.hour)) {
+        hourly.push(...day.hour.map(mapHour));
+      }
+    });
     
     // Map astronomy from first day
     if (firstDay && firstDay.astro) {

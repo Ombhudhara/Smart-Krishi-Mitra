@@ -191,6 +191,12 @@ export default function Landing({ onViewChange }) {
                 </button>
               </li>
             ))}
+            {/* Weather — public page, accessible without login */}
+            <li>
+              <button className="nav-link" onClick={() => navigate("/weather")}>
+                🌤️ Weather
+              </button>
+            </li>
             <li className="nav-actions">
               <button className="btn-outline" onClick={() => handleViewChange("login")}>Login</button>
               <button className="btn-primary" onClick={() => handleViewChange("signup")}>Sign Up</button>

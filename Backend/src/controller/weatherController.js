@@ -228,14 +228,40 @@ export const getCurrentWeather = async (req, res) => {
     const weatherLoc = weatherData.location;
 
     // 4. Map the WeatherAPI response into combined frontend DTO
-    const firstHourly = weatherData.hourly?.[0] || {};
-    const rainChance = firstHourly.rainChance || 0;
+    // Find index of the hour matching or closest to the location's local time
+    let startIdx = 0;
+    const localTimeStr = resolvedLocation?.localTime || weatherLoc?.localTime;
+    if (localTimeStr) {
+      const locTime = new Date(localTimeStr);
+      if (!isNaN(locTime.getTime())) {
+        const currentLocEpoch = locTime.getTime();
+        let minDiff = Infinity;
+        weatherData.hourly.forEach((h, idx) => {
+          if (h.time) {
+            const hTime = new Date(h.time);
+            if (!isNaN(hTime.getTime())) {
+              const diff = Math.abs(hTime.getTime() - currentLocEpoch);
+              if (diff < minDiff) {
+                minDiff = diff;
+                startIdx = idx;
+              }
+            }
+          }
+        });
+      }
+    } else {
+      const currentHour = new Date().getHours();
+      startIdx = currentHour;
+    }
 
-    // Map Hourly Forecast (next 7 hours)
-    const hourlyForecast = weatherData.hourly.slice(0, 7).map((h) => {
+    const currentHourly = weatherData.hourly?.[startIdx] || {};
+    const rainChance = currentHourly.rainChance || 0;
+
+    // Map Hourly Forecast (next 7 hours starting from current hour)
+    const hourlyForecast = weatherData.hourly.slice(startIdx, startIdx + 7).map((h, i) => {
       const timeStr = h.time ? new Date(h.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
       return {
-        time: timeStr || "Now",
+        time: i === 0 ? "Now" : (timeStr || "Now"),
         temp: `${Math.round(h.temperature)}°C`,
         icon: getConditionEmoji(h.condition),
         rain: `${h.rainChance}%`,
@@ -271,9 +297,9 @@ export const getCurrentWeather = async (req, res) => {
 
     // Map Charts values
     const charts = {
-      temp: weatherData.hourly.slice(0, 7).map(h => Math.round(h.temperature)),
-      humidity: weatherData.hourly.slice(0, 7).map(h => h.humidity),
-      rain: weatherData.hourly.slice(0, 7).map(h => h.rainChance)
+      temp: weatherData.hourly.slice(startIdx, startIdx + 7).map(h => Math.round(h.temperature)),
+      humidity: weatherData.hourly.slice(startIdx, startIdx + 7).map(h => h.humidity),
+      rain: weatherData.hourly.slice(startIdx, startIdx + 7).map(h => h.rainChance)
     };
 
     // Construct response matching expected DTO
@@ -307,6 +333,13 @@ export const getCurrentWeather = async (req, res) => {
 
   } catch (error) {
     console.error("Error in getCurrentWeather controller:", error.message || error);
+    try {
+      import("fs").then((fs) => {
+        fs.writeFileSync("weather-error.log", `${new Date().toISOString()}\nError: ${error.message}\nStack: ${error.stack}\n`);
+      });
+    } catch (fsErr) {
+      console.error("Failed to write error log:", fsErr);
+    }
     return res.status(500).json({ success: false, message: "Server error fetching weather." });
   }
 };

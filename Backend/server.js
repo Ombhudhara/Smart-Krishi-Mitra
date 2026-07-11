@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+import "./src/db/loadEnv.js";
 import dns from "node:dns";
 import connectDB from "./src/db/index.js";
 import { app } from "./src/app.js";
@@ -7,11 +7,6 @@ import { initSocket } from "./src/socket/index.js";
 
 // Force Node.js to use public DNS servers to resolve MongoDB SRV records reliably
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
-
-// Load environment variables as early as possible
-dotenv.config({
-  path: "./.env",
-});
 
 const PORT = process.env.PORT || 8000;
 
