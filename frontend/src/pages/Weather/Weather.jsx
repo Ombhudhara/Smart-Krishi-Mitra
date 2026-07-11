@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Sidebar from '../../components/Sidebar/Sidebar';
@@ -7,6 +7,7 @@ import Button from '../../components/Button/Button';
 import Card from '../../components/Card/Card';
 import Loader from '../../components/Loader/Loader';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
+import { getCurrentWeather } from '../../services/weatherService';
 import './Weather.css';
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -194,12 +195,13 @@ function WeatherTrendChart({ data, type, color, label }) {
   const iW = W - pad.left - pad.right;
   const iH = H - pad.top - pad.bottom;
 
-  const maxVal = Math.max(...data, 10);
-  const minVal = Math.min(...data, 0);
+  const chartData = Array.isArray(data) && data.length > 0 ? data : [0, 0, 0, 0, 0, 0, 0];
+  const maxVal = Math.max(...chartData, 10);
+  const minVal = Math.min(...chartData, 0);
   const range = maxVal - minVal || 1;
 
-  const pts = data.map((val, idx) => {
-    const x = pad.left + (idx * (iW / (data.length - 1)));
+  const pts = chartData.map((val, idx) => {
+    const x = pad.left + (idx * (iW / (chartData.length - 1)));
     const y = pad.top + iH - (((val - minVal) / range) * iH);
     return `${x},${y}`;
   }).join(' ');
@@ -272,42 +274,56 @@ export default function Weather() {
 
   const [collapsed, setCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentKey, setCurrentKey] = useState('nashik');
+  const [weatherData, setWeatherData] = useState(null);
   const [recentLocations, setRecentLocations] = useState(SEARCH_HISTORY_DEFAULT);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [notification, setNotification] = useState(null);
 
-  const activeWeather = WEATHER_LOCATIONS[currentKey];
-
-
+  const activeWeather = weatherData || {
+    city: 'Ahmedabad',
+    state: 'Gujarat',
+    temp: 30,
+    condition: 'Clear',
+    icon: '☀️',
+    feelsLike: '32°C',
+    humidity: '50%',
+    windSpeed: '10 km/h',
+    uvIndex: '5 (Moderate)',
+    visibility: '10 km',
+    airQuality: '45 (Good)',
+    pressure: '1010 hPa',
+    sunrise: '06:00 AM',
+    sunset: '07:00 PM',
+    hourly: [],
+    daily: [],
+    alerts: [],
+    cropSuitability: [],
+    aiSuggestions: [],
+    charts: { temp: [30], humidity: [50], rain: [0] }
+  };
 
   const showToast = useCallback((msg, type = 'info') => {
     setNotification({ msg, type });
     setTimeout(() => setNotification(null), 3000);
   }, []);
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    const query = searchQuery.trim().toLowerCase();
+  const fetchWeather = async (lat, lon, query = '') => {
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      if (query.includes('pune')) {
-        setCurrentKey('pune');
-        updateHistory('Pune Region');
-        showToast('Loaded weather profile for Pune.', 'success');
-      } else if (query.includes('nagpur')) {
-        setCurrentKey('nagpur');
-        updateHistory('Nagpur East');
-        showToast('Loaded weather profile for Nagpur.', 'success');
+    try {
+      const res = await getCurrentWeather(lat, lon, query);
+      if (res.data?.success && res.data?.weather) {
+        setWeatherData(res.data.weather);
+        const resolvedName = `${res.data.weather.city}, ${res.data.weather.state}`;
+        updateHistory(resolvedName);
       } else {
-        setCurrentKey('nashik');
-        updateHistory(searchQuery);
-        showToast(`Search results loaded. Profile loaded for ${searchQuery}.`, 'success');
+        showToast("Error retrieving weather from server.", "error");
       }
-      setSearchQuery('');
-    }, 800);
+    } catch (err) {
+      console.error("Weather fetch failed:", err);
+      showToast("Could not retrieve real-time weather details.", "error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const updateHistory = (locationName) => {
@@ -317,32 +333,69 @@ export default function Weather() {
     });
   };
 
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    fetchWeather(null, null, searchQuery.trim());
+    setSearchQuery('');
+  };
+
   const handleRecentClick = (locName) => {
-    const name = locName.toLowerCase();
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      if (name.includes('pune')) setCurrentKey('pune');
-      else if (name.includes('nagpur')) setCurrentKey('nagpur');
-      else setCurrentKey('nashik');
-      showToast(`Loaded weather for ${locName}`, 'success');
-    }, 600);
+    fetchWeather(null, null, locName);
   };
 
   const handleCurrentLocationBtn = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setCurrentKey('nashik');
-      showToast('GPS current location loaded: Nashik District.', 'success');
-    }, 700);
+    if (navigator.geolocation) {
+      setIsLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          fetchWeather(position.coords.latitude, position.coords.longitude);
+          showToast("Refreshed current location.", "success");
+        },
+        (error) => {
+          showToast("Location access denied or unavailable. Loading Ahmedabad.", "error");
+          fetchWeather(23.0225, 72.5714);
+        }
+      );
+    } else {
+      showToast("Geolocation not supported. Loading Ahmedabad.", "error");
+      fetchWeather(23.0225, 72.5714);
+    }
   };
+
+  // Get location on mount
+  useEffect(() => {
+    const handleSuccess = (position) => {
+      const { latitude, longitude } = position.coords;
+      console.log(`[Geolocation] Permission granted: ${latitude}, ${longitude}`);
+      showToast("Current location detected.", "success");
+      fetchWeather(latitude, longitude);
+    };
+
+    const handleError = (error) => {
+      console.warn(`[Geolocation] Error (${error.code}): ${error.message}. Defaulting to Ahmedabad, Gujarat.`);
+      showToast("Location access denied or unavailable. Loading Ahmedabad.", "info");
+      fetchWeather(23.0225, 72.5714);
+    };
+
+    if (navigator.geolocation) {
+      console.log("[Geolocation] Requesting browser location permission...");
+      navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
+        enableHighAccuracy: true,
+        timeout: 8000,
+        maximumAge: 0
+      });
+    } else {
+      console.log("[Geolocation] Browser does not support geolocation. Defaulting to Ahmedabad.");
+      fetchWeather(23.0225, 72.5714);
+    }
+  }, []);
 
   const todayStats = [
     { label: 'Humidity', value: activeWeather.humidity, icon: '💧', color: '#42A5F5' },
     { label: 'Wind', value: activeWeather.windSpeed, icon: '💨', color: '#78909C' },
-    { label: 'Rain Chance', value: activeWeather.hourly[0].rain, icon: '🌧️', color: '#5C6BC0' },
-    { label: 'UV Index', value: activeWeather.uvIndex.split(' ')[0], icon: '☀️', color: '#FFA726' },
+    { label: 'Rain Chance', value: activeWeather.hourly?.[0]?.rain || '0%', icon: '🌧️', color: '#5C6BC0' },
+    { label: 'UV Index', value: activeWeather.uvIndex ? activeWeather.uvIndex.split(' ')[0] : '0', icon: '☀️', color: '#FFA726' },
     { label: 'Visibility', value: activeWeather.visibility, icon: '👁️', color: '#26A69A' },
     { label: 'Pressure', value: activeWeather.pressure || '1010 hPa', icon: '🔵', color: '#7E57C2' },
   ];
