@@ -306,33 +306,37 @@ Based on this, draft a direct, expert, professional advice paragraph in English.
 `;
 
   try {
-    console.log("[Recommendation Service] Dispatching payload to Gemini AI API...");
+    const apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Router API Key (GEMINI_API_KEY or OPENROUTER_API_KEY) is not configured.");
+    }
+
+    console.log("[Recommendation Service] Dispatching payload to Router API...");
     const response = await axios.post(
-      `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
+      "https://openrouter.ai/api/v1/chat/completions",
       {
-        contents: [
+        model: "google/gemini-2.5-flash",
+        messages: [
           {
-            parts: [
-              {
-                text: prompt
-              }
-            ]
+            role: "user",
+            content: prompt
           }
-        ]
+        ],
+        max_tokens: 1500
       },
       {
         headers: {
+          "Authorization": `Bearer ${apiKey}`,
           "Content-Type": "application/json"
         },
-        timeout: 9000 // 9-second timeout limit for AI response
+        timeout: 12000
       }
     );
 
-    const aiText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const aiText = response.data?.choices?.[0]?.message?.content;
     if (!aiText) {
-      throw new Error("Invalid or empty response format received from Gemini AI endpoint.");
+      throw new Error("Invalid or empty response format received from Router API.");
     }
-
     return aiText.trim();
   } catch (error) {
     let errMsg = error.message;
