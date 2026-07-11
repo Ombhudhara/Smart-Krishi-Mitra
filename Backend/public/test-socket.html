@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Krishi Mitra — Socket.io Test Suite</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f8;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    h1 {
+      color: #2E7D32;
+      margin-top: 0;
+      border-bottom: 2px solid #E8F5E9;
+      padding-bottom: 15px;
+    }
+    .section {
+      margin-bottom: 25px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #444;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-family: monospace;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+    button {
+      background: #2E7D32;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #1B5E20;
+    }
+    button.disconnect {
+      background: #c62828;
+    }
+    button.disconnect:hover {
+      background: #b71c1c;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      font-weight: bold;
+      border-radius: 20px;
+      font-size: 13px;
+      margin-left: 10px;
+    }
+    .status-disconnected {
+      background: #ffebee;
+      color: #c62828;
+    }
+    .status-connected {
+      background: #e8f5e9;
+      color: #2E7D32;
+    }
+    .console {
+      background: #1e1e1e;
+      color: #85c46c;
+      padding: 15px;
+      border-radius: 6px;
+      height: 300px;
+      overflow-y: auto;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .log-entry {
+      margin-bottom: 6px;
+      border-bottom: 1px solid #2d2d2d;
+      padding-bottom: 4px;
+    }
+    .log-time {
+      color: #569cd6;
+    }
+    .log-info {
+      color: #dcdcaa;
+    }
+    .log-error {
+      color: #f44336;
+      font-weight: bold;
+    }
+    .log-success {
+      color: #4caf50;
+      font-weight: bold;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+  </style>
+  <!-- Load Socket.io client from CDN -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <h1>Smart Krishi Mitra — WebSocket Diagnostics Tool</h1>
+  
+  <div class="section">
+    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+      <strong>Socket Connection Status:</strong>
+      <span id="connectionStatus" class="status-badge status-disconnected">DISCONNECTED</span>
+    </div>
+    
+    <label for="jwtToken">JWT Authorization Token (Get from localStorage or login response):</label>
+    <input type="text" id="jwtToken" placeholder="Paste your authentication JWT token here...">
+    
+    <div class="grid">
+      <div>
+        <label for="socketUrl">Socket Server URL:</label>
+        <input type="text" id="socketUrl" value="http://localhost:8000">
+      </div>
+      <div>
+        <label for="recipientId">Recipient User ID (To test typing indicators):</label>
+        <input type="text" id="recipientId" placeholder="Enter recipient user's database ID...">
+      </div>
+    </div>
+    
+    <div style="display: flex; gap: 10px;">
+      <button id="connectBtn" onclick="connectSocket()">Connect to WebSocket</button>
+      <button id="disconnectBtn" onclick="disconnectSocket()" class="disconnect" style="display: none;">Disconnect</button>
+      <button id="typingBtn" onclick="simulateTyping(true)" style="display: none;">Trigger Typing</button>
+      <button id="stopTypingBtn" onclick="simulateTyping(false)" style="display: none;">Stop Typing</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <label>Live Console Logs & Real-Time Event Listener:</label>
+    <div id="logConsole" class="console">
+      <div class="log-entry"><span class="log-time">[System]</span> <span class="log-info">Diagnostics initialized. Paste your auth token and connect.</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let socket = null;
+
+  function appendLog(message, type = 'info') {
+    const logConsole = document.getElementById('logConsole');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'log-time';
+    timeSpan.innerText = `[${new Date().toLocaleTimeString()}] `;
+    
+    const contentSpan = document.createElement('span');
+    contentSpan.className = `log-${type}`;
+    contentSpan.innerText = message;
+    
+    entry.appendChild(timeSpan);
+    entry.appendChild(contentSpan);
+    logConsole.appendChild(entry);
+    logConsole.scrollTop = logConsole.scrollHeight;
+  }
+
+  function connectSocket() {
+    const token = document.getElementById('jwtToken').value.trim();
+    const url = document.getElementById('socketUrl').value.trim();
+    
+    if (!token) {
+      alert('Please paste a valid JWT token to authenticate.');
+      appendLog('Failed to connect: Token is missing.', 'error');
+      return;
+    }
+    
+    appendLog(`Connecting to socket server at ${url}...`, 'info');
+    
+    try {
+      socket = io(url, {
+        auth: { token },
+        transports: ['websocket', 'polling']
+      });
+      
+      socket.on('connect', () => {
+        appendLog('Socket connected successfully!', 'success');
+        document.getElementById('connectionStatus').innerText = 'CONNECTED';
+        document.getElementById('connectionStatus').className = 'status-badge status-connected';
+        document.getElementById('connectBtn').style.display = 'none';
+        document.getElementById('disconnectBtn').style.display = 'inline-block';
+        document.getElementById('typingBtn').style.display = 'inline-block';
+        document.getElementById('stopTypingBtn').style.display = 'inline-block';
+      });
+      
+      socket.on('connect_error', (error) => {
+        appendLog(`Connection Error: ${error.message}`, 'error');
+        disconnectSocket();
+      });
+      
+      // Listen for messageReceived event
+      socket.on('messageReceived', (message) => {
+        appendLog(`📥 [Event: messageReceived] New message from ${message.sender?.fullName || 'User'}: "${message.text}"`, 'success');
+        console.log('Received Message Payload:', message);
+      });
+      
+      // Listen for typing events
+      socket.on('userTyping', (data) => {
+        appendLog(`✍️ [Event: userTyping] User ${data.senderId} is typing in conversation ${data.conversationId}`, 'info');
+      });
+      
+      socket.on('userStopTyping', (data) => {
+        appendLog(`🛑 [Event: userStopTyping] User ${data.senderId} stopped typing in conversation ${data.conversationId}`, 'info');
+      });
+      
+      socket.on('disconnect', (reason) => {
+        appendLog(`Socket disconnected. Reason: ${reason}`, 'error');
+        disconnectSocket();
+      });
+      
+    } catch (err) {
+      appendLog(`Initialization error: ${err.message}`, 'error');
+    }
+  }
+
+  function disconnectSocket() {
+    if (socket) {
+      socket.disconnect();
+      socket = null;
+    }
+    document.getElementById('connectionStatus').innerText = 'DISCONNECTED';
+    document.getElementById('connectionStatus').className = 'status-badge status-disconnected';
+    document.getElementById('connectBtn').style.display = 'inline-block';
+    document.getElementById('disconnectBtn').style.display = 'none';
+    document.getElementById('typingBtn').style.display = 'none';
+    document.getElementById('stopTypingBtn').style.display = 'none';
+    appendLog('Socket disconnected by user.', 'info');
+  }
+
+  function simulateTyping(isTyping) {
+    if (!socket) {
+      alert('Connect the socket first!');
+      return;
+    }
+    
+    const recipientId = document.getElementById('recipientId').value.trim();
+    if (!recipientId) {
+      alert('Please enter a Recipient User ID to test typing indicators.');
+      return;
+    }
+    
+    const event = isTyping ? 'typing' : 'stopTyping';
+    appendLog(`📤 Emitting event: "${event}" to recipient: ${recipientId}`, 'info');
+    
+    socket.emit(event, {
+      conversationId: 'test_conv_id_123',
+      receiverId: recipientId
+    });
+  }
+</script>
+
+</body>
+</html>
