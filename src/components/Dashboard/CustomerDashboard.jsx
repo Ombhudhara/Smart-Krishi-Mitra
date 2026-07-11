@@ -15,7 +15,7 @@ const STATS_DATA = [
 ];
 
 const RECOMMENDED_CROPS = [
-  { crop: 'Premium Sharbati Wheat', seller: 'Om Bhudhara (Farmer)', price: '₹2,350/Q', rating: 4.9, bg: '🌾' },
+  { crop: 'Premium Sharbati Wheat', seller: 'Om Bhudhara (Farme\r)', price: '₹2,350/Q', rating: 4.9, bg: '🌾' },
   { crop: 'Basmati Rice (aged)', seller: 'AgroMart Gujarat (Vendor)', price: '₹4,900/Q', rating: 4.7, bg: '🍚' },
   { crop: 'Organic Bt Cotton', seller: 'Raj Patel (Farmer)', price: '₹7,200/Q', rating: 4.9, bg: '☁️' }
 ];

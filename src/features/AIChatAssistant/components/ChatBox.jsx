@@ -14,7 +14,16 @@ import SuggestedQuestions from "./SuggestedQuestions";
 import EmptyChat from "./EmptyChat";
 
 /* Services & Utilities */
-import { sendMessageToAI, generateConversationTitle } from "../services/aiService";
+import { 
+  sendMessageToAI, 
+  generateConversationTitle,
+  fetchConversations,
+  fetchMessages,
+  createConversation,
+  updateConversation,
+  deleteConversation,
+  downloadTextTranscript
+} from "../services/aiService";
 import { generateId } from "../utils/chatHelpers";
 import { dummyConversations } from "../data/dummyMessages";
 import { getStrings, DEFAULT_LANGUAGE } from "../utils/languages";
@@ -66,6 +75,69 @@ function ChatBox({ onClose, showClose = true }) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
+
+  /* ── Load chat history from backend on mount ── */
+  useEffect(() => {
+    async function loadHistory() {
+      try {
+        const conversationsList = await fetchConversations();
+        if (conversationsList.length > 0) {
+          const activeConv = conversationsList[0];
+          const messagesData = await fetchMessages(activeConv._id);
+          
+          const messagesList = [];
+          messagesData.forEach((item, index) => {
+            messagesList.push({
+              id: item._id || `db-u-${index}`,
+              role: "user",
+              text: item.prompt,
+              timestamp: item.createdAt || new Date().toISOString()
+            });
+            messagesList.push({
+              id: item._id ? `${item._id}-ai` : `db-a-${index}`,
+              role: "ai",
+              text: item.response,
+              timestamp: item.createdAt || new Date().toISOString(),
+              confidenceScore: item.confidenceScore,
+              sources: item.sources
+            });
+          });
+
+          const formattedConvs = conversationsList.map(c => ({
+            id: c._id,
+            title: c.title,
+            preview: c.title,
+            timestamp: c.lastActive || c.updatedAt || new Date().toISOString(),
+            pinned: c.isPinned || false,
+            favorite: c.isFavorite || false,
+            category: "today",
+            messages: c._id === activeConv._id ? messagesList : []
+          }));
+
+          setConversations(formattedConvs);
+          setActiveConvId(activeConv._id);
+        } else {
+          await handleNewChat();
+        }
+      } catch (err) {
+        console.error("Failed to load chat history from backend:", err);
+        // Fallback to offline start
+        const fallbackId = generateId("conv");
+        setConversations([{
+          id: fallbackId,
+          title: "New Conversation",
+          preview: "Start a new farming query…",
+          timestamp: new Date().toISOString(),
+          pinned: false,
+          favorite: false,
+          category: "today",
+          messages: []
+        }]);
+        setActiveConvId(fallbackId);
+      }
+    }
+    loadHistory();
+  }, []);
 
   /* ── Handle language change — add fade transition ── */
   function handleLangChange(newCode) {
@@ -132,22 +204,38 @@ function ChatBox({ onClose, showClose = true }) {
       setIsTyping(true);
 
       try {
-        const aiResponse = await sendMessageToAI(text, messages, langCode);
+        const responseData = await sendMessageToAI(text, messages, langCode, targetConvId);
+        
+        let finalConvId = targetConvId;
+        if (!finalConvId || finalConvId.startsWith("conv-")) {
+          finalConvId = responseData.conversationId;
+        }
 
         const aiMessage = {
           id: generateId("msg"),
           role: "ai",
-          text: aiResponse,
+          text: responseData.answer,
           timestamp: new Date().toISOString(),
+          confidenceScore: responseData.confidenceScore,
+          sources: responseData.sources
         };
 
         setConversations((prev) =>
           prev.map((c) =>
-            c.id === targetConvId
-              ? { ...c, messages: [...c.messages, aiMessage], preview: aiResponse.slice(0, 80) }
+            c.id === targetConvId || c.id === finalConvId
+              ? { 
+                  ...c, 
+                  id: finalConvId, 
+                  messages: [...c.messages, aiMessage], 
+                  preview: responseData.answer.slice(0, 80) 
+                }
               : c
           )
         );
+
+        if (targetConvId !== finalConvId) {
+          setActiveConvId(finalConvId);
+        }
       } catch (error) {
         console.error("AI service error:", error);
         const errorMessage = {
@@ -176,54 +264,116 @@ function ChatBox({ onClose, showClose = true }) {
   }
 
   /* ── Start a new conversation ── */
-  function handleNewChat() {
-    const newConv = {
-      id: generateId("conv"),
-      title: "New Conversation",
-      preview: "Start a new farming query…",
-      timestamp: new Date().toISOString(),
-      pinned: false,
-      category: "today",
-      messages: [],
-    };
-    setConversations((prev) => [newConv, ...prev]);
-    setActiveConvId(newConv.id);
+  async function handleNewChat() {
+    try {
+      const newSession = await createConversation("New Conversation");
+      if (newSession) {
+        const newConv = {
+          id: newSession._id,
+          title: newSession.title,
+          preview: "Start a new farming query…",
+          timestamp: newSession.lastActive || new Date().toISOString(),
+          pinned: false,
+          favorite: false,
+          category: "today",
+          messages: [],
+        };
+        setConversations((prev) => [newConv, ...prev]);
+        setActiveConvId(newConv.id);
+      }
+    } catch (err) {
+      console.error("Failed to create conversation:", err);
+      const fallbackId = generateId("conv");
+      const fallbackConv = {
+        id: fallbackId,
+        title: "New Conversation",
+        preview: "Start a new farming query…",
+        timestamp: new Date().toISOString(),
+        pinned: false,
+        favorite: false,
+        category: "today",
+        messages: [],
+      };
+      setConversations((prev) => [fallbackConv, ...prev]);
+      setActiveConvId(fallbackId);
+    }
   }
 
   /* ── Clear messages in current chat ── */
-  function handleClearChat() {
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === activeConvId ? { ...c, messages: [], preview: "Cleared…" } : c
-      )
-    );
+  async function handleClearChat() {
+    if (!activeConvId) return;
+    try {
+      await deleteConversation(activeConvId);
+      await handleNewChat();
+      setConversations(prev => prev.filter(c => c.id !== activeConvId));
+    } catch (err) {
+      console.error("Failed to clear chat session:", err);
+    }
   }
 
   /* ── Delete a conversation ── */
-  function handleDeleteConversation(convId) {
-    setConversations((prev) => {
-      const updated = prev.filter((c) => c.id !== convId);
-      if (convId === activeConvId) {
-        setActiveConvId(updated[0]?.id || null);
-      }
-      return updated;
-    });
+  async function handleDeleteConversation(convId) {
+    try {
+      await deleteConversation(convId);
+      setConversations((prev) => {
+        const updated = prev.filter((c) => c.id !== convId);
+        if (convId === activeConvId) {
+          setActiveConvId(updated[0]?.id || null);
+        }
+        return updated;
+      });
+    } catch (err) {
+      console.error("Failed to delete conversation:", err);
+    }
   }
 
   /* ── Pin / unpin a conversation ── */
-  function handlePinConversation(convId) {
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === convId ? { ...c, pinned: !c.pinned } : c
-      )
-    );
+  async function handlePinConversation(convId) {
+    const target = conversations.find(c => c.id === convId);
+    if (!target) return;
+    const nextPinned = !target.pinned;
+    try {
+      await updateConversation(convId, { isPinned: nextPinned });
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === convId ? { ...c, pinned: nextPinned } : c
+        )
+      );
+    } catch (err) {
+      console.error("Failed to update pin state:", err);
+    }
   }
 
   /* ── Select a conversation ── */
-  function handleSelectConversation(convId) {
+  async function handleSelectConversation(convId) {
     setActiveConvId(convId);
+    const target = conversations.find(c => c.id === convId);
+    if (target && target.messages.length === 0) {
+      try {
+        const messagesData = await fetchMessages(convId);
+        const messagesList = [];
+        messagesData.forEach((item, index) => {
+          messagesList.push({
+            id: item._id || `db-u-${index}`,
+            role: "user",
+            text: item.prompt,
+            timestamp: item.createdAt || new Date().toISOString()
+          });
+          messagesList.push({
+            id: item._id ? `${item._id}-ai` : `db-a-${index}`,
+            role: "ai",
+            text: item.response,
+            timestamp: item.createdAt || new Date().toISOString(),
+            confidenceScore: item.confidenceScore,
+            sources: item.sources
+          });
+        });
+        setConversations(prev => prev.map(c => c.id === convId ? { ...c, messages: messagesList } : c));
+      } catch (err) {
+        console.error("Failed to load conversation messages:", err);
+      }
+    }
   }
-
   return (
     <div className={`ai-chatbox ai-chat-module ${theme}-theme ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
       {/* Mobile sidebar drawer backdrop */}
@@ -265,6 +415,7 @@ function ChatBox({ onClose, showClose = true }) {
           theme={theme}
           toggleTheme={toggleTheme}
           isSidebarCollapsed={sidebarCollapsed}
+          onExportChat={() => downloadTextTranscript(activeConvId)}
         />
 
         {/* Messages / Empty state Welcome Screen */}

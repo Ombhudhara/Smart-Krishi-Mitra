@@ -218,6 +218,7 @@ function ChatHeader({
   theme = "light",
   toggleTheme,
   isSidebarCollapsed = false,
+  onExportChat,
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
@@ -314,6 +315,15 @@ function ChatHeader({
               >
                 <PlusIcon />
                 {strings.headerNewChat || "New Chat"}
+              </button>
+              <button
+                className="ai-header-dropdown-item"
+                role="menuitem"
+                onClick={() => { onExportChat(); setShowMenu(false); }}
+                title="Download Chat History as TXT File"
+              >
+                <span style={{ marginRight: "10px", fontSize: "16px" }}>📥</span>
+                {strings.headerExport || "Export Transcript (TXT)"}
               </button>
             </div>
           )}

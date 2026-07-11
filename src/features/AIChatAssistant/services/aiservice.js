@@ -1,101 +1,53 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// aiService.js
-// Mock AI service with language-aware responses.
-// Replace sendMessageToAI body with Google Gemini API call for production.
-// ─────────────────────────────────────────────────────────────────────────────
-
-import { getResponses, DEFAULT_LANGUAGE } from "../utils/languages";
+import api from "../../../services/api";
+import { DEFAULT_LANGUAGE } from "../utils/languages";
 
 /**
- * Simulate API network delay (ms).
- */
-function randomDelay(min = 800, max = 2000) {
-  return new Promise((resolve) =>
-    setTimeout(resolve, Math.floor(Math.random() * (max - min + 1)) + min)
-  );
-}
-
-/**
- * Priority-ordered keyword map — same for all languages because users may
- * type in any language. Responses are then returned in the selected lang.
- */
-const KEYWORD_MAP = [
-  { keywords: ["wheat", "gehu", "गेहूं", "ઘઉં", "rabi", "roti"], key: "wheat" },
-  { keywords: ["cotton", "kapas", "kapasi", "कपास", "કપાસ", "white gold"], key: "cotton" },
-  { keywords: ["soil", "mitti", "land", "माटी", "मिट्टी", "જમીન", "pH"], key: "soil" },
-  { keywords: ["scheme", "yojana", "subsidy", "govt", "government", "योजना", "sarkari", "kisan", "pm-kisan", "pmfby", "kcc", "nabard", "sarkar", "yojna", "સરકારી", "યોજના"], key: "scheme" },
-  { keywords: ["fertilizer", "urea", "npk", "dap", "manure", "khad", "खाद", "उर्वरक", "ખાતર"], key: "wheat" },
-  { keywords: ["pest", "insect", "aphid", "caterpillar", "कीट", "जीवात", "જીવાત", "boll"], key: "wheat" },
-];
-
-/**
- * Match user message to a response keyword key.
- * @param {string} text
- * @returns {string} key
- */
-function matchKey(text) {
-  const lower = text.toLowerCase();
-  for (const entry of KEYWORD_MAP) {
-    if (entry.keywords.some((kw) => lower.includes(kw))) {
-      return entry.key;
-    }
-  }
-  return "general";
-}
-
-/**
- * Send a message to the AI assistant.
- * Currently uses keyword-based multilingual dummy responses.
+ * 1. Send a user message or voice transcription to the RAG backend.
  *
- * ── FUTURE INTEGRATION (Google Gemini API) ──────────────────────────────────
- *
- *   const response = await fetch(
- *     `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
- *     {
- *       method: "POST",
- *       headers: { "Content-Type": "application/json" },
- *       body: JSON.stringify({
- *         contents: [{ parts: [{ text: userMessage }] }],
- *         systemInstruction: {
- *           parts: [{
- *             text: `You are a farming AI assistant. Reply ONLY in ${languageCode === "hi" ? "Hindi" : languageCode === "gu" ? "Gujarati" : "English"}.`
- *           }]
- *         }
- *       })
- *     }
- *   );
- *   const data = await response.json();
- *   return data.candidates[0].content.parts[0].text;
- *
- * ────────────────────────────────────────────────────────────────────────────
- *
- * @param {string} userMessage        - The user's input text
- * @param {Array}  conversationHistory - Previous messages (for context)
- * @param {string} languageCode       - "en" | "hi" | "gu" (default: "en")
- * @returns {Promise<string>}          - AI response in markdown
+ * @param {string} userMessage - The user's query.
+ * @param {Array} conversationHistory - Past conversation logs.
+ * @param {string} languageCode - Target language ("en", "hi", "gu").
+ * @param {string} [conversationId=null] - Target conversation ID.
+ * @returns {Promise<object>} Full response payload (includes confidenceScore, sources, etc.)
  */
 export async function sendMessageToAI(
   userMessage,
   conversationHistory = [],
-  languageCode = DEFAULT_LANGUAGE
+  languageCode = DEFAULT_LANGUAGE,
+  conversationId = null
 ) {
-  // Simulate API latency
-  await randomDelay(900, 1800);
+  try {
+    const langMap = {
+      en: "English",
+      hi: "Hindi",
+      gu: "Gujarati"
+    };
 
-  // Get responses for the selected language
-  const responses = getResponses(languageCode);
+    const response = await api.post("/ai/chat", {
+      message: userMessage,
+      language: langMap[languageCode] || "English",
+      conversationId
+    });
 
-  // Match keyword
-  const key = matchKey(userMessage);
-
-  // Return matched response or general fallback
-  return responses[key] || responses.general;
+    if (response.data && response.data.success) {
+      return response.data.data;
+    } else {
+      throw new Error(response.data?.message || "Failed to retrieve answer from AI service.");
+    }
+  } catch (error) {
+    console.error("AI Service Error:", error.message || error);
+    throw new Error(
+      languageCode === "hi" 
+        ? "एआई सेवा से जुड़ने में असमर्थ। कृपया बाद में प्रयास करें।"
+        : languageCode === "gu"
+          ? "એઆઈ સેવા સાથે જોડાણ થઈ શક્યું નથી. કૃપા કરીને ફરી પ્રયાસ કરો."
+          : "Unable to connect to Krishi AI. Please try again later."
+    );
+  }
 }
 
 /**
- * Generate a short conversation title from the first user message.
- * @param {string} firstMessage
- * @returns {string}
+ * 2. Generate a short conversation title from the first user message.
  */
 export function generateConversationTitle(firstMessage) {
   if (!firstMessage) return "New Conversation";
@@ -104,36 +56,170 @@ export function generateConversationTitle(firstMessage) {
 }
 
 /**
- * Simulate image/document analysis (future: Gemini Vision API).
- * @param {File}   file
- * @param {string} languageCode
- * @returns {Promise<string>}
+ * 3. Convert uploaded image to base64 and request diagnosis from backend Gemini.
  */
-export async function analyzeUploadedFile(file, languageCode = DEFAULT_LANGUAGE) {
-  await randomDelay(1500, 2500);
-  const isImage = file.type.startsWith("image/");
-  const msgs = {
-    en: isImage
-      ? `## Image Analysis 📸\n\nI received your crop image. Full Gemini Vision analysis coming soon!\n\n### 💡 Tip\n> For now, describe the symptoms in text and I'll provide detailed guidance.`
-      : `## Document Received 📄\n\nReceived **${file.name}**. Document analysis coming soon! Please type key details from your document.`,
-    hi: isImage
-      ? `## छवि विश्लेषण 📸\n\nआपकी फसल की छवि मिली। Gemini Vision विश्लेषण जल्द आएगा!\n\n### 💡 सलाह\n> अभी के लिए लक्षणों को टेक्स्ट में बताएं।`
-      : `## दस्तावेज़ मिला 📄\n\n**${file.name}** मिला। दस्तावेज़ विश्लेषण जल्द आएगा! मुख्य विवरण टाइप करें।`,
-    gu: isImage
-      ? `## છબી વિશ્લેષણ 📸\n\nતમારી પાકની છબી મળી. Gemini Vision વિશ્લેષણ ટૂંક સમયમાં!\n\n### 💡 ટિપ\n> હાલ માટે, ટેક્સ્ટમાં લક્ષણો જણાવો।`
-      : `## દસ્તાવેજ મળ્યો 📄\n\n**${file.name}** મળ્યો. ટૂંક સમયમાં! મુખ્ય વિગતો ટાઇપ કરો।`,
-  };
-  return msgs[languageCode] || msgs.en;
+export async function analyzeUploadedFile(file, languageCode = DEFAULT_LANGUAGE, conversationId = null) {
+  return new Promise((resolve, reject) => {
+    if (!file) return reject(new Error("No file selected."));
+
+    const isImage = file.type.startsWith("image/");
+    if (!isImage) {
+      return resolve(
+        languageCode === "hi"
+          ? `दस्तावेज़ **${file.name}** प्राप्त हुआ।`
+          : languageCode === "gu"
+            ? `દસ્તાવેજ **${file.name}** મળ્યો છે.`
+            : `Document **${file.name}** received.`
+      );
+    }
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const base64Data = reader.result.split(",")[1];
+        const langMap = {
+          en: "English",
+          hi: "Hindi",
+          gu: "Gujarati"
+        };
+
+        const response = await api.post("/ai/chat", {
+          message: "Please analyze this crop leaf image. Identify any visible plant diseases, describe the symptoms, recommend organic/chemical control measures, and estimate recovery time.",
+          language: langMap[languageCode] || "English",
+          image: base64Data,
+          mimeType: file.type,
+          conversationId
+        });
+
+        if (response.data && response.data.success) {
+          resolve(response.data.data);
+        } else {
+          throw new Error(response.data?.message || "Failed to analyze image file.");
+        }
+      } catch (error) {
+        console.error("Leaf Image Diagnostics Error:", error);
+        reject(error);
+      }
+    };
+    reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(file);
+  });
 }
 
 /**
- * Simulate voice transcription (future: Web Speech API).
- * @param {Blob}   audioBlob
- * @param {string} languageCode
- * @returns {Promise<string>}
+ * 4. Fetch all conversations for the user.
+ */
+export async function fetchConversations() {
+  try {
+    const response = await api.get("/ai/conversations");
+    return response.data?.data || [];
+  } catch (error) {
+    console.error("fetchConversations Error:", error.message || error);
+    return [];
+  }
+}
+
+/**
+ * 5. Fetch all messages in a conversation.
+ */
+export async function fetchMessages(conversationId) {
+  try {
+    const response = await api.get(`/ai/conversations/${conversationId}/messages`);
+    return response.data?.data || [];
+  } catch (error) {
+    console.error("fetchMessages Error:", error.message || error);
+    return [];
+  }
+}
+
+/**
+ * 6. Start a new conversation explicitly.
+ */
+export async function createConversation(title) {
+  try {
+    const response = await api.post("/ai/conversations", { title });
+    return response.data?.data;
+  } catch (error) {
+    console.error("createConversation Error:", error.message || error);
+    return null;
+  }
+}
+
+/**
+ * 7. Update conversation metadata (Rename, Favorite, Pinned).
+ */
+export async function updateConversation(id, updates) {
+  try {
+    const response = await api.put(`/ai/conversations/${id}`, updates);
+    return response.data?.data;
+  } catch (error) {
+    console.error("updateConversation Error:", error.message || error);
+    return null;
+  }
+}
+
+/**
+ * 8. Delete a conversation session along with all associated history logs.
+ */
+export async function deleteConversation(id) {
+  try {
+    const response = await api.delete(`/ai/conversations/${id}`);
+    return response.data?.success;
+  } catch (error) {
+    console.error("deleteConversation Error:", error.message || error);
+    return false;
+  }
+}
+
+/**
+ * 9. Delete a single chat log message.
+ */
+export async function deleteMessage(messageId) {
+  try {
+    const response = await api.delete(`/ai/history/${messageId}`);
+    return response.data?.success;
+  } catch (error) {
+    console.error("deleteMessage Error:", error.message || error);
+    return false;
+  }
+}
+
+/**
+ * 10. Submit feedback rating for a generated response.
+ */
+export async function submitFeedback(messageId, rating, feedback) {
+  try {
+    const response = await api.post(`/ai/history/${messageId}/feedback`, { rating, feedback });
+    return response.data?.success;
+  } catch (error) {
+    console.error("submitFeedback Error:", error.message || error);
+    return false;
+  }
+}
+
+/**
+ * 11. Export conversation as plain text transcript.
+ */
+export async function downloadTextTranscript(conversationId) {
+  try {
+    const response = await api.get(`/ai/conversations/${conversationId}/export/text`, { responseType: "blob" });
+    const blob = new Blob([response.data], { type: "text/plain" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `chat_transcript_${conversationId}.txt`;
+    link.click();
+    return true;
+  } catch (error) {
+    console.error("downloadTextTranscript Error:", error.message || error);
+    return false;
+  }
+}
+
+/**
+ * 12. Simulate voice transcription (browser Speech to Text).
  */
 export async function transcribeVoice(audioBlob, languageCode = DEFAULT_LANGUAGE) {
-  await randomDelay(1000, 2000);
+  await new Promise((resolve) => setTimeout(resolve, 1500));
   const samples = {
     en: [
       "Which fertilizer is best for my wheat crop?",

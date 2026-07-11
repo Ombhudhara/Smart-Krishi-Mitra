@@ -68,8 +68,28 @@ function ChatMessage({ message }) {
             </p>
           ) : (
             /* AI — rich markdown */
-            <div className="ai-markdown-body">
-              {parseMarkdownToReact(message.text)}
+            <div>
+              <div className="ai-markdown-body">
+                {parseMarkdownToReact(message.text)}
+              </div>
+              {(message.confidenceScore || (message.sources && message.sources.length > 0)) && (
+                <div className="ai-message-extra-info" style={{ marginTop: "12px", borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: "8px", fontSize: "0.75rem", opacity: 0.8 }}>
+                  {message.confidenceScore && (
+                    <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                      <span style={{ fontWeight: 600, color: "var(--ai-primary)", marginRight: "6px" }}>Confidence Score:</span>
+                      <span className="ai-confidence-badge" style={{ background: "rgba(76, 175, 80, 0.1)", color: "#2e7d32", padding: "2px 6px", borderRadius: "4px", fontWeight: "bold" }}>
+                        {message.confidenceScore}%
+                      </span>
+                    </div>
+                  )}
+                  {message.sources && message.sources.length > 0 && (
+                    <div>
+                      <span style={{ fontWeight: 600, color: "var(--ai-primary)", marginRight: "6px" }}>Sources:</span>
+                      <span style={{ fontStyle: "italic" }}>{message.sources.join(", ")}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
