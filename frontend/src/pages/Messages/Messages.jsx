@@ -207,12 +207,26 @@ export default function Messages() {
     if (!user) return;
 
     const token = localStorage.getItem("token");
-    const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-    const socketUrl = VITE_API_BASE_URL.replace(/\/api\/?$/, "");
+    
+    // Resolve base URL safely across CRA and Vite environments
+    let apiBase = "http://localhost:5000/api";
+    try {
+      if (import.meta && import.meta.env && import.meta.env.VITE_API_BASE_URL) {
+        apiBase = import.meta.env.VITE_API_BASE_URL;
+      }
+    } catch (e) {}
+    try {
+      if (process && process.env && process.env.REACT_APP_API_BASE_URL) {
+        apiBase = process.env.REACT_APP_API_BASE_URL;
+      }
+    } catch (e) {}
+
+    const socketUrl = apiBase.replace(/\/api\/?$/, "");
 
     console.log("[Socket Client] Connecting to:", socketUrl);
     const socket = io(socketUrl, {
-      auth: { token }
+      auth: { token },
+      transports: ["websocket", "polling"]
     });
 
     socketRef.current = socket;
