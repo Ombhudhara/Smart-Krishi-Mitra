@@ -1,5 +1,6 @@
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
+import { emitToUser } from "../socket/index.js";
 
 /**
  * Get all conversations for current user.
@@ -133,6 +134,11 @@ export const sendMessage = async (req, res) => {
     });
 
     const populatedMsg = await Message.findById(message._id).populate("sender", "fullName profileImage");
+
+    // Emit live message event to the receiver
+    if (receiver) {
+      emitToUser(receiver.toString(), "messageReceived", populatedMsg);
+    }
 
     return res.status(201).json({ success: true, message: populatedMsg });
   } catch (error) {

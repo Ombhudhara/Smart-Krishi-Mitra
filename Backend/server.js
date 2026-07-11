@@ -3,6 +3,7 @@ import dns from "node:dns";
 import connectDB from "./src/db/index.js";
 import { app } from "./src/app.js";
 import { seedDatabase } from "./src/db/seeder.js";
+import { initSocket } from "./src/socket/index.js";
 
 // Force Node.js to use public DNS servers to resolve MongoDB SRV records reliably
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
@@ -24,6 +25,9 @@ connectDB()
       console.log(`⚙️ Server is running at port : ${PORT}`);
       console.log(`🏥 Health check URL: http://localhost:${PORT}/health`);
     });
+
+    // Initialize Socket.io real-time chat
+    initSocket(server);
 
     // Handle express-level server errors
     server.on("error", (error) => {

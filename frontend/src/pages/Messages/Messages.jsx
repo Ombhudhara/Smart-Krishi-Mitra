@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { io } from "socket.io-client";
 import Navbar from '../../components/Navbar/Navbar';
 import Sidebar from '../../components/Sidebar/Sidebar';
 import Card from '../../components/Card/Card';
@@ -190,6 +191,65 @@ export default function Messages() {
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const socketRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  const activeChatRef = useRef(activeChat);
+  const [isPartnerTyping, setIsPartnerTyping] = useState(false);
+
+  // Sync activeChatRef for socket callback closures
+  useEffect(() => {
+    activeChatRef.current = activeChat;
+    setIsPartnerTyping(false); // Reset typing status when switching chats
+  }, [activeChat]);
+
+  // Setup Socket.io real-time connection
+  useEffect(() => {
+    if (!user) return;
+
+    const token = localStorage.getItem("token");
+    const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+    const socketUrl = VITE_API_BASE_URL.replace(/\/api\/?$/, "");
+
+    console.log("[Socket Client] Connecting to:", socketUrl);
+    const socket = io(socketUrl, {
+      auth: { token }
+    });
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      console.log("[Socket Client] Connected successfully.");
+    });
+
+    socket.on("messageReceived", (newMessage) => {
+      console.log("[Socket Client] Real-time message received:", newMessage);
+      if (activeChatRef.current === newMessage.conversation) {
+        setMessages((prev) => {
+          if (prev.some((m) => m._id === newMessage._id)) return prev;
+          return [...prev, newMessage];
+        });
+        markConversationRead(newMessage.conversation).catch(console.error);
+      }
+      loadConversations();
+    });
+
+    socket.on("userTyping", ({ conversationId }) => {
+      if (activeChatRef.current === conversationId) {
+        setIsPartnerTyping(true);
+      }
+    });
+
+    socket.on("userStopTyping", ({ conversationId }) => {
+      if (activeChatRef.current === conversationId) {
+        setIsPartnerTyping(false);
+      }
+    });
+
+    return () => {
+      console.log("[Socket Client] Disconnecting socket...");
+      socket.disconnect();
+    };
+  }, [user]);
 
   // Active conversation object
   const activeConv = conversations.find((c) => c._id === activeChat);
@@ -271,12 +331,45 @@ export default function Messages() {
     }
   };
 
+  const handleInputChange = (e) => {
+    setMessageInput(e.target.value);
+
+    if (!activeChat || !socketRef.current || !activeContact) return;
+
+    // Emit typing status
+    socketRef.current.emit("typing", {
+      conversationId: activeChat,
+      receiverId: activeContact._id
+    });
+
+    // Debounce stopTyping event
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      if (socketRef.current) {
+        socketRef.current.emit("stopTyping", {
+          conversationId: activeChat,
+          receiverId: activeContact._id
+        });
+      }
+    }, 2000);
+  };
+
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !activeChat) return;
 
     try {
       const text = messageInput.trim();
       setMessageInput('');
+
+      // Emit stopTyping immediately
+      if (socketRef.current && activeContact) {
+        socketRef.current.emit("stopTyping", {
+          conversationId: activeChat,
+          receiverId: activeContact._id
+        });
+      }
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
       const res = await sendMessage({ conversationId: activeChat, text });
       if (res.data?.success) {
         setMessages((prev) => [...prev, res.data.message]);
@@ -439,7 +532,9 @@ export default function Messages() {
                         <div className="msg-chat-user-name">{activeContact?.fullName}</div>
                         <div className="msg-chat-user-status">
                           <span className={`msg-role-badge msg-role--${(activeContact?.role || 'Farmer').toLowerCase()}`}>{activeContact?.role}</span>
-                          <span className="msg-chat-last-seen">Online</span>
+                          <span className="msg-chat-last-seen">
+                            {isPartnerTyping ? <span style={{ color: "#2E7D32", fontWeight: "bold" }}>typing...</span> : "Online"}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -499,7 +594,7 @@ export default function Messages() {
                         className="msg-input-field"
                         placeholder="Type your message..."
                         value={messageInput}
-                        onChange={(e) => setMessageInput(e.target.value)}
+                        onChange={handleInputChange}
                         onKeyDown={handleKeyDown}
                         rows={1}
                       />
