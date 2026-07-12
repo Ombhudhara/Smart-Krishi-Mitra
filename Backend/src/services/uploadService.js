@@ -61,6 +61,7 @@ export const validateFileSize = (file) => {
 export const generateFolderPath = (type) => {
   const folders = {
     profile: "krishi-mitra/profile-images",
+    cover: "krishi-mitra/cover-images",
     listing: "krishi-mitra/listing-images",
     crop: "krishi-mitra/crop-images",
     chat: "krishi-mitra/chat-images",
@@ -246,6 +247,10 @@ export const uploadProfileImage = async (file) => {
   return await uploadImage(file, "profile");
 };
 
+export const uploadCoverImage = async (file) => {
+  return await uploadImage(file, "cover");
+};
+
 export const uploadListingImage = async (file) => {
   return await uploadImage(file, "listing");
 };
@@ -268,6 +273,7 @@ export default {
   generateFolderPath,
   optimizeImage,
   uploadProfileImage,
+  uploadCoverImage,
   uploadListingImage,
   uploadCropImage,
   uploadChatImage,

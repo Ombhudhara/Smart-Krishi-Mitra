@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getNotifications, markAsRead, markAllAsRead } from '../../services/notificationService';
 
@@ -61,13 +61,15 @@ export default function Profile() {
     }
   };
 
+  const { userId } = useParams();
+
   // ── Role-based View ────────────────────────────────────────────────────────
   const renderProfileContent = () => {
     switch (role) {
-      case 'Farmer':   return <FarmerProfile />;
-      case 'Vendor':   return <VendorProfile />;
-      case 'Customer': return <CustomerProfile />;
-      default:         return <FarmerProfile />;
+      case 'Farmer':   return <FarmerProfile userId={userId} />;
+      case 'Vendor':   return <VendorProfile userId={userId} />;
+      case 'Customer': return <CustomerProfile userId={userId} />;
+      default:         return <FarmerProfile userId={userId} />;
     }
   };
 

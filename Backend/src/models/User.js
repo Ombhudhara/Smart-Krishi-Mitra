@@ -43,6 +43,11 @@ const UserSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    coverImage: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     gender: {
       type: String,
       enum: {

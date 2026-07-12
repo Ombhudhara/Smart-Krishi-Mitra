@@ -314,6 +314,31 @@
   gap: 22px;
 }
 
+/* Load More Button */
+.ns-load-more-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+}
+.ns-load-more-btn {
+  padding: 12px 36px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  border-radius: 50px !important;
+  border: 2px solid var(--ns-primary) !important;
+  color: var(--ns-primary) !important;
+  background: transparent !important;
+  cursor: pointer;
+  transition: all 0.3s var(--ns-ease);
+  letter-spacing: 0.3px;
+}
+.ns-load-more-btn:hover {
+  background: var(--ns-primary) !important;
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(46,125,50,0.25);
+}
+
 .ns-news-card {
   background: var(--ns-white);
   border-radius: var(--ns-radius);
@@ -627,6 +652,130 @@
 /* --- Fade-in Animation --- */
 .ns-fade-in { animation: nsFadeIn 0.3s var(--ns-ease); }
 
+/* --- Flash Card Overlay (Scheme Details Popup) --- */
+.ns-flash-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: nsFadeIn 0.2s ease;
+}
+.ns-flash-card {
+  position: relative;
+  background: var(--ns-white, #fff);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+  padding: 28px 28px 24px;
+  animation: nsSlideUp 0.3s ease;
+}
+@keyframes nsSlideUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.ns-flash-close {
+  position: absolute;
+  top: 12px; right: 14px;
+  background: var(--ns-bg, #f5f5f5);
+  border: 1px solid var(--ns-border, #e0e0e0);
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: 0.2s;
+  color: var(--ns-text-mid, #666);
+}
+.ns-flash-close:hover { background: #fee; color: #c62828; }
+.ns-flash-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--ns-primary-pale, #e8f5e9);
+}
+.ns-flash-emoji { font-size: 36px; }
+.ns-flash-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ns-text, #1a1a1a);
+  margin: 0 0 4px;
+}
+.ns-flash-ministry {
+  font-size: 13px;
+  color: var(--ns-text-mid, #666);
+  margin: 0;
+}
+.ns-flash-body { display: flex; flex-direction: column; gap: 16px; }
+.ns-flash-section h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ns-primary, #2e7d32);
+  margin: 0 0 6px;
+}
+.ns-flash-section p {
+  font-size: 13.5px;
+  color: var(--ns-text-mid, #555);
+  line-height: 1.65;
+  margin: 0;
+}
+.ns-flash-docs {
+  list-style: none;
+  padding: 0; margin: 0;
+}
+.ns-flash-docs li {
+  font-size: 13.5px;
+  color: var(--ns-text-mid, #555);
+  line-height: 1.8;
+}
+.ns-flash-link {
+  font-size: 13.5px;
+  color: var(--ns-primary, #2e7d32);
+  font-weight: 600;
+  word-break: break-all;
+}
+.ns-flash-link:hover { text-decoration: underline; }
+.ns-flash-kpis {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--ns-primary-pale, #e8f5e9);
+  border-radius: 10px;
+}
+.ns-flash-kpis div {
+  font-size: 13px;
+  color: var(--ns-text, #333);
+}
+.ns-flash-apply-btn {
+  display: block;
+  margin-top: 20px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, var(--ns-primary, #2e7d32), var(--ns-primary-lt, #43a047));
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.ns-flash-apply-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(46,125,50,0.4);
+}
+
 /* --- Popular Schemes --- */
 .ns-popular-grid {
   display: flex; flex-direction: column; gap: 14px;
@@ -840,4 +989,27 @@
   .ns-ai-hero        { flex-direction: column; text-align: center; }
   .ns-ai-card-inner  { flex-direction: column; }
   .ns-bm-item        { flex-direction: column; align-items: flex-start; }
+}
+
+.ns-weather-no-alerts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #F1F8E9;
+  border: 1px dashed #AED581;
+  border-radius: 12px;
+  padding: 30px 20px;
+  color: #558B2F;
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+  gap: 10px;
+}
+.ns-weather-no-alerts span {
+  font-size: 32px;
+}
+.ns-weather-no-alerts p {
+  margin: 0;
+  font-weight: 500;
+  font-size: 14px;
 }

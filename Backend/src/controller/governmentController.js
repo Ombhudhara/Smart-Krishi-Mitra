@@ -1,5 +1,6 @@
 import Scheme from "../models/Scheme.js";
 import Notification from "../models/Notification.js";
+import { getAllSchemes } from "../services/governmentSchemeService.js";
 
 /**
  * Get government welfare schemes.
@@ -8,20 +9,23 @@ import Notification from "../models/Notification.js";
 export const getGovSchemes = async (req, res) => {
   try {
     const { category, search } = req.query;
-    const filter = {};
+    
+    // Fetch from OGD / real-time / local fallback service
+    const result = await getAllSchemes();
+    let schemes = result.data || [];
 
-    if (category && category !== "All") {
-      filter.category = category;
+    if (category && category !== "All" && category !== "all") {
+      schemes = schemes.filter(s => s.category?.toLowerCase() === category.toLowerCase() || s.category === category);
     }
 
     if (search) {
-      filter.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-      ];
+      const q = search.toLowerCase();
+      schemes = schemes.filter(s => 
+        (s.title || s.name || "").toLowerCase().includes(q) || 
+        (s.description || "").toLowerCase().includes(q)
+      );
     }
 
-    const schemes = await Scheme.find(filter).sort({ createdAt: -1 });
     return res.status(200).json({ success: true, schemes });
   } catch (error) {
     console.error("Error in getGovSchemes controller:", error.message || error);
@@ -35,7 +39,11 @@ export const getGovSchemes = async (req, res) => {
  */
 export const getSchemeById = async (req, res) => {
   try {
-    const scheme = await Scheme.findById(req.params.id);
+    const { id } = req.params;
+    const result = await getAllSchemes();
+    const schemes = result.data || [];
+    const scheme = schemes.find(s => s.id === id || s._id?.toString() === id);
+
     if (!scheme) {
       return res.status(404).json({ success: false, message: "Scheme not found." });
     }
@@ -83,7 +91,11 @@ export const checkEligibility = async (req, res) => {
  */
 export const applyForScheme = async (req, res) => {
   try {
-    const scheme = await Scheme.findById(req.params.schemeId);
+    const { schemeId } = req.params;
+    const result = await getAllSchemes();
+    const schemes = result.data || [];
+    const scheme = schemes.find(s => s.id === schemeId || s._id?.toString() === schemeId);
+
     if (!scheme) {
       return res.status(404).json({ success: false, message: "Scheme not found." });
     }
@@ -92,7 +104,7 @@ export const applyForScheme = async (req, res) => {
     await Notification.create({
       recipient: req.user._id,
       title: "Scheme Application Received",
-      message: `Your application for "${scheme.title}" has been successfully logged. Status: In Review. Reference ID: SKM-${Math.floor(100000 + Math.random() * 900000)}.`,
+      message: `Your application for "${scheme.title || scheme.name}" has been successfully logged. Status: In Review. Reference ID: SKM-${Math.floor(100000 + Math.random() * 900000)}.`,
       type: "scheme",
     });
 

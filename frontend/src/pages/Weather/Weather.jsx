@@ -241,7 +241,6 @@ export default function Weather() {
         (error) => {
           console.warn("[Geolocation] Error:", error.message);
           showToast("Location access denied. Loading Ahmedabad.", "info");
-          setLocationBlocked(true);
           fetchWeather(23.0225, 72.5714);
         },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
@@ -270,7 +269,7 @@ export default function Weather() {
             navigator.geolocation.getCurrentPosition(
               (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
               () => {
-                setLocationBlocked(true);
+                // Silently load default if getting position fails even when granted
                 fetchWeather(23.0225, 72.5714);
               }
             );
@@ -278,7 +277,7 @@ export default function Weather() {
             setIsLoading(false);
             setShowLocationModal(true);
           } else {
-            setLocationBlocked(true);
+            // Silently load default if permission is denied, without showing the banner
             fetchWeather(23.0225, 72.5714);
           }
         } else {

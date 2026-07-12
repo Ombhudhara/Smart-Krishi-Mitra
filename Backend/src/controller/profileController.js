@@ -1,6 +1,19 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { uploadSingle } from "../middleware/uploadMiddleware.js";
+import uploadService from "../services/uploadService.js";
+
+// Helper to extract Cloudinary public ID from secure URL for deletion
+const getPublicIdFromUrl = (url) => {
+  if (!url) return null;
+  const parts = url.split("/");
+  const startIndex = parts.findIndex(part => part === "krishi-mitra");
+  if (startIndex === -1) return null;
+  const pathWithExt = parts.slice(startIndex).join("/");
+  const lastDotIndex = pathWithExt.lastIndexOf(".");
+  if (lastDotIndex === -1) return pathWithExt;
+  return pathWithExt.substring(0, lastDotIndex);
+};
 
 // Helper for structured success response
 const sendSuccess = (res, message, data = {}) => {
@@ -178,14 +191,31 @@ export const updateProfileImage = (req, res) => {
     }
 
     try {
-      const imageUrl = `/uploads/${req.file.filename}`;
-      const user = await User.findByIdAndUpdate(
-        req.user._id,
-        { $set: { profileImage: imageUrl } },
-        { new: true }
-      ).select("-password");
+      const user = await User.findById(req.user._id);
+      if (!user) {
+        return sendError(res, 404, "User not found.");
+      }
 
-      return sendSuccess(res, "Profile image updated successfully.", user);
+      // Delete old profile image from Cloudinary if exists
+      if (user.profileImage) {
+        const oldPublicId = getPublicIdFromUrl(user.profileImage);
+        if (oldPublicId) {
+          await uploadService.deleteImage(oldPublicId);
+        }
+      }
+
+      // Upload new image to Cloudinary using uploadService
+      const uploadRes = await uploadService.uploadProfileImage(req.file);
+      if (!uploadRes.success) {
+        return sendError(res, 500, uploadRes.message || "Failed to upload image to Cloudinary.");
+      }
+
+      user.profileImage = uploadRes.data.secureUrl;
+      await user.save();
+
+      // Return user without password
+      const userRes = await User.findById(req.user._id).select("-password");
+      return sendSuccess(res, "Profile image updated successfully.", userRes);
     } catch (error) {
       console.error("Error in updateProfileImage controller:", error.message || error);
       return sendError(res, 500, "Server error updating profile image.");
@@ -303,16 +333,148 @@ export const updateNotificationSettings = async (req, res) => {
  */
 export const deleteProfileImage = async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
-      { $set: { profileImage: "" } },
-      { new: true }
-    ).select("-password");
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return sendError(res, 404, "User not found.");
+    }
 
-    return sendSuccess(res, "Profile image removed successfully.", user);
+    if (user.profileImage) {
+      const oldPublicId = getPublicIdFromUrl(user.profileImage);
+      if (oldPublicId) {
+        await uploadService.deleteImage(oldPublicId);
+      }
+    }
+
+    user.profileImage = "";
+    await user.save();
+
+    const userRes = await User.findById(req.user._id).select("-password");
+    return sendSuccess(res, "Profile image removed successfully.", userRes);
   } catch (error) {
     console.error("Error in deleteProfileImage controller:", error.message || error);
     return sendError(res, 500, "Server error removing profile image.");
+  }
+};
+
+/**
+ * 7.1 Update Cover Image
+ * PUT /api/profile/cover
+ */
+export const updateCoverImage = (req, res) => {
+  uploadSingle(req, res, async (err) => {
+    if (err) {
+      return sendError(res, 400, "Image upload failed", [err.message]);
+    }
+
+    if (!req.file) {
+      return sendError(res, 400, "Validation failed", ["No image file provided or unsupported file type."]);
+    }
+
+    try {
+      const user = await User.findById(req.user._id);
+      if (!user) {
+        return sendError(res, 404, "User not found.");
+      }
+
+      // Delete old cover image from Cloudinary if exists
+      if (user.coverImage) {
+        const oldPublicId = getPublicIdFromUrl(user.coverImage);
+        if (oldPublicId) {
+          await uploadService.deleteImage(oldPublicId);
+        }
+      }
+
+      // Upload new cover image to Cloudinary using uploadService
+      const uploadRes = await uploadService.uploadCoverImage(req.file);
+      if (!uploadRes.success) {
+        return sendError(res, 500, uploadRes.message || "Failed to upload cover image to Cloudinary.");
+      }
+
+      user.coverImage = uploadRes.data.secureUrl;
+      await user.save();
+
+      const userRes = await User.findById(req.user._id).select("-password");
+      return sendSuccess(res, "Cover image updated successfully.", userRes);
+    } catch (error) {
+      console.error("Error in updateCoverImage controller:", error.message || error);
+      return sendError(res, 500, "Server error updating cover image.");
+    }
+  });
+};
+
+/**
+ * 7.2 Delete Cover Image
+ * DELETE /api/profile/cover
+ */
+export const deleteCoverImage = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return sendError(res, 404, "User not found.");
+    }
+
+    if (user.coverImage) {
+      const oldPublicId = getPublicIdFromUrl(user.coverImage);
+      if (oldPublicId) {
+        await uploadService.deleteImage(oldPublicId);
+      }
+    }
+
+    user.coverImage = "";
+    await user.save();
+
+    const userRes = await User.findById(req.user._id).select("-password");
+    return sendSuccess(res, "Cover image removed successfully.", userRes);
+  } catch (error) {
+    console.error("Error in deleteCoverImage controller:", error.message || error);
+    return sendError(res, 500, "Server error removing cover image.");
+  }
+};
+
+/**
+ * 7.3 Get User Profile Images
+ * GET /api/profile/images
+ */
+export const getProfileImages = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("profileImage coverImage");
+    if (!user) {
+      return sendError(res, 404, "User not found.");
+    }
+    return res.status(200).json({
+      success: true,
+      profileImage: user.profileImage || "",
+      coverImage: user.coverImage || ""
+    });
+  } catch (error) {
+    console.error("Error in getProfileImages controller:", error.message || error);
+    return sendError(res, 500, "Server error retrieving profile images.");
+  }
+};
+
+/**
+ * 7.4 Get Public Profile
+ * GET /api/profile/public/:userId
+ */
+export const getPublicProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return sendError(res, 400, "Invalid User ID format.");
+    }
+    const user = await User.findById(userId).select(
+      "fullName role state district village profileImage coverImage farmName farmSize soilType cropsGrown createdAt"
+    );
+    if (!user) {
+      return sendError(res, 404, "User not found.");
+    }
+    return res.status(200).json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    console.error("Error in getPublicProfile controller:", error.message || error);
+    return sendError(res, 500, "Server error retrieving public profile.");
   }
 };
 
@@ -394,6 +556,23 @@ export const getBookmarks = async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) {
       return sendError(res, 404, "User not found.");
+    }
+
+    let changed = false;
+    if (user.bookmarks && user.bookmarks.length > 0) {
+      const cleanBookmarks = user.bookmarks.map(b => {
+        if (b.includes(':scheme_')) {
+          changed = true;
+          return b.replace(':scheme_', ':');
+        }
+        return b;
+      });
+
+      if (changed) {
+        // deduplicate and save
+        user.bookmarks = [...new Set(cleanBookmarks)];
+        await user.save();
+      }
     }
 
     return res.status(200).json({ success: true, bookmarks: user.bookmarks || [] });

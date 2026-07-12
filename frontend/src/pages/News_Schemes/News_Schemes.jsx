@@ -8,8 +8,9 @@ import Card from '../../components/Card/Card';
 import Loader from '../../components/Loader/Loader';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
 import { useAuth } from '../../context/AuthContext';
-import { getNews } from '../../services/newsService';
-import { getGovSchemes } from '../../services/governmentService';
+import { getNews, getBookmarks, bookmarkItem } from '../../services/newsService';
+import { getGovSchemes, applyForScheme } from '../../services/governmentService';
+import { getCurrentWeather } from '../../services/weatherService';
 import './News_Schemes.css';
 
 // =============================================================================
@@ -17,10 +18,10 @@ import './News_Schemes.css';
 // =============================================================================
 
 const POPULAR_SCHEMES = [
-  { id: 1, name: 'PM-KISAN Samman Nidhi', desc: 'Direct income support of ₹6,000/year to farmer families.', status: 'Active', beneficiaries: '11.8 Cr' },
-  { id: 2, name: 'Fasal Bima Yojana', desc: 'Crop insurance for farmers against natural calamities.', status: 'Active', beneficiaries: '5.5 Cr' },
-  { id: 3, name: 'Soil Health Card Scheme', desc: 'Nutrient-based soil testing and recommendations.', status: 'Active', beneficiaries: '23 Cr' },
-  { id: 4, name: 'eNAM (National Agriculture Market)', desc: 'Online trading platform for agricultural commodities.', status: 'Active', beneficiaries: '1.7 Cr' },
+  { id: 1, name: 'PM-KISAN Samman Nidhi', desc: 'Direct income support of ₹6,000/year to farmer families.', status: 'Active', beneficiaries: '11.8 Cr', officialLink: 'https://pmkisan.gov.in' },
+  { id: 2, name: 'Fasal Bima Yojana', desc: 'Crop insurance for farmers against natural calamities.', status: 'Active', beneficiaries: '5.5 Cr', officialLink: 'https://pmfby.gov.in' },
+  { id: 3, name: 'Soil Health Card Scheme', desc: 'Nutrient-based soil testing and recommendations.', status: 'Active', beneficiaries: '23 Cr', officialLink: 'https://soilhealth.dac.gov.in' },
+  { id: 4, name: 'eNAM (National Agriculture Market)', desc: 'Online trading platform for agricultural commodities.', status: 'Active', beneficiaries: '1.7 Cr', officialLink: 'https://www.enam.gov.in' },
 ];
 
 const AI_RECOMMENDATIONS = [
@@ -72,17 +73,28 @@ const CATEGORIES_FILTER = [
 // Loader will be used directly from components
 
 // Individual news article card
-function NewsCard({ item, bookmarks, onBookmark }) {
-  const isBookmarked = bookmarks.includes(item.id);
+function NewsCard({ item, bookmarks, onBookmark, onReadMore }) {
+  const isBookmarked = bookmarks.includes('news:' + item.id);
+
+  const handleImageError = (e) => {
+    e.target.src = 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&h=380&fit=crop';
+  };
+
   return (
     <Card className="ns-news-card">
       <div className="ns-news-img-wrap">
-        <img src={item.image} alt={item.title} className="ns-news-img" loading="lazy" />
+        <img 
+          src={item.image} 
+          alt={item.title} 
+          className="ns-news-img" 
+          loading="lazy" 
+          onError={handleImageError} 
+        />
         {item.trending && <span className="ns-fire-badge">Trending</span>}
         <Button
-          text={isBookmarked ? 'Saved' : 'Save'}
+          icon="🔖"
           className={`ns-bm-corner-btn${isBookmarked ? ' ns-bm-corner-btn--on' : ''}`}
-          onClick={() => onBookmark(item.id, 'news')}
+          onClick={() => onBookmark('news:' + item.id)}
           title={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
           variant="outline"
           size="small"
@@ -108,8 +120,18 @@ function NewsCard({ item, bookmarks, onBookmark }) {
             <span className="ns-news-src">{item.source}</span>
           </div>
           <div className="ns-news-btns">
-            <Button text="Share" className="ns-share-btn" variant="outline" size="small" />
-            <Button text="Read More" className="ns-read-btn" />
+            <Button text="Share" className="ns-share-btn" variant="outline" size="small"
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({ title: item.title, url: item.url }).catch(() => {});
+                } else {
+                  navigator.clipboard.writeText(item.url);
+                }
+              }}
+            />
+            <Button text="Read More" className="ns-read-btn"
+              onClick={() => onReadMore(item.id)}
+            />
           </div>
         </div>
       </div>
@@ -120,21 +142,26 @@ function NewsCard({ item, bookmarks, onBookmark }) {
 // Government scheme card with expandable documents section
 function SchemeCard({ scheme, bookmarks, onBookmark }) {
   const [expanded, setExpanded] = useState(false);
-  const isBookmarked = bookmarks.includes('scheme_' + scheme.id);
+  const [showFlash, setShowFlash] = useState(false);
+  const isBookmarked = bookmarks.includes('scheme:' + scheme.id);
+
+  const officialLink = scheme.officialLink || scheme.link || null;
+
   return (
-    <Card className="ns-scheme-card">
+    <Card className="ns-scheme-card" style={{ position: 'relative' }}>
       <div className="ns-scheme-head">
         <div className="ns-scheme-emoji-wrap">
-          <span className="ns-scheme-emoji">{scheme.emoji}</span>
+          <span className="ns-scheme-emoji">{scheme.emoji || '🏛️'}</span>
         </div>
         <div className="ns-scheme-title-group">
-          <h3 className="ns-scheme-name">{scheme.name}</h3>
-          <p className="ns-scheme-dept">{scheme.department}</p>
+          <h3 className="ns-scheme-name">{scheme.name || scheme.title}</h3>
+          <p className="ns-scheme-dept">{scheme.department || scheme.ministry}</p>
         </div>
         <Button
-          text={isBookmarked ? 'Saved' : 'Save'}
+          icon="🔖"
           className={`ns-bm-corner-btn${isBookmarked ? ' ns-bm-corner-btn--on' : ''}`}
-          onClick={() => onBookmark('scheme_' + scheme.id, 'scheme')}
+          onClick={() => onBookmark('scheme:' + scheme.id)}
+          title={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
           variant="outline"
           size="small"
         />
@@ -143,15 +170,15 @@ function SchemeCard({ scheme, bookmarks, onBookmark }) {
       <div className="ns-scheme-kpi-row">
         <div className="ns-scheme-kpi">
           <span className="ns-kpi-label">Beneficiaries</span>
-          <span className="ns-kpi-val">{scheme.beneficiaries}</span>
+          <span className="ns-kpi-val">{scheme.beneficiaries || 'Varies'}</span>
         </div>
         <div className="ns-scheme-kpi">
           <span className="ns-kpi-label">Budget</span>
-          <span className="ns-kpi-val">{scheme.budget}</span>
+          <span className="ns-kpi-val">{scheme.budget || 'Varies'}</span>
         </div>
         <div className="ns-scheme-kpi">
           <span className="ns-kpi-label">Status</span>
-          <span className="ns-status-active">{scheme.status}</span>
+          <span className="ns-status-active">{scheme.status || 'Active'}</span>
         </div>
       </div>
 
@@ -165,14 +192,14 @@ function SchemeCard({ scheme, bookmarks, onBookmark }) {
       </div>
       <div className="ns-scheme-detail-row">
         <div className="ns-detail-label">Deadline</div>
-        <p className="ns-detail-text ns-deadline">{scheme.deadline}</p>
+        <p className="ns-detail-text ns-deadline">{scheme.deadline || 'N/A'}</p>
       </div>
 
       {expanded && (
         <div className="ns-scheme-docs ns-fade-in">
           <div className="ns-detail-label">Required Documents</div>
           <ul className="ns-docs-list">
-            {scheme.documents.map((doc, i) => (
+            {(scheme.documents || []).map((doc, i) => (
               <li key={i} className="ns-doc-item">
                 <span className="ns-doc-dot" />
                 {doc}
@@ -191,58 +218,133 @@ function SchemeCard({ scheme, bookmarks, onBookmark }) {
           size="small"
         />
         <div className="ns-scheme-cta">
-          <Button text="Details" className="ns-view-det-btn" variant="secondary" size="small" />
-          <Button text="Apply Now" className="ns-apply-btn" variant="primary" />
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-// AI-powered recommendation card with priority badge
-function AIRecommendationCard({ rec }) {
-  const pMap = {
-    urgent: { bg: '#FCE4EC', border: '#EF9A9A', text: '#C62828', label: 'Urgent' },
-    high:   { bg: '#E8F5E9', border: '#A5D6A7', text: '#2E7D32', label: 'High Priority' },
-    medium: { bg: '#FFF8E1', border: '#FFE082', text: '#F57F17', label: 'Recommended' },
-  };
-  const p = pMap[rec.priority];
-  return (
-    <Card className="ns-ai-card" style={{ borderLeftColor: p.border }}>
-      <div className="ns-ai-card-inner">
-        <div className="ns-ai-icon-bubble" style={{ background: p.bg }}>
-          <span className="ns-ai-icon">{rec.icon}</span>
-        </div>
-        <div className="ns-ai-content">
-          <div className="ns-ai-meta">
-            <span
-              className="ns-ai-priority"
-              style={{ background: p.bg, color: p.text, borderColor: p.border }}
+          <Button
+            text="📋 Details"
+            className="ns-view-det-btn"
+            variant="secondary"
+            size="small"
+            onClick={() => setShowFlash(true)}
+          />
+          {officialLink && (
+            <a
+              href={officialLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ns-apply-btn"
+              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
             >
-              {p.label}
-            </span>
-            <span className="ns-ai-tag">AI Insight</span>
-          </div>
-          <h4 className="ns-ai-title">{rec.title}</h4>
-          <p className="ns-ai-desc">{rec.desc}</p>
-          <Button text={rec.action} className="ns-ai-action" variant="outline" size="small" />
+              Apply Now ↗
+            </a>
+          )}
         </div>
       </div>
+
+      {/* ---- FLASH CARD OVERLAY ---- */}
+      {showFlash && (
+        <div className="ns-flash-overlay" onClick={() => setShowFlash(false)}>
+          <div className="ns-flash-card" onClick={(e) => e.stopPropagation()}>
+            <button className="ns-flash-close" onClick={() => setShowFlash(false)}>✕</button>
+
+            <div className="ns-flash-header">
+              <span className="ns-flash-emoji">{scheme.emoji || '🏛️'}</span>
+              <div>
+                <h3 className="ns-flash-title">{scheme.name || scheme.title}</h3>
+                <p className="ns-flash-ministry">{scheme.department || scheme.ministry}</p>
+              </div>
+            </div>
+
+            <div className="ns-flash-body">
+              <div className="ns-flash-section">
+                <h4>📝 Description</h4>
+                <p>{scheme.description || scheme.benefits}</p>
+              </div>
+
+              <div className="ns-flash-section">
+                <h4>✅ Eligibility</h4>
+                <p>{scheme.eligibility || 'All eligible farmers'}</p>
+              </div>
+
+              <div className="ns-flash-section">
+                <h4>🎁 Benefits</h4>
+                <p>{scheme.benefits}</p>
+              </div>
+
+              <div className="ns-flash-section">
+                <h4>📄 Required Documents</h4>
+                <ul className="ns-flash-docs">
+                  {(scheme.documents || []).map((doc, i) => (
+                    <li key={i}>• {doc}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {scheme.applicationProcess && (
+                <div className="ns-flash-section">
+                  <h4>📌 How to Apply</h4>
+                  <p>{scheme.applicationProcess}</p>
+                </div>
+              )}
+
+              <div className="ns-flash-section">
+                <h4>🔗 Where to Apply</h4>
+                {officialLink ? (
+                  <a href={officialLink} target="_blank" rel="noopener noreferrer" className="ns-flash-link">
+                    {officialLink}
+                  </a>
+                ) : (
+                  <p>Contact your nearest agricultural office or Common Service Centre (CSC).</p>
+                )}
+              </div>
+
+              <div className="ns-flash-section ns-flash-kpis">
+                <div><strong>Status:</strong> <span className="ns-status-active">{scheme.status || 'Active'}</span></div>
+                <div><strong>Deadline:</strong> {scheme.deadline || 'No deadline / Ongoing'}</div>
+                <div><strong>Budget:</strong> {scheme.budget || 'Varies'}</div>
+              </div>
+            </div>
+
+            {officialLink && (
+              <a
+                href={officialLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ns-flash-apply-btn"
+              >
+                🌐 Open Official Portal & Apply ↗
+              </a>
+            )}
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
 
-// Compact card for the horizontal trending news scroll
-function TrendingCard({ item }) {
+function TrendingCard({ item, onReadMore }) {
+  const handleImageError = (e) => {
+    e.target.src = 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&h=380&fit=crop';
+  };
+
   return (
     <Card className="ns-trending-card">
-      <img src={item.image} alt={item.headline} className="ns-trending-img" />
+      <img 
+        src={item.image} 
+        alt={item.headline} 
+        className="ns-trending-img" 
+        onError={handleImageError} 
+      />
       <div className="ns-trending-body">
         <span className="ns-trending-cat">{item.category}</span>
         <p className="ns-trending-headline">{item.headline}</p>
         <div className="ns-trending-foot">
           <span className="ns-trending-date">{item.date}</span>
-          <Button text="Read" className="ns-trending-read" variant="outline" size="small" />
+          <Button
+            text="Read"
+            className="ns-trending-read"
+            variant="outline"
+            size="small"
+            onClick={() => onReadMore(item.id)}
+          />
         </div>
       </div>
     </Card>
@@ -286,26 +388,7 @@ function WeatherAlertCard({ alert }) {
   );
 }
 
-// Single bookmarked item with remove action
-function BookmarkItem({ id, onRemove, newsList, schemesList }) {
-  const newsItem   = newsList.find((n) => n._id === id || n.id === id);
-  const schemeItem = schemesList.find((s) => s._id === id || s.id === id);
-  if (!newsItem && !schemeItem) return null;
 
-  const label    = newsItem ? newsItem.title : schemeItem.name;
-  const tag      = newsItem ? newsItem.category : 'Gov Scheme';
-  const tagColor = newsItem ? newsItem.categoryColor : '#2E7D32';
-
-  return (
-    <div className="ns-bm-item">
-      <span className="ns-bm-tag" style={{ background: tagColor + '18', color: tagColor }}>
-        {tag}
-      </span>
-      <p className="ns-bm-title">{label}</p>
-      <Button text="Remove" className="ns-bm-remove" onClick={() => onRemove(id)} variant="danger" size="small" />
-    </div>
-  );
-}
 
 // =============================================================================
 // MAIN COMPONENT
@@ -326,59 +409,78 @@ export default function NewsSchemes() {
   const [activeTab,      setActiveTab]      = useState('news');
   const [newsList,       setNewsList]       = useState([]);
   const [schemesList,    setSchemesList]    = useState([]);
+  const [weatherAlerts,  setWeatherAlerts]  = useState([]);
+  const [visibleNewsCount, setVisibleNewsCount] = useState(9);
 
-  // Fetch news and schemes on mount
+  // Fetch news, schemes, and weather alerts on mount
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [newsRes, schemesRes] = await Promise.all([
+        const [newsRes, schemesRes, weatherRes, bookmarksRes] = await Promise.allSettled([
           getNews(),
-          getGovSchemes()
+          getGovSchemes(),
+          getCurrentWeather(null, null, user?.district || 'Ahmedabad'),
+          getBookmarks()
         ]);
 
-        if (newsRes.data?.success) {
-          const mappedNews = newsRes.data.news.map(n => ({
-            id: n._id,
-            _id: n._id,
+        if (newsRes.status === 'fulfilled' && newsRes.value.data?.success) {
+          const mappedNews = newsRes.value.data.news.map(n => ({
+            id: n.id || n._id,
+            _id: n.id || n._id,
             title: n.title,
-            description: n.content || n.description,
+            description: n.description || n.content,
             category: n.category || 'Agriculture',
             categoryColor: n.category === 'Market Prices' ? '#1565C0' : (n.category === 'Weather' ? '#0277BD' : '#2E7D32'),
-            date: new Date(n.createdAt || Date.now()).toLocaleDateString(),
+            date: new Date(n.publishedAt || n.createdAt || Date.now()).toLocaleDateString(),
             source: n.source || 'News Source',
-            image: n.imageUrl || 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&h=380&fit=crop',
-            trending: n.featured || false,
+            image: n.image || n.imageUrl || 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&h=380&fit=crop',
+            url: n.url || n.link || '#',
+            trending: n.trending || n.featured || false,
             headline: n.title,
           }));
           setNewsList(mappedNews);
         }
 
-        if (schemesRes.data?.success) {
-          const mappedSchemes = schemesRes.data.schemes.map(s => ({
-            id: s._id,
-            _id: s._id,
-            title: s.title,
-            name: s.title,
+        if (schemesRes.status === 'fulfilled' && schemesRes.value.data?.success) {
+          const mappedSchemes = schemesRes.value.data.schemes.map(s => ({
+            id: s.id || s._id,
+            _id: s.id || s._id,
+            title: s.title || s.name,
+            name: s.title || s.name,
             description: s.description,
             ministry: s.ministry || 'Ministry of Agriculture',
             budget: s.budgetAllocated || 'Varies',
-            status: s.active ? 'Active' : 'Closed',
+            status: s.active || s.status === 'Active' ? 'Active' : 'Closed',
             benefits: s.benefits || 'Financial assistance and support benefits.',
             eligibility: s.eligibility || 'Small and marginal farmers.',
             deadline: s.lastDate ? new Date(s.lastDate).toLocaleDateString() : 'N/A',
-            documents: s.documentsRequired || ['Aadhaar Card', 'Land Records', 'Bank Passbook']
+            documents: s.documentsRequired || ['Aadhaar Card', 'Land Records', 'Bank Passbook'],
+            officialLink: s.officialLink || s.official_link || s.link || null,
+            applicationProcess: s.applicationProcess || null,
           }));
           setSchemesList(mappedSchemes);
+          console.log('[DEBUG] Loaded schemes IDs:', mappedSchemes.map(s => s.id));
+        }
+
+        if (weatherRes.status === 'fulfilled' && weatherRes.value.data?.success) {
+          const alerts = weatherRes.value.data.alerts || [];
+          setWeatherAlerts(alerts);
+        }
+
+        if (bookmarksRes && bookmarksRes.status === 'fulfilled' && bookmarksRes.value.data?.success) {
+          const loadedBookmarks = bookmarksRes.value.data.bookmarks || [];
+          setBookmarks(loadedBookmarks);
+          console.log('[DEBUG] Loaded bookmarks:', loadedBookmarks);
         }
       } catch (err) {
-        console.error("Error fetching news/schemes:", err);
+        console.error("Error fetching news/schemes/weather:", err);
       } finally {
         setIsLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [user]);
 
   // Show a toast notification for 3 seconds
   const showNotify = useCallback((msg, type = 'success') => {
@@ -387,22 +489,44 @@ export default function NewsSchemes() {
   }, []);
 
   // Toggle bookmark for a news item or scheme
-  const handleBookmark = useCallback((id) => {
-    setBookmarks((prev) => {
-      if (prev.includes(id)) {
-        showNotify('Bookmark removed.', 'info');
-        return prev.filter((b) => b !== id);
-      }
-      showNotify('Bookmarked successfully!', 'success');
-      return [...prev, id];
-    });
+  const handleBookmark = useCallback((key) => {
+    const [type, id] = key.split(':');
+    bookmarkItem(id, type)
+      .then(res => {
+        if (res.data?.success) {
+          setBookmarks(res.data.bookmarks || []);
+          showNotify(res.data.message, 'success');
+        } else {
+          showNotify(res.data?.message || 'Failed to update bookmark', 'info');
+        }
+      })
+      .catch(() => showNotify('Error updating bookmark.', 'info'));
   }, [showNotify]);
 
   // Remove a bookmark from the bookmarks tab
   const handleRemoveBookmark = useCallback((id) => {
-    setBookmarks((prev) => prev.filter((b) => b !== id));
-    showNotify('Bookmark removed.', 'info');
-  }, [showNotify]);
+    handleBookmark(id);
+  }, [handleBookmark]);
+
+  // Apply for a government scheme
+  const handleApplyScheme = useCallback(async (scheme) => {
+    if (!user) {
+      showNotify('Please log in to apply for schemes.', 'info');
+      navigate('/login');
+      return;
+    }
+    try {
+      const res = await applyForScheme(scheme.id || scheme._id, {});
+      if (res.data?.success) {
+        showNotify(res.data.message || `Application submitted for "${scheme.name}"!`, 'success');
+      } else {
+        showNotify(res.data?.message || 'Something went wrong. Please try again.', 'info');
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to submit application. Please try again.';
+      showNotify(msg, 'info');
+    }
+  }, [user, navigate, showNotify]);
 
   const filteredNews = newsList.filter((n) => {
     const matchCat    = activeCategory === 'all' || n.category === activeCategory;
@@ -413,6 +537,14 @@ export default function NewsSchemes() {
     return matchCat && matchSearch;
   });
 
+  // Reset visible count when category or search changes
+  useEffect(() => {
+    setVisibleNewsCount(9);
+  }, [activeCategory, searchQuery]);
+
+  const visibleNews = filteredNews.slice(0, visibleNewsCount);
+  const hasMoreNews = visibleNewsCount < filteredNews.length;
+
   // Scroll the trending news strip left or right
   const scrollTrending = (dir) => {
     if (trendingRef.current) {
@@ -420,15 +552,18 @@ export default function NewsSchemes() {
     }
   };
 
+  // Navigation is handled via onNavigate prop passed directly to modal
+
   const TABS = [
     { id: 'news',      label: 'Latest News' },
     { id: 'schemes',   label: 'Gov Schemes' },
-    { id: 'ai',        label: 'AI Insights' },
     { id: 'bookmarks', label: `Bookmarks (${bookmarks.length})` },
   ];
 
   return (
     <div className="ns-root">
+
+      {/* News Detail Modal replaced by dedicated page */}
 
       {/* Toast notification */}
       {notification && (
@@ -473,7 +608,6 @@ export default function NewsSchemes() {
                   <span className="ns-header-tag">Agriculture</span>
                   <span className="ns-header-tag">Gov Schemes</span>
                   <span className="ns-header-tag">Market Prices</span>
-                  <span className="ns-header-tag">AI Insights</span>
                 </div>
               </div>
               <div className="ns-header-illus" aria-hidden="true">
@@ -489,7 +623,12 @@ export default function NewsSchemes() {
 
           {/* Quick statistics row */}
           <section className="ns-stats-row">
-            {STATS_DATA.map((stat) => <StatCard key={stat.id} stat={stat} />)}
+            {[
+              { id: 1, icon: '📰', label: 'News Articles Available', value: newsList.length, color: '#2E7D32', bg: '#E8F5E9' },
+              { id: 2, icon: '📢', label: 'Active Government Schemes', value: schemesList.length, color: '#1565C0', bg: '#E3F2FD' },
+              { id: 3, icon: '🌾', label: 'Agriculture Updates (Month)', value: '120', color: '#E65100', bg: '#FFF3E0' },
+              { id: 4, icon: '👨‍🌾', label: 'Farmers Benefited', value: '2.5M', color: '#6A1B9A', bg: '#F3E5F5' },
+            ].map((stat) => <StatCard key={stat.id} stat={stat} />)}
           </section>
 
           {/* Search bar and category filter chips */}
@@ -562,9 +701,25 @@ export default function NewsSchemes() {
                   </div>
                 ) : (
                   <div className="ns-news-grid">
-                    {filteredNews.map((item) => (
-                      <NewsCard key={item.id} item={item} bookmarks={bookmarks} onBookmark={handleBookmark} />
+                    {visibleNews.map((item) => (
+                      <NewsCard
+                        key={item.id}
+                        item={item}
+                        bookmarks={bookmarks}
+                        onBookmark={handleBookmark}
+                        onReadMore={(id) => navigate(`/news/${id}`)}
+                      />
                     ))}
+                  </div>
+                )}
+                {!isLoading && hasMoreNews && (
+                  <div className="ns-load-more-wrap">
+                    <Button
+                      text={`More News (${filteredNews.length - visibleNewsCount} remaining)`}
+                      className="ns-load-more-btn"
+                      variant="outline"
+                      onClick={() => setVisibleNewsCount(prev => prev + 9)}
+                    />
                   </div>
                 )}
               </section>
@@ -579,7 +734,17 @@ export default function NewsSchemes() {
                   </div>
                 </div>
                 <div className="ns-trending-scroll" ref={trendingRef}>
-                  {newsList.filter(n => n.trending).map((item) => <TrendingCard key={item.id} item={item} />)}
+                  {(() => {
+                    const trendingNewsList = newsList.filter(n => n.trending);
+                    const displayTrending = trendingNewsList.length > 0 ? trendingNewsList : newsList.slice(0, 4);
+                    return displayTrending.map((item) => (
+                      <TrendingCard
+                        key={item.id}
+                        item={item}
+                        onReadMore={(id) => navigate(`/news/${id}`)}
+                      />
+                    ));
+                  })()}
                 </div>
               </section>
 
@@ -588,9 +753,18 @@ export default function NewsSchemes() {
                 <div className="ns-section-header">
                   <h2 className="ns-section-title">Weather Alerts</h2>
                 </div>
-                <div className="ns-weather-grid">
-                  {WEATHER_ALERTS.map((alert) => <WeatherAlertCard key={alert.id} alert={alert} />)}
-                </div>
+                {weatherAlerts.length === 0 ? (
+                  <div className="ns-weather-no-alerts">
+                    <span>☀️</span>
+                    <p>No active weather warnings. Conditions are stable in your region.</p>
+                  </div>
+                ) : (
+                  <div className="ns-weather-grid">
+                    {weatherAlerts.map((alert, idx) => (
+                      <WeatherAlertCard key={idx} alert={alert} />
+                    ))}
+                  </div>
+                )}
               </section>
             </>
           )}
@@ -620,53 +794,46 @@ export default function NewsSchemes() {
                   <h2 className="ns-section-title">Popular Government Schemes</h2>
                 </div>
                 <div className="ns-popular-grid">
-                  {POPULAR_SCHEMES.map((s) => (
-                    <Card key={s.id} className="ns-popular-card">
-                      <div className="ns-popular-top">
-                        <div>
-                          <h4 className="ns-popular-name">{s.name}</h4>
-                          <p className="ns-popular-desc">{s.desc}</p>
+                  {POPULAR_SCHEMES.map((s) => {
+                    // Try to find the matching full scheme from backend for the officialLink
+                    const fullScheme = schemesList.find(fs =>
+                      (fs.name || fs.title || '').toLowerCase().includes(s.name.toLowerCase().split(' ')[0]) ||
+                      s.name.toLowerCase().includes((fs.name || fs.title || '').toLowerCase().split(' ')[0])
+                    );
+                    const link = fullScheme?.officialLink;
+
+                    const handleViewDetails = () => {
+                      window.open(s.officialLink, '_blank', 'noopener,noreferrer');
+                    };
+
+                    return (
+                      <Card key={s.id} className="ns-popular-card">
+                        <div className="ns-popular-top">
+                          <div>
+                            <h4 className="ns-popular-name">{s.name}</h4>
+                            <p className="ns-popular-desc">{s.desc}</p>
+                          </div>
+                          <span className="ns-popular-badge">{s.status}</span>
                         </div>
-                        <span className="ns-popular-badge">{s.status}</span>
-                      </div>
-                      <div className="ns-popular-foot">
-                        <span className="ns-popular-bene">{s.beneficiaries} benefited</span>
-                        <Button text="View Details" className="ns-popular-view" variant="outline" size="small" />
-                      </div>
-                    </Card>
-                  ))}
+                        <div className="ns-popular-foot">
+                          <span className="ns-popular-bene">{s.beneficiaries} benefited</span>
+                          <Button
+                            text="View Details ↗"
+                            className="ns-popular-view"
+                            variant="outline"
+                            size="small"
+                            onClick={handleViewDetails}
+                          />
+                        </div>
+                      </Card>
+                    );
+                  })}
                 </div>
               </section>
             </>
           )}
 
-          {/* ---- AI INSIGHTS TAB ---- */}
-          {activeTab === 'ai' && (
-            <section className="ns-section">
-              <div className="ns-section-header">
-                <h2 className="ns-section-title">AI Recommendations</h2>
-                <span className="ns-section-pill">Personalized for you</span>
-              </div>
 
-              {/* AI hero banner */}
-              <div className="ns-ai-hero">
-                <div className="ns-ai-hero-icon">{'\uD83E\uDD16'}</div>
-                <div className="ns-ai-hero-content">
-                  <h3 className="ns-ai-hero-title">Smart Krishi AI Assistant</h3>
-                  <p className="ns-ai-hero-desc">
-                    AI is analyzing your farm data, soil reports, weather patterns, and market trends
-                    to give you personalized recommendations.
-                  </p>
-                </div>
-                <Button text="Ask AI Assistant" className="ns-ai-chat-btn" variant="primary" />
-              </div>
-
-              {/* AI recommendation cards */}
-              <div className="ns-ai-grid">
-                {AI_RECOMMENDATIONS.map((rec) => <AIRecommendationCard key={rec.id} rec={rec} />)}
-              </div>
-            </section>
-          )}
 
           {/* ---- BOOKMARKS TAB ---- */}
           {activeTab === 'bookmarks' && (
@@ -682,10 +849,55 @@ export default function NewsSchemes() {
                   <p>No bookmarks yet. Start bookmarking news and schemes!</p>
                 </div>
               ) : (
-                <div className="ns-bm-grid">
-                  {bookmarks.map((id) => (
-                    <BookmarkItem key={id} id={id} onRemove={handleRemoveBookmark} newsList={newsList} schemesList={schemesList} />
-                  ))}
+                <div className="ns-news-grid">
+                  {bookmarks.map((id) => {
+                    const colonIdx = id.indexOf(':');
+                    if (colonIdx === -1) return null;
+                    const type   = id.substring(0, colonIdx);
+                    const realId = id.substring(colonIdx + 1);
+
+                    if (type === 'news') {
+                      const newsItem = newsList.find(n =>
+                        String(n._id) === realId || String(n.id) === realId
+                      );
+                      if (!newsItem) return null;
+                      return (
+                        <NewsCard
+                          key={id}
+                          item={newsItem}
+                          bookmarks={bookmarks}
+                          onBookmark={handleBookmark}
+                          onReadMore={(nid) => navigate(`/news/${nid}`)}
+                        />
+                      );
+                    }
+
+                    if (type === 'scheme') {
+                      const schemeItem = schemesList.find(s =>
+                        String(s.id)  === realId ||
+                        String(s._id) === realId ||
+                        (s.title || s.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-') === realId
+                      );
+                      if (!schemeItem) {
+                        // Show a placeholder card if scheme data hasn't loaded yet
+                        return (
+                          <div key={id} className="ns-scheme-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '120px', opacity: 0.6 }}>
+                            <span>🔖 Government Scheme (ID: {realId})</span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <SchemeCard
+                          key={id}
+                          scheme={schemeItem}
+                          bookmarks={bookmarks}
+                          onBookmark={handleBookmark}
+                        />
+                      );
+                    }
+
+                    return null;
+                  })}
                 </div>
               )}
             </section>
@@ -698,3 +910,4 @@ export default function NewsSchemes() {
     </div>
   );
 }
+  

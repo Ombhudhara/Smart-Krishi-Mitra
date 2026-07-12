@@ -11,6 +11,6 @@
 import React from 'react';
 import ProfilePage from './ProfilePage';
 
-const CustomerProfile = () => <ProfilePage role="customer" />;
+const CustomerProfile = ({ userId }) => <ProfilePage role="customer" userId={userId} />;
 
 export default CustomerProfile;

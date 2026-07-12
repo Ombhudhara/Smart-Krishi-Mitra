@@ -1,7 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { updateProfile as updateProfileApi } from '../../services/profileService';
+import { 
+  updateProfile as updateProfileApi,
+  uploadProfilePhoto,
+  uploadCoverPhoto,
+  getPublicProfile
+} from '../../services/profileService';
 import { getTransactions } from '../../services/transactionService';
 import { getDashboardSummary } from '../../services/dashboardService';
 import { RECENT_ACTIVITIES } from './profileData';
@@ -29,9 +34,36 @@ const SHORTCUTS = [
   { title: 'Log Invoices',     desc: 'Inspect receipt details and transaction audits', path: '/transactions',   icon: '📜' },
 ];
 
-export default function ProfilePage({ role }) {
+export default function ProfilePage({ role, userId }) {
   const navigate = useNavigate();
   const { user, updateProfile, logout } = useAuth();
+
+  const isOwnProfile = !userId || userId === user?.id;
+  const [publicUser, setPublicUser] = useState(null);
+  const viewedUser = isOwnProfile ? user : publicUser;
+
+  const profileInputRef = useRef(null);
+  const coverInputRef = useRef(null);
+
+  // ── Cover Reposition State ───────────────────────────────────────────────────
+  const [coverPositionY, setCoverPositionY] = useState(50); // percentage 0–100
+  const [isRepositioning, setIsRepositioning] = useState(false);
+  const dragRef = useRef({ isDragging: false, startY: 0, startPos: 50 });
+
+  const handleRepositionMouseDown = (e) => {
+    dragRef.current = { isDragging: true, startY: e.clientY, startPos: coverPositionY };
+    e.preventDefault();
+  };
+  const handleRepositionMouseMove = (e) => {
+    if (!dragRef.current.isDragging) return;
+    const delta = e.clientY - dragRef.current.startY;
+    const bannerHeight = 320;
+    const newPos = Math.min(100, Math.max(0, dragRef.current.startPos - (delta / bannerHeight) * 100));
+    setCoverPositionY(newPos);
+  };
+  const handleRepositionMouseUp = () => { dragRef.current.isDragging = false; };
+  const handleSavePosition = () => { setIsRepositioning(false); };
+  const handleCancelReposition = () => { setCoverPositionY(50); setIsRepositioning(false); };
 
   // ── Active Tab State ─────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('overview');
@@ -76,32 +108,51 @@ export default function ProfilePage({ role }) {
     completedDeals: 0
   });
 
-  // ── Sync user to form state ──
+  // ── Sync viewedUser to form state ──
   useEffect(() => {
-    if (user) {
+    if (viewedUser) {
       setPersonalForm({
-        fullName: user.fullName || '',
-        phone: user.phone || '',
-        email: user.email || '',
-        address: user.address || '',
-        state: user.state || '',
-        district: user.district || '',
-        village: user.village || '',
-        preferredLanguage: user.preferredLanguage || 'English',
+        fullName: viewedUser.fullName || '',
+        phone: viewedUser.phone || '',
+        email: viewedUser.email || '',
+        address: viewedUser.address || '',
+        state: viewedUser.state || '',
+        district: viewedUser.district || '',
+        village: viewedUser.village || '',
+        preferredLanguage: viewedUser.preferredLanguage || 'English',
       });
       setRoleForm({
-        farmSize: user.farmSize || '',
-        soilType: user.soilType || '',
-        cropsGrown: user.cropsGrown?.join(', ') || '',
+        farmSize: viewedUser.farmSize || '',
+        soilType: viewedUser.soilType || '',
+        cropsGrown: viewedUser.cropsGrown?.join(', ') || '',
       });
-      setSettings({
-        emailNotif: user.notificationSettings?.emailAlerts ?? true,
-        smsNotif: user.notificationSettings?.smsAlerts ?? true,
-        profilePublic: true,
-        allowAiCalls: user.notificationSettings?.weatherAlerts ?? true,
-      });
+      if (isOwnProfile && viewedUser.notificationSettings) {
+        setSettings({
+          emailNotif: viewedUser.notificationSettings.emailAlerts ?? true,
+          smsNotif: viewedUser.notificationSettings.smsAlerts ?? true,
+          profilePublic: true,
+          allowAiCalls: viewedUser.notificationSettings.weatherAlerts ?? true,
+        });
+      }
     }
-  }, [user]);
+  }, [viewedUser, isOwnProfile]);
+
+  // ── Fetch Public Profile ──
+  useEffect(() => {
+    if (!isOwnProfile) {
+      const fetchPublic = async () => {
+        try {
+          const res = await getPublicProfile(userId);
+          if (res.data?.success) {
+            setPublicUser(res.data.user);
+          }
+        } catch (err) {
+          console.error("Error fetching public profile:", err);
+        }
+      };
+      fetchPublic();
+    }
+  }, [userId, isOwnProfile]);
 
   // ── Fetch dynamic profile stats and transactions on tab switch ──
   useEffect(() => {
@@ -146,6 +197,42 @@ export default function ProfilePage({ role }) {
   const handleRoleChange = (e) => {
     const { name, value } = e.target;
     setRoleForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleProfileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      showToast('Uploading profile photo...', 'info');
+      const res = await uploadProfilePhoto(file);
+      if (res.data?.success) {
+        updateProfile(res.data.user);
+        showToast('Profile photo updated', 'success');
+      }
+    } catch (err) {
+      console.error(err);
+      const data = err.response?.data;
+      const errMsg = (data?.errors && data.errors[0]) || data?.message || err.message || 'Failed to upload photo';
+      showToast(errMsg, 'error');
+    }
+  };
+
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      showToast('Uploading cover photo...', 'info');
+      const res = await uploadCoverPhoto(file);
+      if (res.data?.success) {
+        updateProfile(res.data.user);
+        showToast('Cover photo updated', 'success');
+      }
+    } catch (err) {
+      console.error(err);
+      const data = err.response?.data;
+      const errMsg = (data?.errors && data.errors[0]) || data?.message || err.message || 'Failed to upload cover';
+      showToast(errMsg, 'error');
+    }
   };
 
   // ── Profile Updates ──────────────────────────────────────────────────────────
@@ -237,7 +324,7 @@ export default function ProfilePage({ role }) {
               <p className="pp-section-sub">Your contact and identity information</p>
             </div>
           </div>
-          {!isEditing && (
+          {!isEditing && isOwnProfile && (
             <Button text="Edit" variant="outline" size="small" onClick={() => setIsEditing(true)} />
           )}
         </div>
@@ -267,9 +354,9 @@ export default function ProfilePage({ role }) {
             </>
           ) : (
             [
-              { label: 'Full Name',       val: personalForm.fullName || user?.fullName },
-              { label: 'Phone Number',    val: personalForm.phone || user?.phone },
-              { label: 'Email Address',   val: personalForm.email || user?.email },
+              { label: 'Full Name',       val: personalForm.fullName || viewedUser?.fullName },
+              { label: 'Phone Number',    val: personalForm.phone || viewedUser?.phone },
+              { label: 'Email Address',   val: personalForm.email || viewedUser?.email },
               { label: 'Primary Address', val: personalForm.address || 'Not Provided' },
               { label: 'State',           val: personalForm.state || 'Not Provided' },
               { label: 'District',        val: personalForm.district || 'Not Provided' },
@@ -291,7 +378,7 @@ export default function ProfilePage({ role }) {
           <div className="pp-section-title-group">
             <span className="pp-section-icon">🏷️</span>
             <div>
-              <h2 className="pp-section-title">{user?.role || "User"} Details</h2>
+              <h2 className="pp-section-title">{viewedUser?.role || "User"} Details</h2>
               <p className="pp-section-sub">Role-specific verification and profile settings</p>
             </div>
           </div>
@@ -421,18 +508,29 @@ export default function ProfilePage({ role }) {
         </div>
 
         <div className="pp-timeline">
-          {RECENT_ACTIVITIES.map((act, i) => (
-            <div key={act.id} className="pp-timeline-item">
-              <div className="pp-timeline-left">
-                <div className="pp-timeline-dot">{act.icon}</div>
-                {i < RECENT_ACTIVITIES.length - 1 && <div className="pp-timeline-line" />}
-              </div>
-              <div className="pp-timeline-body">
-                <div className="pp-timeline-action">{act.action}</div>
-                <div className="pp-timeline-time">{act.time}</div>
-              </div>
+          {recentTx.length === 0 ? (
+            <div className="pp-empty-state">
+              <span>📭</span>
+              <p>No activity recorded yet. Start by listing a crop or making a transaction!</p>
             </div>
-          ))}
+          ) : (
+            recentTx.map((txn, i) => (
+              <div key={txn._id} className="pp-timeline-item">
+                <div className="pp-timeline-left">
+                  <div className="pp-timeline-dot">🌾</div>
+                  {i < recentTx.length - 1 && <div className="pp-timeline-line" />}
+                </div>
+                <div className="pp-timeline-body">
+                  <div className="pp-timeline-action">
+                    Transaction: {txn.cropName} — ₹{txn.totalAmount?.toLocaleString()}
+                  </div>
+                  <div className="pp-timeline-time">
+                    {new Date(txn.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </Card>
     </div>
@@ -586,10 +684,10 @@ export default function ProfilePage({ role }) {
   };
 
   const profileStats = [
-    { label: 'Crops Listed', value: `${stats.totalCrops} Items`, icon: '🌾', trend: 'From active listings' },
-    { label: 'Total Earnings', value: `₹${stats.earnings.toLocaleString()}`, icon: '💰', trend: 'Platform payouts' },
-    { label: 'Seller Rating', value: '4.8 / 5', icon: '⭐', trend: 'Verified partner' },
-    { label: 'Completed Deals', value: `${stats.completedDeals} Orders`, icon: '📦', trend: '100% fulfillment' },
+    { label: 'Crops Listed',     value: `${stats.totalCrops} Items`,                    icon: '🌾', trend: 'From active listings' },
+    { label: 'Total Earnings',   value: `₹${stats.earnings.toLocaleString()}`,           icon: '💰', trend: 'Platform payouts' },
+    { label: 'Seller Rating',    value: stats.completedDeals > 0 ? '4.8 / 5' : 'N/A',  icon: '⭐', trend: stats.completedDeals > 0 ? 'Verified partner' : 'No deals yet' },
+    { label: 'Completed Deals',  value: `${stats.completedDeals} Orders`,               icon: '📦', trend: '100% fulfillment' },
   ];
 
   return (
@@ -627,58 +725,96 @@ export default function ProfilePage({ role }) {
          ═══════════════════════════════════════════════════════════════ */}
       <div className="pp-hero">
         <div
-          className="pp-banner"
-          style={{ backgroundImage: `url("https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1000&h=300&fit=crop")` }}
+          className={`pp-banner${isRepositioning ? ' pp-banner--reposition' : ''}`}
+          style={{
+            backgroundImage: `url("${viewedUser?.coverImage || 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1000&h=300&fit=crop'}")`,
+            backgroundPositionY: `${coverPositionY}%`,
+          }}
+          onMouseMove={isRepositioning ? handleRepositionMouseMove : undefined}
+          onMouseUp={isRepositioning ? handleRepositionMouseUp : undefined}
+          onMouseLeave={isRepositioning ? handleRepositionMouseUp : undefined}
         >
-          <button
-            className="pp-banner-btn"
-            onClick={() => showToast('Cover photo upload triggered.', 'info')}
-          >
-            📷 Change Cover
-          </button>
+          {isRepositioning && (
+            <div className="pp-reposition-overlay">
+              <div
+                className="pp-reposition-drag-area"
+                onMouseDown={handleRepositionMouseDown}
+              >
+                <span className="pp-reposition-hint">↕ Drag to Reposition</span>
+              </div>
+              <div className="pp-reposition-actions">
+                <button className="pp-reposition-save" onClick={handleSavePosition}>✓ Save Position</button>
+                <button className="pp-reposition-cancel" onClick={handleCancelReposition}>✕ Cancel</button>
+              </div>
+            </div>
+          )}
+          {isOwnProfile && !isRepositioning && (
+            <>
+              <div className="pp-banner-btn-group">
+                <button className="pp-banner-btn" onClick={() => coverInputRef.current?.click()}>📷 Change Cover</button>
+                {viewedUser?.coverImage && (
+                  <button className="pp-banner-btn" onClick={() => setIsRepositioning(true)}>↕ Reposition</button>
+                )}
+              </div>
+              <input type="file" ref={coverInputRef} style={{ display: 'none' }} accept="image/*" onChange={handleCoverUpload} />
+            </>
+          )}
         </div>
 
         <div className="pp-profile-card">
           <div className="pp-avatar-wrap">
             <div className="pp-avatar">
-              {user?.profileImage ? (
-                <img src={user.profileImage} alt="" style={{width: '100%', height: '100%', borderRadius: '50%'}} />
+              {viewedUser?.profileImage ? (
+                <img src={viewedUser.profileImage} alt="" style={{width: '100%', height: '100%', borderRadius: '50%'}} />
               ) : (
-                user?.role === "Farmer" ? "👨‍🌾" : (user?.role === "Vendor" ? "🏬" : "🤵")
+                viewedUser?.role === "Farmer" ? "👨‍🌾" : (viewedUser?.role === "Vendor" ? "🏬" : "🤵")
               )}
             </div>
-            <button
-              className="pp-avatar-edit-btn"
-              title="Change Avatar"
-              onClick={() => showToast('Avatar change triggered.', 'info')}
-            >
-              📷
-            </button>
+            {isOwnProfile && (
+              <>
+                <button
+                  className="pp-avatar-edit-btn"
+                  title="Change Avatar"
+                  onClick={() => profileInputRef.current?.click()}
+                >
+                  📷
+                </button>
+                <input type="file" ref={profileInputRef} style={{ display: 'none' }} accept="image/*" onChange={handleProfileUpload} />
+              </>
+            )}
           </div>
 
           <div className="pp-identity">
             <div className="pp-name-row">
-              <h1 className="pp-name">{personalForm.fullName || user?.fullName}</h1>
-              <span className="pp-verified-chip">✓ Verified</span>
-              <span className={`pp-role-chip pp-role-chip--${(user?.role || 'Farmer').toLowerCase()}`}>
-                {user?.role || 'Farmer'}
+              <h1 className="pp-name">{personalForm.fullName || viewedUser?.fullName}</h1>
+              {viewedUser?.email === 'ombhudhara20@gmail.com' && (
+                <span className="pp-verified-chip">✓ Verified</span>
+              )}
+              <span className={`pp-role-chip pp-role-chip--${(viewedUser?.role || 'Farmer').toLowerCase()}`}>
+                {viewedUser?.role || 'Farmer'}
               </span>
             </div>
             <div className="pp-meta-row">
-              <span>📍 {user?.district ? `${user.district}, ${user.state}` : 'Punjab, India'}</span>
-              <span className="pp-meta-dot">·</span>
-              <span>📅 Member since {new Date(user?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+              {(viewedUser?.district || viewedUser?.state) && (
+                <>
+                  <span>📍 {[viewedUser.district, viewedUser.state].filter(Boolean).join(', ')}</span>
+                  <span className="pp-meta-dot">·</span>
+                </>
+              )}
+              <span>📅 Member since {new Date(viewedUser?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
             </div>
           </div>
 
           <div className="pp-hero-actions">
-            {isEditing ? (
-              <>
-                <Button text="Cancel"      variant="outline" size="small" onClick={() => setIsEditing(false)} />
-                <Button text="💾 Save"     variant="primary" size="small" loading={isSaving} onClick={handleSaveProfile} />
-              </>
-            ) : (
-              <Button text="✏️ Edit Profile" variant="primary" size="small" onClick={() => { setIsEditing(true); setActiveTab('overview'); }} />
+            {isOwnProfile && (
+              isEditing ? (
+                <>
+                  <Button text="Cancel"      variant="outline" size="small" onClick={() => setIsEditing(false)} />
+                  <Button text="💾 Save"     variant="primary" size="small" loading={isSaving} onClick={handleSaveProfile} />
+                </>
+              ) : (
+                <Button text="✏️ Edit Profile" variant="primary" size="small" onClick={() => { setIsEditing(true); setActiveTab('overview'); }} />
+              )
             )}
           </div>
         </div>

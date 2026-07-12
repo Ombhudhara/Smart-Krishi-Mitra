@@ -26,6 +26,7 @@ import TransactionHistory from '../pages/TransactionHistory/TransactionHistory';
 import Profile from '../pages/Profile/Profile';
 import CostCalculator from '../pages/CostCalculator/CostCalculator';
 import NewsSchemes from '../pages/News_Schemes/News_Schemes';
+import NewsDetails from '../pages/News_Schemes/NewsDetails';
 
 // =============================================================================
 // ADMIN PAGES — Admin role required
@@ -259,6 +260,12 @@ const AppRoutes = () => {
         }
       />
 
+      {/* Public route — anyone can view another user's public profile */}
+      <Route
+        path="/profile/:userId"
+        element={<Profile />}
+      />
+
       {/* ── Cost Calculator ───────────────────────────────────────────── */}
       <Route
         path="/calculator"
@@ -275,6 +282,16 @@ const AppRoutes = () => {
         element={
           <PrivateRoute>
             <NewsSchemes />
+          </PrivateRoute>
+        }
+      />
+
+      {/* ── News Details ───────────────────────────────────────────────── */}
+      <Route
+        path="/news/:id"
+        element={
+          <PrivateRoute>
+            <NewsDetails />
           </PrivateRoute>
         }
       />

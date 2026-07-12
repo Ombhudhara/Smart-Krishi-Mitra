@@ -11,6 +11,6 @@
 import React from 'react';
 import ProfilePage from './ProfilePage';
 
-const FarmerProfile = () => <ProfilePage role="farmer" />;
+const FarmerProfile = ({ userId }) => <ProfilePage role="farmer" userId={userId} />;
 
 export default FarmerProfile;

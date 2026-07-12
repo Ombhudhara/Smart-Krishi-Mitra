@@ -4,6 +4,16 @@ import axios from "axios";
 const API_KEY = process.env.GNEWS_API_KEY;
 const API_URL = (process.env.GNEWS_BASE_URL || "https://gnews.io/api/v4").replace(/\/+$/, "");
 
+// Deterministic string hashing function to generate unique IDs
+const getHash = (str) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
+};
+
 // Create Axios Client Instance for GNews
 const gnewsClient = axios.create({
   baseURL: API_URL,
@@ -173,18 +183,15 @@ const MOCK_NEWS = [
  * @param {object} article - Raw GNews article.
  * @returns {object} Formatted news object.
  */
-export const formatNews = (article) => {
+export const formatNews = (article, index = 0) => {
   if (!article) return null;
 
   const url = article.url || "";
   const title = article.title || "Agri News Update";
 
-  // Generate a deterministic ID using a simple regex or base64 variant of the URL/Title
   let id = article.id;
   if (!id) {
-    id = url 
-      ? "news-" + url.replace(/[^a-z0-9]/gi, "").substring(0, 16).toLowerCase()
-      : "news-" + title.replace(/[^a-z0-9]/gi, "").substring(0, 16).toLowerCase();
+    id = url ? "news-" + getHash(url) : "news-" + getHash(title);
   }
 
   return {
@@ -196,8 +203,97 @@ export const formatNews = (article) => {
     source: article.source?.name || "Global Agriculture News",
     author: article.author || article.source?.name || "Unknown",
     publishedAt: article.publishedAt || new Date().toISOString(),
-    url: url || "https://gnews.io"
+    url: url || "https://gnews.io",
+    trending: index < 3 || article.trending || false
   };
+};
+
+/**
+ * Helper to clean XML CDATA tags.
+ */
+const cleanCDATA = (str) => {
+  if (!str) return "";
+  return str.replace(/<!\[CDATA\[/g, "").replace(/\]\]>/g, "").trim();
+};
+
+/**
+ * Fetches real-time agricultural news from The Hindu RSS feed.
+ * Differentiates categories dynamically based on keywords.
+ *
+ * @returns {Promise<Array<object>>} Formatted article list.
+ */
+export const fetchRSSNews = async () => {
+  try {
+    const feedUrl = "https://www.thehindu.com/sci-tech/agriculture/feeder/default.rss";
+    console.log(`[RSS Service] Fetching real-time agriculture news from RSS: ${feedUrl}`);
+    const response = await axios.get(feedUrl, {
+      timeout: 6000,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+      }
+    });
+
+    const xml = response.data;
+    const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+    const items = [];
+    let match;
+
+    while ((match = itemRegex.exec(xml)) !== null) {
+      const itemContent = match[1];
+
+      const titleMatch = itemContent.match(/<title>(<!\[CDATA\[)?([\s\S]*?)(]]>)?<\/title>/);
+      const descMatch = itemContent.match(/<description>(<!\[CDATA\[)?([\s\S]*?)(]]>)?<\/description>/);
+      const linkMatch = itemContent.match(/<link>([\s\S]*?)<\/link>/);
+      const dateMatch = itemContent.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
+
+      const title = titleMatch ? cleanCDATA(titleMatch[2]) : "Agriculture Update";
+      const description = descMatch ? cleanCDATA(descMatch[2]) : "Latest updates from agricultural sectors.";
+      const link = linkMatch ? cleanCDATA(linkMatch[1]) : "https://www.thehindu.com/sci-tech/agriculture/";
+      const pubDate = dateMatch ? cleanCDATA(dateMatch[1]) : new Date().toISOString();
+
+      // Find image URL
+      const mediaMatch = itemContent.match(/<media:content[^>]*url="([^"]+)"/);
+      const enclosureMatch = itemContent.match(/<enclosure[^>]*url="([^"]+)"/);
+      const image = mediaMatch ? mediaMatch[1] : (enclosureMatch ? enclosureMatch[1] : "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=800&q=80");
+
+      // Categorize news dynamically based on content keywords
+      let category = "Agriculture";
+      const combinedText = (title + " " + description).toLowerCase();
+      if (/monsoon|rain|weather|temperature|wind|storm|cyclone|climate|el ni/i.test(combinedText)) {
+        category = "Weather";
+      } else if (/government|scheme|subsidy|minister|pm-|pradhan|ministry|msp|policy|budget/i.test(combinedText)) {
+        category = "Government";
+      } else if (/drone|ai|iot|smart|satellite|digital|technology|sensor|machine|tractor|app|portal/i.test(combinedText)) {
+        category = "Technology";
+      } else if (/organic|natural farming|pesticide-free|compost|bio-/i.test(combinedText)) {
+        category = "Organic Farming";
+      } else if (/price|cost|rate|market|export|import|trade|sell|buy|loan|finance|nabard/i.test(combinedText)) {
+        category = "Market Prices";
+      }
+
+      const id = "rss-" + getHash(link);
+
+      items.push({
+        id,
+        title,
+        description,
+        content: description,
+        image,
+        source: "The Hindu",
+        author: "The Hindu Bureau",
+        publishedAt: new Date(pubDate).toISOString(),
+        url: link,
+        category,
+        trending: items.length < 3 // Mark first 3 as trending
+      });
+    }
+
+    console.log(`[RSS Service] Successfully loaded and parsed ${items.length} live articles.`);
+    return items;
+  } catch (error) {
+    console.error("[RSS Service] Failed to fetch agricultural RSS feed:", error.message);
+    throw error;
+  }
 };
 
 /**
@@ -244,8 +340,8 @@ const makeRequest = async (endpoint, params = {}) => {
     return cachedData;
   }
 
-  if (!API_KEY) {
-    throw new Error("GNews API Key is not set. Operating in fallback mode.");
+  if (!API_KEY || API_KEY.startsWith("YOUR_") || API_KEY === "") {
+    throw new Error("GNews API Key is not set or is a placeholder. Operating in fallback mode.");
   }
 
   try {
@@ -319,14 +415,23 @@ export const getTopHeadlines = async () => {
       data
     };
   } catch (err) {
-    console.warn(`[GNews Service] Falling back to mock headlines. Reason: ${err.message}`);
-    // Safe agricultural mock data fallback
-    const fallbackData = searchMockNews("agriculture");
-    return {
-      success: true, // We return success: true to keep the frontend functional with mock data
-      message: "News fetched successfully",
-      data: fallbackData
-    };
+    console.warn(`[GNews Service] Falling back to RSS top headlines. Reason: ${err.message}`);
+    try {
+      const rssData = await fetchRSSNews();
+      return {
+        success: true,
+        message: "News fetched successfully (Live RSS)",
+        data: rssData
+      };
+    } catch (rssErr) {
+      console.warn(`[GNews Service] RSS fallback also failed. Using static mock headlines.`);
+      const fallbackData = searchMockNews("agriculture");
+      return {
+        success: true,
+        message: "News fetched successfully (Static Fallback)",
+        data: fallbackData
+      };
+    }
   }
 };
 
@@ -349,13 +454,29 @@ export const searchNews = async (keyword) => {
       data
     };
   } catch (err) {
-    console.warn(`[GNews Service] Falling back to mock search for "${keyword}". Reason: ${err.message}`);
-    const fallbackData = searchMockNews(keyword);
-    return {
-      success: true,
-      message: "News fetched successfully",
-      data: fallbackData
-    };
+    console.warn(`[GNews Service] Falling back to RSS search for "${keyword}". Reason: ${err.message}`);
+    try {
+      const rssData = await fetchRSSNews();
+      const term = keyword.toLowerCase().trim();
+      const filtered = rssData.filter(article => {
+        return (article.title && article.title.toLowerCase().includes(term)) ||
+               (article.description && article.description.toLowerCase().includes(term)) ||
+               (article.category && article.category.toLowerCase().includes(term));
+      });
+      return {
+        success: true,
+        message: "News fetched successfully (Live RSS)",
+        data: filtered.length > 0 ? filtered : rssData
+      };
+    } catch (rssErr) {
+      console.warn(`[GNews Service] RSS fallback also failed. Using static mock search.`);
+      const fallbackData = searchMockNews(keyword);
+      return {
+        success: true,
+        message: "News fetched successfully (Static Fallback)",
+        data: fallbackData
+      };
+    }
   }
 };
 
@@ -394,16 +515,30 @@ export const getNewsByCategory = async (category) => {
       };
     }
   } catch (err) {
-    console.warn(`[GNews Service] Falling back to mock categories for "${category}". Reason: ${err.message}`);
-    const fallbackData = MOCK_NEWS.filter(n => {
-      const artCat = n.category ? n.category.toLowerCase() : "";
-      return artCat === category.trim().toLowerCase() || artCat.includes(category.trim().toLowerCase());
-    });
-    return {
-      success: true,
-      message: "News fetched successfully",
-      data: fallbackData.length > 0 ? fallbackData : MOCK_NEWS
-    };
+    console.warn(`[GNews Service] Falling back to RSS categories for "${category}". Reason: ${err.message}`);
+    try {
+      const rssData = await fetchRSSNews();
+      const fallbackData = rssData.filter(n => {
+        const artCat = n.category ? n.category.toLowerCase() : "";
+        return artCat === category.trim().toLowerCase() || artCat.includes(category.trim().toLowerCase());
+      });
+      return {
+        success: true,
+        message: "News fetched successfully (Live RSS)",
+        data: fallbackData.length > 0 ? fallbackData : rssData
+      };
+    } catch (rssErr) {
+      console.warn(`[GNews Service] RSS fallback also failed. Using static mock categories.`);
+      const fallbackData = MOCK_NEWS.filter(n => {
+        const artCat = n.category ? n.category.toLowerCase() : "";
+        return artCat === category.trim().toLowerCase() || artCat.includes(category.trim().toLowerCase());
+      });
+      return {
+        success: true,
+        message: "News fetched successfully (Static Fallback)",
+        data: fallbackData.length > 0 ? fallbackData : MOCK_NEWS
+      };
+    }
   }
 };
 
@@ -435,15 +570,25 @@ export const getNewsByCountry = async (country) => {
       data
     };
   } catch (err) {
-    console.warn(`[GNews Service] Falling back to mock country for "${country}". Reason: ${err.message}`);
-    const normCountry = country.trim().toLowerCase();
-    const mappedCode = COUNTRY_MAP[normCountry] || "in";
-    const fallbackData = MOCK_NEWS.filter(n => n.country === mappedCode);
-    return {
-      success: true,
-      message: "News fetched successfully",
-      data: fallbackData.length > 0 ? fallbackData : MOCK_NEWS
-    };
+    console.warn(`[GNews Service] Falling back to RSS country for "${country}". Reason: ${err.message}`);
+    try {
+      const rssData = await fetchRSSNews();
+      return {
+        success: true,
+        message: "News fetched successfully (Live RSS)",
+        data: rssData
+      };
+    } catch (rssErr) {
+      console.warn(`[GNews Service] RSS fallback also failed. Using static mock country news.`);
+      const normCountry = country.trim().toLowerCase();
+      const mappedCode = COUNTRY_MAP[normCountry] || "in";
+      const fallbackData = MOCK_NEWS.filter(n => n.country === mappedCode);
+      return {
+        success: true,
+        message: "News fetched successfully (Static Fallback)",
+        data: fallbackData.length > 0 ? fallbackData : MOCK_NEWS
+      };
+    }
   }
 };
 
@@ -475,15 +620,25 @@ export const getNewsByLanguage = async (language) => {
       data
     };
   } catch (err) {
-    console.warn(`[GNews Service] Falling back to mock language for "${language}". Reason: ${err.message}`);
-    const normLanguage = language.trim().toLowerCase();
-    const mappedCode = LANGUAGE_MAP[normLanguage] || "en";
-    const fallbackData = MOCK_NEWS.filter(n => n.language === mappedCode);
-    return {
-      success: true,
-      message: "News fetched successfully",
-      data: fallbackData.length > 0 ? fallbackData : MOCK_NEWS
-    };
+    console.warn(`[GNews Service] Falling back to RSS language for "${language}". Reason: ${err.message}`);
+    try {
+      const rssData = await fetchRSSNews();
+      return {
+        success: true,
+        message: "News fetched successfully (Live RSS)",
+        data: rssData
+      };
+    } catch (rssErr) {
+      console.warn(`[GNews Service] RSS fallback also failed. Using static mock language news.`);
+      const normLanguage = language.trim().toLowerCase();
+      const mappedCode = LANGUAGE_MAP[normLanguage] || "en";
+      const fallbackData = MOCK_NEWS.filter(n => n.language === mappedCode);
+      return {
+        success: true,
+        message: "News fetched successfully (Static Fallback)",
+        data: fallbackData.length > 0 ? fallbackData : MOCK_NEWS
+      };
+    }
   }
 };
 
@@ -504,12 +659,22 @@ export const getLatestAgricultureNews = async () => {
       data
     };
   } catch (err) {
-    console.warn(`[GNews Service] Falling back to mock latest agriculture news. Reason: ${err.message}`);
-    return {
-      success: true,
-      message: "News fetched successfully",
-      data: MOCK_NEWS
-    };
+    console.warn(`[GNews Service] Falling back to RSS latest agriculture news. Reason: ${err.message}`);
+    try {
+      const rssData = await fetchRSSNews();
+      return {
+        success: true,
+        message: "News fetched successfully (Live RSS)",
+        data: rssData
+      };
+    } catch (rssErr) {
+      console.warn(`[GNews Service] RSS fallback also failed. Using static mock latest agriculture news.`);
+      return {
+        success: true,
+        message: "News fetched successfully (Static Fallback)",
+        data: MOCK_NEWS
+      };
+    }
   }
 };
 
@@ -545,6 +710,47 @@ export const bookmarkNews = async (newsId) => {
   }
 };
 
+/**
+ * 8. Retrieve a specific news article by its hashed ID.
+ * Scans local mock database, requestCache maps, and live RSS.
+ *
+ * @param {string} id - The hashed target ID to look up.
+ * @returns {Promise<object|null>} Found article or null.
+ */
+export const getNewsById = async (id) => {
+  // a. Check mock news list
+  let found = MOCK_NEWS.find(n => n.id === id);
+  if (found) return found;
+
+  // b. Check active requestCache responses
+  for (const cached of requestCache.values()) {
+    if (Array.isArray(cached.data)) {
+      found = cached.data.find(n => n.id === id);
+      if (found) return found;
+    }
+  }
+
+  // c. Parse and search live RSS feed
+  try {
+    const rssList = await fetchRSSNews();
+    found = rssList.find(n => n.id === id);
+    if (found) return found;
+  } catch (err) {
+    console.warn(`[newsService] RSS fetch error resolving news detail ID: ${id}`);
+  }
+
+  // d. Search latest agriculture headlines
+  try {
+    const defaultRes = await getLatestAgricultureNews();
+    found = (defaultRes.data || []).find(n => n.id === id);
+    if (found) return found;
+  } catch (err) {
+    console.warn(`[newsService] Headlines search error resolving news detail ID: ${id}`);
+  }
+
+  return null;
+};
+
 export default {
   getTopHeadlines,
   searchNews,
@@ -553,5 +759,6 @@ export default {
   getNewsByLanguage,
   getLatestAgricultureNews,
   bookmarkNews,
+  getNewsById,
   formatNews
 };

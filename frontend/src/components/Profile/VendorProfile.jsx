@@ -11,6 +11,6 @@
 import React from 'react';
 import ProfilePage from './ProfilePage';
 
-const VendorProfile = () => <ProfilePage role="vendor" />;
+const VendorProfile = ({ userId }) => <ProfilePage role="vendor" userId={userId} />;
 
 export default VendorProfile;
