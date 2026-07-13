@@ -5,6 +5,7 @@ import {
   changePassword,
   changeLanguage,
   updateNotificationSettings,
+  updatePrivacySettings,
   updateProfileImage,
   deleteProfileImage,
   updateCoverImage,
@@ -27,6 +28,7 @@ router.put("/", updateProfile);
 router.put("/password", changePassword);
 router.put("/language", changeLanguage);
 router.put("/notifications", updateNotificationSettings);
+router.put("/privacy", updatePrivacySettings);
 router.put("/image", updateProfileImage);
 router.delete("/image", deleteProfileImage);
 router.put("/cover", updateCoverImage);

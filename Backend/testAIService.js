@@ -13,8 +13,8 @@ async function runTests() {
 
   try {
     // Connect to Database
-    const dbUri = process.env.MONGO_URI || "mongodb+srv://ombhudhara20_db_user:KEEPSMILEOM30@cluster0.sopibwy.mongodb.net/smart_krishi_mitra?appName=Cluster0";
-    console.log("Connecting to database:", dbUri.split("@")[1] || dbUri);
+    const dbUri = process.env.MONGO_URI || "YOUR_MONGODB_URI_PLACEHOLDER";
+    console.log("Connecting to database:", dbUri.includes("@") ? dbUri.split("@")[1] : dbUri);
     await mongoose.connect(dbUri);
     console.log("Connected to MongoDB successfully.\n");
 

@@ -14,17 +14,17 @@
   --pr-secondary: #66BB6A;
   --pr-accent: #FFD54F;
   --pr-accent-dark: #F9A825;
-  --pr-bg: #F4FBF4;
+  --pr-bg: #F8FFF8;
   --pr-white: #ffffff;
   --pr-text-dark: #1A2B1A;
   --pr-text-mid: #3D5A3D;
   --pr-text-muted: #6B8C6B;
   --pr-border: #D4EDD4;
-  --pr-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);
-  --pr-shadow-md: 0 4px 20px rgba(46, 125, 50, 0.08);
-  --pr-shadow-lg: 0 8px 40px rgba(46, 125, 50, 0.12);
-  --pr-radius: 20px;
-  --pr-radius-sm: 10px;
+  --pr-shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.04);
+  --pr-shadow-md: 0 8px 30px rgba(46, 125, 50, 0.08);
+  --pr-shadow-lg: 0 16px 48px rgba(46, 125, 50, 0.12);
+  --pr-radius: 24px;
+  --pr-radius-sm: 16px;
   --pr-ease: cubic-bezier(0.4, 0, 0.2, 1);
   --pr-transition: all 0.22s var(--pr-ease);
 }
@@ -50,7 +50,6 @@
 /* ─── Layout Body (Sidebar + Main) ─────────────────────────────────────── */
 .pr-layout {
   display: flex;
-  margin-top: 70px; /* matches --nav-height from reusable navbar */
   flex: 1;
 }
 

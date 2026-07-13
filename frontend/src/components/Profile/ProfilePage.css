@@ -79,10 +79,9 @@
    ───────────────────────────────────────────────────────────────────────────── */
 .pp-hero {
   background: var(--pr-white);
-  border: 1px solid var(--pr-border);
-  border-radius: 24px;
+  border-radius: 0 0 40px 40px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(46, 125, 50, 0.03);
+  box-shadow: 0 4px 20px rgba(46, 125, 50, 0.08);
   margin-bottom: 24px;
 }
 

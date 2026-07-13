@@ -1,14 +1,8 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// EmptyChat.jsx
-// Welcome screen — matches the premium, clean layout in the design mockup
-// ─────────────────────────────────────────────────────────────────────────────
 import React from "react";
-import SuggestedQuestions from "./SuggestedQuestions";
 
 /**
  * Empty chat state welcome screen.
- * Displays AI assistant leaf badge, "Hello! 👋", quick action grid,
- * and horizontal suggested questions underneath.
+ * Displays AI assistant badge, gradient "Hello, Farmer 👋", and minimalistic action cards.
  *
  * @param {{
  *   onQuickAction: (template: string) => void,
@@ -27,39 +21,31 @@ function EmptyChat({ onQuickAction, strings, langCode }) {
         </svg>
       </div>
 
-      {/* Greetings */}
-      <h2 className="ai-empty-welcome">{strings.welcomeTitle}</h2>
-      <h3 className="ai-empty-heading">{strings.welcomeHeading}</h3>
-      <p className="ai-empty-subtitle">{strings.welcomeSubtitle}</p>
+      {/* Greetings with Gradient Text */}
+      <h1 className="ai-empty-welcome-gradient">
+        {strings.welcomeTitle === "Hello 👋" || strings.welcomeTitle === "Hello" ? "Hello, Farmer 👋" : strings.welcomeTitle}
+      </h1>
+      <h2 className="ai-empty-welcome-subtitle">{strings.welcomeHeading}</h2>
 
-      {/* Grid of 4 Quick Action Cards */}
-      <div className="ai-empty-actions" role="list">
+      {/* Grid of Quick Action Cards (Minimalistic 2x3 grid) */}
+      <div className="ai-empty-actions-minimal" role="list">
         {strings.quickActions.map((action) => (
           <button
             key={action.id}
-            className="ai-quick-action-card"
+            className="ai-quick-action-card-minimal"
             role="listitem"
             onClick={() => onQuickAction(action.template)}
             title={action.description}
           >
-            <div className="ai-quick-action-header">
-              <span className="ai-quick-action-icon" aria-hidden="true">
-                {action.icon}
-              </span>
-              <span className="ai-quick-action-title">{action.title}</span>
+            <span className="ai-quick-action-icon-minimal" aria-hidden="true">
+              {action.icon}
+            </span>
+            <div className="ai-quick-action-content-minimal">
+              <span className="ai-quick-action-title-minimal">{action.title}</span>
+              <span className="ai-quick-action-desc-minimal">{action.description}</span>
             </div>
-            <span className="ai-quick-action-desc">{action.description}</span>
           </button>
         ))}
-      </div>
-
-      {/* Suggested question chips directly in the welcome area */}
-      <div className="ai-empty-suggested-container">
-        <SuggestedQuestions
-          onSelect={onQuickAction}
-          langCode={langCode}
-          label=""
-        />
       </div>
     </div>
   );

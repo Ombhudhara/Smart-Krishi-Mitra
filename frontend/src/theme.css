@@ -1,0 +1,373 @@
+/* ==========================================================================
+   Smart Krishi Mitra (SKM) - Global Design System
+   Based on the Dashboard's premium UI/UX
+   ========================================================================== */
+
+/* ─── Variables ─── */
+:root {
+  --skm-primary: #2E7D32;
+  --skm-primary-light: #E8F5E9;
+  --skm-primary-hover: #1B5E20;
+  --skm-secondary: #66BB6A;
+  --skm-accent: #FFD54F;
+  
+  --skm-bg: #F8FFF8;
+  --skm-surface: #ffffff;
+  --skm-text-main: #1A2B1A;
+  --skm-text-muted: #6B8C6B;
+  --skm-border: #D4EDD4;
+  --skm-border-light: #E8F5E9;
+  
+  --skm-shadow-sm: 0 2px 8px rgba(0,0,0,0.03);
+  --skm-shadow-md: 0 4px 16px rgba(0,0,0,0.04);
+  --skm-shadow-hover: 0 8px 24px rgba(46,125,50,0.08);
+  
+  --skm-radius-sm: 12px;
+  --skm-radius-md: 16px;
+  --skm-radius-lg: 20px;
+  
+  --skm-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] {
+  --skm-bg: #0f172a;
+  --skm-surface: #1e293b;
+  --skm-text-main: #f8fafc;
+  --skm-text-muted: #94a3b8;
+  --skm-border: #334155;
+  --skm-border-light: #475569;
+  --skm-primary-light: rgba(46, 125, 50, 0.15);
+  --skm-shadow-md: 0 4px 20px rgba(0,0,0,0.25);
+  --skm-shadow-hover: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+/* ─── Layouts ─── */
+.skm-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+}
+
+.skm-layout {
+  display: flex;
+  flex: 1;
+  padding-top: var(--nav-height, 70px);
+}
+
+.skm-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--skm-bg);
+}
+
+.skm-content-area {
+  padding: 30px;
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .skm-content-area {
+    padding: 20px;
+  }
+}
+
+.skm-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.skm-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skm-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.skm-section-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--skm-text-main);
+}
+
+.skm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.skm-dual-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 992px) {
+  .skm-dual-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Cards ─── */
+.skm-card {
+  background: var(--skm-surface);
+  border-radius: var(--skm-radius-lg);
+  padding: 24px;
+  box-shadow: var(--skm-shadow-md);
+  border: 1.5px solid var(--skm-border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.skm-welcome-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--skm-surface);
+  padding: 24px 30px;
+  border-radius: var(--skm-radius-lg);
+  box-shadow: var(--skm-shadow-sm);
+  border: 1px solid var(--skm-border-light);
+}
+
+.skm-card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--skm-text-main);
+}
+
+.skm-stat-card {
+  background: var(--skm-surface);
+  padding: 20px;
+  border-radius: var(--skm-radius-lg);
+  box-shadow: var(--skm-shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.2s;
+  border: 1px solid transparent;
+}
+
+.skm-stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.skm-stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.skm-stat-label {
+  font-size: 11px;
+  color: var(--skm-text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.skm-stat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.skm-stat-value {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--skm-text-main);
+}
+
+.skm-stat-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  border-top: 1.5px solid var(--skm-bg);
+  padding-top: 8px;
+}
+
+.skm-stat-desc {
+  color: var(--skm-text-muted);
+}
+
+.skm-stat-trend {
+  font-weight: 700;
+}
+
+.skm-stat-trend.up, .skm-stat-trend.positive { color: var(--skm-primary); }
+.skm-stat-trend.down, .skm-stat-trend.negative { color: #E53935; }
+.skm-stat-trend.neutral { color: #E65100; }
+
+/* ─── Page Title ─── */
+.skm-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--skm-text-main);
+  line-height: 1.3;
+}
+
+.skm-action-card {
+  background: var(--skm-surface);
+  padding: 22px;
+  border-radius: var(--skm-radius-lg);
+  box-shadow: var(--skm-shadow-md);
+  border: 1.5px solid var(--skm-border-light);
+  cursor: pointer;
+  transition: var(--skm-transition);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skm-action-card:hover {
+  border-color: var(--skm-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--skm-shadow-hover);
+}
+
+.skm-action-icon {
+  font-size: 26px;
+}
+
+.skm-action-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--skm-text-main);
+}
+
+.skm-action-desc {
+  margin: 0;
+  font-size: 11px;
+  color: var(--skm-text-muted);
+  line-height: 1.5;
+}
+
+/* ─── Typography ─── */
+.skm-text-muted {
+  color: var(--skm-text-muted);
+}
+
+/* ─── Buttons & Links ─── */
+.skm-text-link-btn {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--skm-primary);
+  cursor: pointer;
+}
+
+.skm-action-btn {
+  background: var(--skm-bg);
+  border: 1.5px solid var(--skm-border);
+  padding: 10px;
+  border-radius: var(--skm-radius-lg);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3D5A3D;
+  cursor: pointer;
+  text-align: center;
+  transition: var(--skm-transition);
+}
+
+.skm-action-btn:hover {
+  background: var(--skm-primary);
+  color: #ffffff;
+  border-color: var(--skm-primary);
+}
+
+/* ─── Tables ─── */
+.skm-table-card {
+  background: var(--skm-surface);
+  border-radius: var(--skm-radius-lg);
+  box-shadow: var(--skm-shadow-md);
+  border: 1.5px solid var(--skm-border-light);
+  overflow-x: auto;
+}
+
+.skm-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.skm-table th {
+  background: var(--skm-bg);
+  padding: 14px 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--skm-text-muted);
+  text-transform: uppercase;
+}
+
+.skm-table td {
+  padding: 14px 20px;
+  font-size: 13px;
+  border-bottom: 1.5px solid var(--skm-bg);
+  color: var(--skm-text-main);
+}
+
+/* ─── Badges ─── */
+.skm-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: var(--skm-primary-light);
+  color: var(--skm-primary);
+}
+
+.skm-status-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.skm-status-badge.success { background: var(--skm-primary-light); color: var(--skm-primary); }
+.skm-status-badge.warning { background: #FFF3E0; color: #E65100; }
+.skm-status-badge.danger { background: #FFEBEE; color: #C62828; }
+.skm-status-badge.info { background: #E3F2FD; color: #1565C0; }
+
+/* ─── Previews (Lists of items inside cards) ─── */
+.skm-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skm-preview-item {
+  background: var(--skm-bg);
+  border: 1px solid var(--skm-border);
+  padding: 12px 16px;
+  border-radius: var(--skm-radius-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: var(--skm-transition);
+}
+
+.skm-preview-item:hover {
+  border-color: var(--skm-primary);
+}

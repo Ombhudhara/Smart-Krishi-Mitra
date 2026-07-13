@@ -375,31 +375,7 @@ function ChatBox({ onClose, showClose = true }) {
     }
   }
   return (
-    <div className={`ai-chatbox ai-chat-module ${theme}-theme ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
-      {/* Mobile sidebar drawer backdrop */}
-      {sidebarOpen && (
-        <div
-          className="ai-sidebar-backdrop"
-          onClick={() => setSidebarOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* ── Sidebar (Collapsible & Drawer) ── */}
-      <ChatSidebar
-        conversations={conversations}
-        activeId={activeConvId}
-        onSelectConversation={handleSelectConversation}
-        onNewChat={handleNewChat}
-        onDeleteConversation={handleDeleteConversation}
-        onPinConversation={handlePinConversation}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        strings={strings}
-        isCollapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
-      />
-
+    <div className={`ai-chatbox ai-chat-module ${theme}-theme`}>
       {/* ── Main Chat Area ── */}
       <main className="ai-chat-main">
         {/* Header */}
@@ -407,14 +383,14 @@ function ChatBox({ onClose, showClose = true }) {
           onClearChat={handleClearChat}
           onNewChat={handleNewChat}
           onClose={onClose}
-          onToggleSidebar={handleToggleSidebar}
+          onToggleSidebar={null}
           showClose={showClose}
           currentLang={langCode}
           onLangChange={handleLangChange}
           strings={strings}
           theme={theme}
           toggleTheme={toggleTheme}
-          isSidebarCollapsed={sidebarCollapsed}
+          isSidebarCollapsed={true}
           onExportChat={() => downloadTextTranscript(activeConvId)}
         />
 

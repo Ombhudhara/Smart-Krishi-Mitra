@@ -15,6 +15,7 @@ code {
 /* ==========================================================================
    Global Theme Stylesheet — Smart Krishi Mitra
    ========================================================================== */
+@import './theme.css';
 
 /* Theme Variables Definition */
 :root {
@@ -25,6 +26,19 @@ code {
   --text-muted: #6B8C6B;
   --border-color: #D4EDD4;
   --white: #ffffff;
+
+}
+
+/* Zoom scaling for accessibility Text Size toggle */
+html[data-text-size="small"] { zoom: 0.95; }
+html[data-text-size="medium"] { zoom: 1.05; }
+html[data-text-size="big"] { zoom: 1.15; }
+
+/* Fallback transform for Firefox which doesn't support zoom well */
+@-moz-document url-prefix() {
+  html[data-text-size="small"] body { transform: scale(0.95); transform-origin: top left; width: calc(100% / 0.95); height: calc(100% / 0.95); }
+  html[data-text-size="medium"] body { transform: scale(1.05); transform-origin: top left; width: calc(100% / 1.05); height: calc(100% / 1.05); }
+  html[data-text-size="big"] body { transform: scale(1.15); transform-origin: top left; width: calc(100% / 1.15); height: calc(100% / 1.15); }
 }
 
 body[data-theme="dark"],
@@ -144,6 +158,19 @@ html[data-theme="dark"],
 body[data-theme="dark"] {
   background-color: #0f172a !important;
   color: #f8fafc !important;
+}
+
+.db-layout,
+.mkt-layout,
+.cc-layout,
+.ns-layout,
+.wt2-layout,
+.tx-layout,
+.nc-layout,
+.pr-layout,
+.msg-layout,
+.msg-page-layout {
+  padding-top: var(--nav-height, 70px);
 }
 
 [data-theme="dark"] body,

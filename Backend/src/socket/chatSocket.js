@@ -23,4 +23,14 @@ export default (socket, io) => {
       });
     }
   });
+
+  // Listen for message read event and relay to sender
+  socket.on("messageRead", ({ conversationId, senderId }) => {
+    if (senderId) {
+      io.to(senderId.toString()).emit("messageRead", {
+        conversationId,
+        readerId: socket.user._id.toString()
+      });
+    }
+  });
 };

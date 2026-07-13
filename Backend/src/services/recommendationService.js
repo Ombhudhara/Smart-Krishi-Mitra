@@ -8,7 +8,7 @@ import weatherService from "./weatherService.js";
 import marketPriceService from "./marketPriceService.js";
 
 // Retrieve configurations from environment
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 /**
@@ -271,8 +271,8 @@ export const getSellingRecommendation = (marketData = {}, profile = {}) => {
  * @returns {Promise<string>} Detailed advice summary text.
  */
 const fetchAISummary = async (promptData) => {
-  if (!GEMINI_API_KEY) {
-    console.warn("[Recommendation Service] GEMINI_API_KEY variable is missing. Running in rule-based fallback mode.");
+  if (!OPENROUTER_API_KEY) {
+    console.warn("[Recommendation Service] OPENROUTER_API_KEY variable is missing. Running in rule-based fallback mode.");
     return generateFallbackSummary(promptData);
   }
 
@@ -308,7 +308,7 @@ Based on this, draft a direct, expert, professional advice paragraph in English.
   try {
     const apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error("Router API Key (GEMINI_API_KEY or OPENROUTER_API_KEY) is not configured.");
+      throw new Error("OPENROUTER_API_KEY is not configured in environment variables.");
     }
 
     console.log("[Recommendation Service] Dispatching payload to Router API...");

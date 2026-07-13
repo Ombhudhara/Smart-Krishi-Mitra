@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { io } from "socket.io-client";
+
 import Navbar from '../../components/Navbar/Navbar';
 import Sidebar from '../../components/Sidebar/Sidebar';
-import Card from '../../components/Card/Card';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
+
+import { useNavigate } from 'react-router-dom';
+import { io } from "socket.io-client";
+import Card from '../../components/Card/Card';
 import { useAuth } from '../../context/AuthContext';
-import { getConversations, getMessages, sendMessage, markConversationRead } from '../../services/chatService';
+import { getConversations, getMessages, sendMessage, sendImageMessage, markConversationRead, getContacts, deleteMessage } from '../../services/chatService';
 import { 
-  FiSearch, FiPhone, FiMoreVertical, FiPaperclip, 
-  FiImage, FiSmile, FiSend, FiX, FiCheck, FiFileText,
-  FiMapPin, FiPhoneCall, FiDollarSign, FiBox, FiMessageSquare
+  FiSearch, FiSend, FiX, FiCheck, FiBox, FiMessageSquare, FiTrash2, FiImage, FiPaperclip, FiLoader
 } from 'react-icons/fi';
 import './Messages.css';
 
@@ -30,11 +30,9 @@ const CURRENT_USER = {
 
 const QUICK_ACTIONS = [
   { icon: <FiBox />, label: 'Product Details', text: 'Can you share the product details?' },
-  { icon: <FiDollarSign />, label: 'Negotiate Price', text: 'Can we negotiate the price?' },
-  { icon: <FiFileText />, label: 'Delivery Status', text: 'What is the delivery status?' },
+  { icon: <FiBox />, label: 'Negotiate Price', text: 'Can we negotiate the price?' },
+  { icon: <FiBox />, label: 'Delivery Status', text: 'What is the delivery status?' },
   { icon: <FiSearch />, label: 'Crop Availability', text: 'Is this crop available right now?' },
-  { icon: <FiMapPin />, label: 'Share Location', text: 'Here is my delivery location:' },
-  { icon: <FiPhoneCall />, label: 'Request Call', text: 'Can we talk over a phone call?' },
 ];
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -44,43 +42,35 @@ const QUICK_ACTIONS = [
 
 
 // ─── Message Bubble (WhatsApp Style) ──────────────────────────────
-function MessageBubble({ message, isSelf }) {
+function MessageBubble({ message, isSelf, onDelete }) {
   const statusIcon = () => {
     if (!isSelf) return null;
-    if (message.status === 'read') return <span className="msg-status msg-status--read"><FiCheck /><FiCheck style={{marginLeft: '-8px'}}/></span>;
-    if (message.status === 'delivered') return <span className="msg-status msg-status--delivered"><FiCheck /><FiCheck style={{marginLeft: '-8px'}}/></span>;
+    if (message.isRead) return <span className="msg-status msg-status--read"><FiCheck /><FiCheck style={{marginLeft: '-8px'}}/></span>;
+    if (message.delivered) return <span className="msg-status msg-status--delivered"><FiCheck /><FiCheck style={{marginLeft: '-8px'}}/></span>;
     return <span className="msg-status msg-status--sent"><FiCheck /></span>;
   };
 
   return (
     <div className={`msg-bubble-row ${isSelf ? 'msg-bubble-row--self' : 'msg-bubble-row--other'}`}>
       <div className={`msg-bubble ${isSelf ? 'msg-bubble--self' : 'msg-bubble--other'}`}>
-        
-        {/* File attachment */}
-        {message.type === 'file' && (
-          <div className="msg-file-preview" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', background: 'rgba(0,0,0,0.05)', padding: '8px', borderRadius: '8px' }}>
-            <FiFileText size={24} color="#54656F" />
-            <div className="msg-file-info" style={{ flex: 1 }}>
-              <div className="msg-file-name" style={{ fontSize: '13px', fontWeight: 600 }}>{message.fileName}</div>
-              <div className="msg-file-size" style={{ fontSize: '11px', color: '#667781' }}>{message.fileSize}</div>
-            </div>
-          </div>
-        )}
-
-        {/* Location */}
-        {message.type === 'location' && (
-          <div className="msg-location-preview" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', background: 'rgba(0,0,0,0.05)', padding: '8px', borderRadius: '8px' }}>
-            <FiMapPin size={24} color="#54656F" />
-            <span className="msg-location-text" style={{ fontSize: '13px', fontWeight: 500 }}>{message.location}</span>
-          </div>
-        )}
-
         {/* Text */}
-        <div className="msg-text">{message.text}</div>
+        <div className="msg-text" style={{ fontStyle: message.deleted ? 'italic' : 'normal', color: message.deleted ? '#888' : 'inherit' }}>
+          {message.imageUrl && !message.deleted && (
+            <div className="msg-image-wrap" onClick={() => window.open(message.imageUrl, '_blank')}>
+              <img src={message.imageUrl} alt="Uploaded" className="msg-photo" />
+            </div>
+          )}
+          {message.text}
+        </div>
 
         <div className="msg-meta">
           <span className="msg-time">{message.time}</span>
           {statusIcon()}
+          {isSelf && !message.deleted && (
+            <button className="msg-delete-btn" onClick={() => onDelete(message._id)} title="Delete Message">
+              <FiTrash2 size={12} />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -105,7 +95,11 @@ function ConversationCard({ contact, conversation, isActive, onClick }) {
       onClick={onClick}
     >
       <div className="msg-conv-avatar-wrap">
-        <span className="msg-conv-avatar">{contact.avatar}</span>
+        {contact.avatar ? (
+          <img src={contact.avatar} alt={contact.name} className="msg-conv-avatar" style={{ objectFit: 'cover' }} />
+        ) : (
+          <span className="msg-conv-avatar">{contact.name?.charAt(0).toUpperCase()}</span>
+        )}
         {contact.online && <span className="msg-online-dot" />}
       </div>
       <div className="msg-conv-info">
@@ -170,31 +164,92 @@ function EmptyChatView({ onQuickContact }) {
   );
 }
 
+function DraggableFAB({ onClick }) {
+  const [position, setPosition] = useState(null);
+  const draggingRef = useRef(false);
+  const startPosRef = useRef({ offsetX: 0, offsetY: 0 });
+  const hasMovedRef = useRef(false);
+
+  const handlePointerDown = (e) => {
+    draggingRef.current = true;
+    hasMovedRef.current = false;
+    const rect = e.currentTarget.getBoundingClientRect();
+    startPosRef.current = {
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!draggingRef.current) return;
+    hasMovedRef.current = true;
+    let newX = e.clientX - startPosRef.current.offsetX;
+    let newY = e.clientY - startPosRef.current.offsetY;
+    newX = Math.max(0, Math.min(newX, window.innerWidth - 60));
+    newY = Math.max(0, Math.min(newY, window.innerHeight - 60));
+    setPosition({ x: newX, y: newY });
+  };
+
+  const handlePointerUp = (e) => {
+    draggingRef.current = false;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
+
+  const handleClick = (e) => {
+    if (hasMovedRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    if (onClick) onClick(e);
+  };
+
+  return (
+    <button 
+      className="msg-fab" 
+      title="Ask AI Assistant"
+      style={position ? { left: position.x, top: position.y, bottom: 'auto', right: 'auto', margin: 0, transition: 'none' } : {}}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onClick={handleClick}
+    >
+      <FiMessageSquare color="#2E7D32" size={24} style={{ pointerEvents: 'none' }} />
+    </button>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 export default function Messages() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
   const [activeChat, setActiveChat] = useState(null);
   const [messageInput, setMessageInput] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('All');
   const [showUnread, setShowUnread] = useState(false);
+  const [contacts, setContacts] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [mobileView, setMobileView] = useState('list'); // 'list' | 'chat'
   const [showQuickActions, setShowQuickActions] = useState(true);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const socketRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const activeChatRef = useRef(activeChat);
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
+  const [onlineUsersMap, setOnlineUsersMap] = useState(new Set());
 
   // Sync activeChatRef for socket callback closures
   useEffect(() => {
@@ -259,6 +314,33 @@ export default function Messages() {
       }
     });
 
+    socket.on("messageDeleted", ({ messageId, conversationId }) => {
+      if (activeChatRef.current === conversationId) {
+        setMessages((prev) => prev.map(m => m._id === messageId ? { ...m, deleted: true, text: 'This message was deleted' } : m));
+      }
+      loadConversations();
+    });
+
+    socket.on("onlineUsers", (users) => {
+      setOnlineUsersMap(new Set(users));
+    });
+
+    socket.on("userOnline", (userId) => {
+      setOnlineUsersMap(prev => {
+        const next = new Set(prev);
+        next.add(userId);
+        return next;
+      });
+    });
+
+    socket.on("userOffline", (userId) => {
+      setOnlineUsersMap(prev => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
+    });
+
     return () => {
       console.log("[Socket Client] Disconnecting socket...");
       socket.disconnect();
@@ -269,15 +351,20 @@ export default function Messages() {
   const activeConv = conversations.find((c) => c._id === activeChat);
   const activeContact = activeConv?.participants.find((p) => p._id !== user?._id);
 
-  // Fetch conversations list on mount
   const loadConversations = async () => {
     try {
-      const res = await getConversations();
-      if (res.data?.success) {
-        setConversations(res.data.conversations);
+      const [convRes, contactsRes] = await Promise.all([
+        getConversations(),
+        getContacts()
+      ]);
+      if (convRes.data?.success) {
+        setConversations(convRes.data.conversations);
+      }
+      if (contactsRes.data?.success) {
+        setContacts(contactsRes.data.contacts);
       }
     } catch (err) {
-      console.error("Error loading conversations:", err);
+      console.error("Error loading conversations or contacts:", err);
     }
   };
 
@@ -319,14 +406,58 @@ export default function Messages() {
     }
   }, [activeChat]);
 
-  // Filter conversations
-  const filteredConversations = conversations.filter((conv) => {
+  // Generate chat list items: existing conversations + new contacts
+  const chatListItems = [];
+
+  // Add existing conversations
+  conversations.forEach((conv) => {
     const partner = conv.participants.find((p) => p._id !== user?._id);
-    if (!partner) return false;
+    if (!partner) return;
+
+    let lastMsgRender = 'No messages yet';
+    if (conv.lastMessage) {
+      if (conv.lastMessage.messageType === 'Image' || conv.lastMessage.imageUrl) {
+        lastMsgRender = <span style={{display: 'flex', alignItems: 'center', gap: '4px'}}><FiImage size={12}/> Photo</span>;
+      } else {
+        lastMsgRender = conv.lastMessage.text;
+      }
+    }
+
+    chatListItems.push({
+      _id: conv._id,
+      isConv: true,
+      partner,
+      lastMessage: lastMsgRender,
+      lastTime: conv.lastMessage ? new Date(conv.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+      unread: (conv.lastMessage && conv.lastMessage.sender?._id !== user?._id && !conv.lastMessage.isRead) ? 1 : 0
+    });
+  });
+
+  // Add contacts that don't have a conversation yet
+  contacts.forEach((contact) => {
+    if (contact._id === user?._id) return;
+    const exists = chatListItems.some(item => item.partner._id === contact._id);
+    if (!exists) {
+      // Create a pseudo-conversation for the contact
+      chatListItems.push({
+        _id: `contact-${contact._id}`,
+        isConv: false,
+        partner: contact,
+        lastMessage: 'Start a new conversation',
+        lastTime: '',
+        unread: 0
+      });
+    }
+  });
+
+  // Filter conversations
+  const filteredConversations = chatListItems.filter((item) => {
+    const partner = item.partner;
     if (searchQuery && !partner.fullName.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (filterRole !== 'All' && partner.role !== filterRole) return false;
     return true;
   });
+
 
   const totalUnread = conversations.reduce((acc, conv) => {
     // If last message exists and is not sent by current user, check read status
@@ -334,14 +465,32 @@ export default function Messages() {
     return acc + (isUnread ? 1 : 0);
   }, 0);
 
-  const handleSelectChat = async (convId) => {
-    setActiveChat(convId);
-    setMobileView('chat');
-    try {
-      await markConversationRead(convId);
-      loadConversations();
-    } catch (err) {
-      console.error(err);
+  const handleSelectChat = async (item) => {
+    if (item.isConv) {
+      setActiveChat(item._id);
+      setMobileView('chat');
+      try {
+        await markConversationRead(item._id);
+        loadConversations();
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      // It's a new contact, start a conversation first via API or just set activeChat to a temporary state.
+      // But the backend `sendMessage` handles creating one if activeConvId is missing but recipientId is given.
+      // Wait, we need an activeChat ID. The easiest is to call startConversation.
+      import('../../services/chatService').then(async ({ startConversation }) => {
+        try {
+          const res = await startConversation(item.partner._id);
+          if (res.data?.success) {
+            setActiveChat(res.data.conversation._id);
+            setMobileView('chat');
+            loadConversations();
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      });
     }
   };
 
@@ -368,12 +517,37 @@ export default function Messages() {
     }, 2000);
   };
 
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be less than 5MB');
+      return;
+    }
+    setSelectedImage(file);
+    setImagePreview(URL.createObjectURL(file));
+    
+    if (inputRef.current) {
+      setTimeout(() => inputRef.current.focus(), 10);
+    }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !activeChat) return;
+    if ((!messageInput.trim() && !selectedImage) || !activeChat || isUploading) return;
 
     try {
       const text = messageInput.trim();
       setMessageInput('');
+      setIsUploading(true);
 
       // Emit stopTyping immediately
       if (socketRef.current && activeContact) {
@@ -384,13 +558,26 @@ export default function Messages() {
       }
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
-      const res = await sendMessage({ conversationId: activeChat, text });
+      let res;
+      if (selectedImage) {
+        const formData = new FormData();
+        formData.append('conversationId', activeChat);
+        if (text) formData.append('text', text);
+        formData.append('image', selectedImage);
+        res = await sendImageMessage(formData);
+        removeImage();
+      } else {
+        res = await sendMessage({ conversationId: activeChat, text });
+      }
+
       if (res.data?.success) {
         setMessages((prev) => [...prev, res.data.message]);
         loadConversations();
       }
     } catch (err) {
       console.error("Error sending message:", err);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -404,6 +591,18 @@ export default function Messages() {
   const handleQuickAction = (text) => {
     setMessageInput(text);
     inputRef.current?.focus();
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    if (!window.confirm("Are you sure you want to delete this message?")) return;
+    try {
+      const res = await deleteMessage(messageId);
+      if (res.data?.success) {
+        setMessages((prev) => prev.map(m => m._id === messageId ? { ...m, deleted: true, text: 'This message was deleted' } : m));
+      }
+    } catch (err) {
+      console.error("Error deleting message:", err);
+    }
   };
 
   const handleBackToList = () => {
@@ -496,28 +695,27 @@ export default function Messages() {
                     <p>No conversations found</p>
                   </div>
                 ) : (
-                  filteredConversations.map((conv) => {
-                    const partner = conv.participants.find((p) => p._id !== user?._id);
-                    if (!partner) return null;
+                  filteredConversations.map((item) => {
+                    const partner = item.partner;
                     const contactObj = {
-                      id: conv._id,
+                      id: partner._id,
                       name: partner.fullName,
                       role: partner.role,
-                      avatar: partner.role === 'Farmer' ? '👨‍🌾' : (partner.role === 'Vendor' ? '🏬' : '🤵'),
-                      online: true,
+                      avatar: partner.profileImage || null,
+                      online: onlineUsersMap.has(partner._id),
                     };
                     const convData = {
-                      lastMessage: conv.lastMessage?.text || 'No messages yet',
-                      lastTime: conv.lastMessage ? new Date(conv.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-                      unread: (conv.lastMessage && conv.lastMessage.sender?._id !== user?._id && !conv.lastMessage.isRead) ? 1 : 0
+                      lastMessage: item.lastMessage,
+                      lastTime: item.lastTime,
+                      unread: item.unread
                     };
                     return (
                       <ConversationCard
-                        key={conv._id}
+                        key={item._id}
                         contact={contactObj}
                         conversation={convData}
-                        isActive={activeChat === conv._id}
-                        onClick={() => handleSelectChat(conv._id)}
+                        isActive={activeChat === item._id}
+                        onClick={() => handleSelectChat(item)}
                       />
                     );
                   })
@@ -536,11 +734,15 @@ export default function Messages() {
                     <button className="msg-back-btn" onClick={handleBackToList}>
                       ← 
                     </button>
-                    <div className="msg-chat-user-info">
-                      <div className="msg-chat-avatar-wrap">
-                        <span className="msg-chat-avatar">
-                          {activeContact?.role === 'Farmer' ? '👨‍🌾' : (activeContact?.role === 'Vendor' ? '🏬' : '🤵')}
-                        </span>
+                    <div className="msg-chat-user-info" onClick={() => navigate(`/profile/${activeContact?._id}`)} style={{ cursor: 'pointer' }} title="View Profile">
+                      <div className="msg-chat-avatar-wrap" style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden' }}>
+                        {activeContact?.profileImage ? (
+                          <img src={activeContact.profileImage} alt={activeContact.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <span className="msg-chat-avatar">
+                            {activeContact?.fullName?.charAt(0).toUpperCase()}
+                          </span>
+                        )}
                       </div>
                       <div className="msg-chat-user-text">
                         <div className="msg-chat-user-name">{activeContact?.fullName}</div>
@@ -553,9 +755,6 @@ export default function Messages() {
                       </div>
                     </div>
                     <div className="msg-chat-actions">
-                      <button className="msg-chat-action-btn" title="Voice Call"><FiPhone /></button>
-                      <button className="msg-chat-action-btn" title="Search"><FiSearch /></button>
-                      <button className="msg-chat-action-btn" title="More Options"><FiMoreVertical /></button>
                     </div>
                   </div>
 
@@ -570,6 +769,7 @@ export default function Messages() {
                           time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                         }}
                         isSelf={msg.sender?._id === user?._id || msg.sender === user?._id}
+                        onDelete={handleDeleteMessage}
                       />
                     ))}
                     <div ref={messagesEndRef} />
@@ -596,40 +796,51 @@ export default function Messages() {
                   )}
 
                   {/* Input Area */}
-                  <div className="msg-input-area">
-                    <div className="msg-input-actions">
-                      <button className="msg-input-btn" title="Emoji"><FiSmile /></button>
-                      <button className="msg-input-btn" title="Attach File"><FiPaperclip /></button>
-                      <button className="msg-input-btn" title="Image"><FiImage /></button>
+                  {activeContact?.privacySettings?.allowMessages === false ? (
+                    <div className="msg-input-area" style={{ justifyContent: 'center', background: '#f0f2f5' }}>
+                      <p style={{ color: '#54656F', fontStyle: 'italic', margin: 0 }}>This user is not accepting messages.</p>
                     </div>
-                    <div className="msg-input-wrap">
-                      <textarea
-                        ref={inputRef}
-                        className="msg-input-field"
-                        placeholder="Type your message..."
-                        value={messageInput}
-                        onChange={handleInputChange}
-                        onKeyDown={handleKeyDown}
-                        rows={1}
-                      />
+                  ) : (
+                    <div className="msg-input-container-wrapper" style={{ display: 'flex', flexDirection: 'column' }}>
+                      {imagePreview && (
+                        <div className="msg-image-preview-container">
+                          <img src={imagePreview} alt="Preview" className="msg-image-preview" />
+                          <button className="msg-image-remove" onClick={removeImage}><FiX /></button>
+                        </div>
+                      )}
+                      <div className="msg-input-area">
+                        <div className="msg-input-wrap">
+                          <label className="msg-attachment-btn" title="Attach Image">
+                            <FiPaperclip size={20} color="#54656F" />
+                            <input type="file" accept="image/jpeg,image/png,image/jpg,image/webp" hidden onChange={handleImageSelect} />
+                          </label>
+                          <textarea
+                            ref={inputRef}
+                            className="msg-input-field"
+                            placeholder="Type your message..."
+                            value={messageInput}
+                            onChange={handleInputChange}
+                            onKeyDown={handleKeyDown}
+                            rows={1}
+                          />
+                        </div>
+                        <button 
+                          className="msg-send-btn" 
+                          onClick={handleSendMessage} 
+                          title="Send"
+                          disabled={(!messageInput.trim() && !selectedImage) || isUploading}
+                          style={{ opacity: (messageInput.trim() || selectedImage) && !isUploading ? 1 : 0.5, cursor: (messageInput.trim() || selectedImage) && !isUploading ? 'pointer' : 'default' }}
+                        >
+                          {isUploading ? <FiLoader className="spin-icon" /> : <FiSend />}
+                        </button>
+                      </div>
                     </div>
-                    <button 
-                      className="msg-send-btn" 
-                      onClick={handleSendMessage} 
-                      title="Send"
-                      disabled={!messageInput.trim()}
-                      style={{ opacity: messageInput.trim() ? 1 : 0.5, cursor: messageInput.trim() ? 'pointer' : 'default' }}
-                    >
-                      <FiSend />
-                    </button>
-                  </div>
+                  )}
                 </>
               )}
 
               {/* Floating AI Assistant */}
-              <button className="msg-fab" title="Ask AI Assistant">
-                 <FiMessageSquare color="#2E7D32" size={24} />
-              </button>
+              <DraggableFAB />
 
             </section>
 

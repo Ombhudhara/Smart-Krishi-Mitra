@@ -42,24 +42,20 @@ export const UI_STRINGS = {
     welcomeSubtitle: "Your premium AI-powered farming companion is here to help you with crop advice, pest control, soil health, market prices, and government schemes.",
     emptyChatHintLabel: "Try asking:",
 
-    // 6 Premium Quick Action Cards
+    // 4 Premium Quick Action Cards
     quickActions: [
       { id: "qa-1", icon: "🌾", title: "Diagnose Crop Disease",  description: "Identify pest or disease symptoms", template: "My crop is showing symptoms of " },
       { id: "qa-2", icon: "🌱", title: "Crop Recommendation",  description: "Best crop matches for your soil",  template: "Which crops are recommended for " },
       { id: "qa-3", icon: "💰", title: "Cost Calculator",      description: "Estimate cultivation cost & profit",template: "Calculate the cultivation cost for " },
-      { id: "qa-4", icon: "📢", title: "Government Schemes",   description: "Find active subsidies & benefits",  template: "What government schemes are available for " },
-      { id: "qa-5", icon: "🌦", title: "Weather Advice",       description: "Sowing & harvesting schedules",     template: "What is the weather advisory for sowing " },
-      { id: "qa-6", icon: "🛒", title: "Market Prices",        description: "Check MSP and latest mandi rates",  template: "What is the latest mandi price of " },
+      { id: "qa-4", icon: "📢", title: "Government Schemes",   description: "Find active subsidies & benefits",  template: "What government schemes are available for " }
     ],
 
-    // Suggested questions chips (6 cards)
+    // Suggested questions chips (4 cards)
     suggestedQuestions: [
       { id: "sq-1", icon: "🌾", text: "Best crop for black soil?" },
       { id: "sq-2", icon: "💧", text: "Cotton water requirement" },
       { id: "sq-3", icon: "🐛", text: "Pest control" },
-      { id: "sq-4", icon: "🌦", text: "Weather forecast" },
-      { id: "sq-5", icon: "📢", text: "Government Schemes" },
-      { id: "sq-6", icon: "💰", text: "Estimate cultivation cost" },
+      { id: "sq-4", icon: "🌦", text: "Weather forecast" }
     ],
 
     // Suggested chips label
@@ -119,24 +115,20 @@ export const UI_STRINGS = {
     welcomeSubtitle: "आपका प्रीमियम AI-संचालित कृषि साथी फसल सलाह, कीट नियंत्रण, मिट्टी के स्वास्थ्य, बाजार भाव और सरकारी योजनाओं में आपकी सहायता करने के लिए यहाँ है।",
     emptyChatHintLabel: "कोशिश करें:",
 
-    // 6 Premium Quick Action Cards
+    // 4 Premium Quick Action Cards
     quickActions: [
       { id: "qa-1", icon: "🌾", title: "फसल रोग का निदान",      description: "कीट या रोग के लक्षणों की पहचान",       template: "मेरी फसल में यह लक्षण दिख रहे हैं: " },
       { id: "qa-2", icon: "🌱", title: "फसल सुझाव",           description: "अपनी मिट्टी के लिए सर्वोत्तम फसलें",   template: "किस प्रकार की मिट्टी में कौन सी फसलें उगाएं: " },
       { id: "qa-3", icon: "💰", title: "लागत कैलकुलेटर",        description: "खेती की लागत और लाभ का अनुमान",    template: "खेती की लागत की गणना करें: " },
-      { id: "qa-4", icon: "📢", title: "सरकारी योजनाएं",       description: "सक्रिय सब्सिडी और लाभ खोजें",         template: "किसानों के लिए कौन सी सरकारी योजनाएं उपलब्ध हैं: " },
-      { id: "qa-5", icon: "🌦", title: "मौसम सलाह",            description: "बुवाई और कटाई की समय-सारणी",         template: "बुवाई के लिए मौसम की सलाह क्या है: " },
-      { id: "qa-6", icon: "🛒", title: "बाजार भाव",            description: "MSP और नवीनतम मंडी दरें देखें",      template: "नवीनतम मंडी भाव क्या है: " },
+      { id: "qa-4", icon: "📢", title: "सरकारी योजनाएं",       description: "सक्रिय सब्सिडी और लाभ खोजें",         template: "किसानों के लिए कौन सी सरकारी योजनाएं उपलब्ध हैं: " }
     ],
 
-    // Suggested questions chips (6 cards)
+    // Suggested questions chips (4 cards)
     suggestedQuestions: [
       { id: "sq-1", icon: "🌾", text: "काली मिट्टी के लिए सबसे अच्छी फसल?" },
       { id: "sq-2", icon: "💧", text: "कपास के लिए पानी की आवश्यकता" },
       { id: "sq-3", icon: "🐛", text: "कीट नियंत्रण" },
-      { id: "sq-4", icon: "🌦", text: "मौसम का पूर्वानुमान" },
-      { id: "sq-5", icon: "📢", text: "सरकारी योजनाएं" },
-      { id: "sq-6", icon: "💰", text: "खेती की लागत का अनुमान" },
+      { id: "sq-4", icon: "🌦", text: "मौसम का पूर्वानुमान" }
     ],
 
     // Suggested chips label
@@ -196,24 +188,20 @@ export const UI_STRINGS = {
     welcomeSubtitle: "તમારો પ્રીમિયમ AI-સંચાલિત ખેતી સાથી પાકની સલાહ, જીવાત નિયંત્રણ, જમીન આરોગ્ય, બજાર કિંમતો અને સરકારી યોજનાઓમાં તમને મદદ કરવા માટે અહીં છે.",
     emptyChatHintLabel: "અજમાવો:",
 
-    // 6 Premium Quick Action Cards
+    // 4 Premium Quick Action Cards
     quickActions: [
       { id: "qa-1", icon: "🌾", title: "પાક રોગ નિદાન",         description: "જીવાત અથવા રોગના લક્ષણો ઓળખો",     template: "મારા પાકમાં આ લક્ષણો દેખાય છે: " },
       { id: "qa-2", icon: "🌱", title: "પાકની ભલામણ",          description: "તમારી જમીન માટે શ્રેષ્ઠ પાક મેળવો",  template: "કઈ જમીનમાં કયો પાક લેવો અનુકૂળ છે: " },
       { id: "qa-3", icon: "💰", title: "ખર્ચ ગણક",              description: "ખેતી ખર્ચ અને નફાનો અંદાજ મેળવો",   template: "વાવેતર ખર્ચની ગણતરી કરો: " },
-      { id: "qa-4", icon: "📢", title: "સરકારી યોજનાઓ",         description: "સક્રિય સબસિડી અને યોજનાઓ શોધો",     template: "ખેડૂતો માટે કઈ સરકારી યોજનાઓ ઉપલબ્ધ છે: " },
-      { id: "qa-5", icon: "🌦", title: "હવામાન સલાહ",           description: "વાવણી અને લણણીના સમયપત્રક",          template: "વાવણી માટે હવામાન સલાહ શું છે: " },
-      { id: "qa-6", icon: "🛒", title: "બજાર ભાવ",             description: "MSP અને નવીનતમ મંડી ભાવો તપાસો",    template: "નવીનતમ મંડી ભાવો શું છે: " },
+      { id: "qa-4", icon: "📢", title: "સરકારી યોજનાઓ",         description: "સક્રિય સબસિડી અને યોજનાઓ શોધો",     template: "ખેડૂતો માટે કઈ સરકારી યોજનાઓ ઉપલબ્ધ છે: " }
     ],
 
-    // Suggested questions chips (6 cards)
+    // Suggested questions chips (4 cards)
     suggestedQuestions: [
       { id: "sq-1", icon: "🌾", text: "કાળી જમીન માટે શ્રેષ્ઠ પાક?" },
       { id: "sq-2", icon: "💧", text: "કપાસમાં પાણીની જરૂરિયાત" },
       { id: "sq-3", icon: "🐛", text: "જીવાત નિયંત્રણ" },
-      { id: "sq-4", icon: "🌦", text: "હવામાન આગાહી" },
-      { id: "sq-5", icon: "📢", text: "સરકારી યોજનાઓ" },
-      { id: "sq-6", icon: "💰", text: "વાવેતર ખર્ચનો અંદાજ" },
+      { id: "sq-4", icon: "🌦", text: "હવામાન આગાહી" }
     ],
 
     // Suggested chips label

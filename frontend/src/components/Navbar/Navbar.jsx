@@ -8,26 +8,23 @@ const Navbar = ({
   onNotification,
   onProfile,
   onToggleSidebar,
-  // Optional render prop: pass <NotificationBell /> from parent
   notificationSlot,
-  languages = [
-    { code: 'en', label: 'English' },
-    { code: 'hi', label: 'हिंदी' },
-    { code: 'gu', label: 'ગુજરાતી' },
-    { code: 'mr', label: 'मराठी' }
-  ],
-  defaultLanguage = 'en',
   logoText = 'Smart Krishi Mitra',
   logoIcon = '🌿'
 }) => {
-  const [selectedLang, setSelectedLang] = useState(defaultLanguage);
   const [searchVal, setSearchVal] = useState('');
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  const [textSize, setTextSize] = useState(localStorage.getItem('textSize') || 'big');
 
   React.useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute('data-text-size', textSize);
+    localStorage.setItem('textSize', textSize);
+  }, [textSize]);
 
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
@@ -39,10 +36,6 @@ const Navbar = ({
     if (onSearch) {
       onSearch(value);
     }
-  };
-
-  const handleLangChange = (e) => {
-    setSelectedLang(e.target.value);
   };
 
   const getInitials = () => {
@@ -102,19 +95,18 @@ const Navbar = ({
           {theme === 'light' ? '🌙' : '☀️'}
         </button>
 
-        {/* Language Selector */}
+        {/* Text Size Selector */}
         <div className="skm-navbar-lang-select-wrap">
-          <span className="skm-navbar-lang-icon">🌐</span>
+          <span className="skm-navbar-lang-icon" title="Text Size">Aa</span>
           <select
-            value={selectedLang}
-            onChange={handleLangChange}
+            value={textSize}
+            onChange={(e) => setTextSize(e.target.value)}
             className="skm-navbar-lang-select"
+            title="Adjust Text Size"
           >
-            {languages.map((lang) => (
-              <option key={lang.code} value={lang.code}>
-                {lang.label}
-              </option>
-            ))}
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="big">Big</option>
           </select>
         </div>
 
@@ -164,13 +156,6 @@ Navbar.propTypes = {
   onProfile: PropTypes.func,
   onToggleSidebar: PropTypes.func,
   notificationSlot: PropTypes.node,
-  languages: PropTypes.arrayOf(
-    PropTypes.shape({
-      code: PropTypes.string.isRequired,
-      label: PropTypes.string.isRequired
-    })
-  ),
-  defaultLanguage: PropTypes.string,
   logoText: PropTypes.string,
   logoIcon: PropTypes.string
 };

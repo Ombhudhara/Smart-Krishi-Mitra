@@ -5,11 +5,11 @@ import {
   updateProfile as updateProfileApi,
   uploadProfilePhoto,
   uploadCoverPhoto,
-  getPublicProfile
+  getPublicProfile,
+  updatePrivacySettings
 } from '../../services/profileService';
 import { getTransactions } from '../../services/transactionService';
 import { getDashboardSummary } from '../../services/dashboardService';
-import { RECENT_ACTIVITIES } from './profileData';
 
 // ── Reusable UI Components ────────────────────────────────────────────────────
 import Button from '../Button/Button';
@@ -86,12 +86,17 @@ export default function ProfilePage({ role, userId }) {
     cropsGrown: ''
   });
 
-  // ── Settings Toggles State ───────────────────────────────────────────────────
   const [settings, setSettings] = useState({
     emailNotif:    true,
     smsNotif:      true,
     profilePublic: true,
     allowAiCalls:  true,
+  });
+  
+  const [privacySettings, setPrivacySettings] = useState({
+    allowMessages: true,
+    showPhoneNumber: true,
+    showEmail: true,
   });
 
   // ── UI Overlay States ────────────────────────────────────────────────────────
@@ -132,6 +137,13 @@ export default function ProfilePage({ role, userId }) {
           smsNotif: viewedUser.notificationSettings.smsAlerts ?? true,
           profilePublic: true,
           allowAiCalls: viewedUser.notificationSettings.weatherAlerts ?? true,
+        });
+      }
+      if (isOwnProfile && viewedUser.privacySettings) {
+        setPrivacySettings({
+          allowMessages: viewedUser.privacySettings.allowMessages ?? true,
+          showPhoneNumber: viewedUser.privacySettings.showPhoneNumber ?? true,
+          showEmail: viewedUser.privacySettings.showEmail ?? true,
         });
       }
     }
@@ -296,6 +308,27 @@ export default function ProfilePage({ role, userId }) {
     }
   };
 
+  const handlePrivacyToggle = async (key) => {
+    const updatedPrivacy = { ...privacySettings, [key]: !privacySettings[key] };
+    setPrivacySettings(updatedPrivacy);
+
+    try {
+      const payload = {
+        allowMessages: updatedPrivacy.allowMessages,
+        showPhoneNumber: updatedPrivacy.showPhoneNumber,
+        showEmail: updatedPrivacy.showEmail,
+      };
+      const response = await updatePrivacySettings(payload);
+      if (response.data?.success) {
+        updateProfile(response.data.user);
+        showToast('Privacy setting updated.', 'success');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to update privacy setting.', 'error');
+    }
+  };
+
   // ── Logout Handler ───────────────────────────────────────────────────────────
   const handleLogout = async () => {
     showToast('Logging out… redirecting.', 'info');
@@ -355,8 +388,8 @@ export default function ProfilePage({ role, userId }) {
           ) : (
             [
               { label: 'Full Name',       val: personalForm.fullName || viewedUser?.fullName },
-              { label: 'Phone Number',    val: personalForm.phone || viewedUser?.phone },
-              { label: 'Email Address',   val: personalForm.email || viewedUser?.email },
+              { label: 'Phone Number',    val: personalForm.phone || viewedUser?.phone || (isOwnProfile ? '' : 'Phone Number Hidden by User') },
+              { label: 'Email Address',   val: personalForm.email || viewedUser?.email || (isOwnProfile ? '' : 'Email Hidden by User') },
               { label: 'Primary Address', val: personalForm.address || 'Not Provided' },
               { label: 'State',           val: personalForm.state || 'Not Provided' },
               { label: 'District',        val: personalForm.district || 'Not Provided' },
@@ -610,6 +643,41 @@ export default function ProfilePage({ role, userId }) {
               <button
                 className={`pp-toggle-switch ${settings[s.key] ? 'on' : 'off'}`}
                 onClick={() => handleSettingToggle(s.key)}
+                aria-label={`Toggle ${s.label}`}
+              >
+                <div className="pp-toggle-dot" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Privacy Settings Card */}
+      <Card hover={false} shadow={true} rounded={true} className="pp-section-card">
+        <div className="pp-section-header">
+          <div className="pp-section-title-group">
+            <span className="pp-section-icon">👁️</span>
+            <div>
+              <h2 className="pp-section-title">Privacy Controls</h2>
+              <p className="pp-section-sub">Control who can message you and see your contact details</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="pp-toggle-list">
+          {[
+            { key: 'allowMessages',    label: 'Allow Direct Messages',     desc: 'Let other users send you direct messages on the platform' },
+            { key: 'showPhoneNumber',  label: 'Show Phone Number',         desc: 'Display your phone number on your public profile and in chats' },
+            { key: 'showEmail',        label: 'Show Email Address',        desc: 'Display your email address on your public profile and in chats' },
+          ].map((s) => (
+            <div key={s.key} className="pp-toggle-row">
+              <div className="pp-toggle-text">
+                <span className="pp-toggle-label">{s.label}</span>
+                <span className="pp-toggle-desc">{s.desc}</span>
+              </div>
+              <button
+                className={`pp-toggle-switch ${privacySettings[s.key] ? 'on' : 'off'}`}
+                onClick={() => handlePrivacyToggle(s.key)}
                 aria-label={`Toggle ${s.label}`}
               >
                 <div className="pp-toggle-dot" />

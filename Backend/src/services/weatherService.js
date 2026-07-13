@@ -1,299 +1,210 @@
 import axios from "axios";
 
-// Retrieve configurations from environment
-const API_KEY = process.env.WEATHER_API_KEY;
-const API_URL = process.env.WEATHER_API_URL || "https://api.weatherapi.com/v1";
-
-// Create Axios Client Instance
-const weatherClient = axios.create({
-  baseURL: API_URL,
-  timeout: 10000, // 10-second request timeout limit
-});
-
-/**
- * Reusable helper to handle Axios request, validation, and error logging.
- * 
- * @param {string} endpoint - API path.
- * @param {object} params - Query parameters.
- * @returns {Promise<object>} Response data.
- */
-const makeRequest = async (endpoint, params = {}) => {
-  try {
-    const apiKey = process.env.WEATHER_API_KEY;
-    const apiUrl = process.env.WEATHER_API_URL || "https://api.weatherapi.com/v1";
-    if (!apiKey) {
-      throw new Error("Weather API credentials are not set. Set WEATHER_API_KEY in environment variables.");
-    }
-    const response = await weatherClient.get(endpoint, {
-      baseURL: apiUrl,
-      params: {
-        key: apiKey,
-        ...params,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    let message = "Weather API request failed.";
-    if (error.response) {
-      const apiErr = error.response.data?.error;
-      message = apiErr ? apiErr.message : `API responded with code ${error.response.status}`;
-      console.error(`WeatherAPI response error [Status ${error.response.status}]:`, message);
-    } else if (error.request) {
-      message = "Connection timeout or weather provider server is currently unreachable.";
-      console.error("WeatherAPI network/timeout error:", error.message);
-    } else {
-      message = error.message;
-      console.error("Weather service system error:", error.message);
-    }
-    throw new Error(message);
-  }
-};
-
-// ── RESPONSE MAPPERS ─────────────────────────────────────────────────────────
-
-const mapLocation = (loc) => {
-  if (!loc) return {};
-  return {
-    city: loc.name,
-    state: loc.region,
-    country: loc.country,
-    latitude: loc.lat,
-    longitude: loc.lon,
-    localTime: loc.localtime,
+// Helper to map WMO Weather Codes to text descriptions
+const getConditionText = (code) => {
+  const map = {
+    0: "Clear sky",
+    1: "Mainly clear",
+    2: "Partly cloudy",
+    3: "Overcast",
+    45: "Fog",
+    48: "Depositing rime fog",
+    51: "Light drizzle",
+    53: "Moderate drizzle",
+    55: "Dense drizzle",
+    61: "Slight rain",
+    63: "Moderate rain",
+    65: "Heavy rain",
+    71: "Slight snow fall",
+    73: "Moderate snow fall",
+    75: "Heavy snow fall",
+    80: "Slight rain showers",
+    81: "Moderate rain showers",
+    82: "Violent rain showers",
+    95: "Thunderstorm",
+    96: "Thunderstorm with slight hail",
+    99: "Thunderstorm with heavy hail"
   };
-};
-
-const mapCurrent = (curr) => {
-  if (!curr) return {};
-  return {
-    temp: curr.temp_c,
-    feelsLike: curr.feelslike_c,
-    humidity: curr.humidity,
-    windSpeed: curr.wind_kph,
-    windDirection: curr.wind_dir,
-    pressure: curr.pressure_mb,
-    visibility: curr.vis_km,
-    uvIndex: curr.uv,
-    condition: curr.condition?.text || "",
-    icon: curr.condition?.icon || "",
-    lastUpdated: curr.last_updated,
-  };
-};
-
-const mapAirQuality = (aq) => {
-  if (!aq) return {};
-  return {
-    aqi: aq["us-epa-index"] || null,
-    pm25: aq.pm2_5 || 0,
-    pm10: aq.pm10 || 0,
-    co: aq.co || 0,
-    no2: aq.no2 || 0,
-    o3: aq.o3 || 0,
-    so2: aq.so2 || 0,
-  };
-};
-
-const mapForecastDay = (fd) => {
-  if (!fd) return {};
-  return {
-    date: fd.date,
-    sunrise: fd.astro?.sunrise || "",
-    sunset: fd.astro?.sunset || "",
-    maxTemp: fd.day?.maxtemp_c,
-    minTemp: fd.day?.mintemp_c,
-    avgTemp: fd.day?.avgtemp_c,
-    chanceOfRain: fd.day?.daily_chance_of_rain || 0,
-    chanceOfSnow: fd.day?.daily_chance_of_snow || 0,
-    humidity: fd.day?.avghumidity || 0,
-    windSpeed: fd.day?.maxwind_kph || 0,
-    condition: fd.day?.condition?.text || "",
-    icon: fd.day?.condition?.icon || "",
-  };
-};
-
-const mapHour = (h) => {
-  if (!h) return {};
-  return {
-    time: h.time,
-    temperature: h.temp_c,
-    humidity: h.humidity,
-    rainChance: h.chance_of_rain || 0,
-    windSpeed: h.wind_kph,
-    condition: h.condition?.text || "",
-    icon: h.condition?.icon || "",
-  };
-};
-
-const mapAlerts = (alertsObj) => {
-  if (!alertsObj || !Array.isArray(alertsObj.alert)) return [];
-  return alertsObj.alert.map((a) => ({
-    alertTitle: a.event,
-    severity: a.severity || "Normal",
-    description: a.desc,
-    effectiveTime: a.effective,
-    expiryTime: a.expires,
-  }));
-};
-
-// ── EXPORTED SERVICE MODULES ──────────────────────────────────────────────────
-
-/**
- * 1. Fetch current weather conditions for a query location (city, postcode, or lat/lon).
- * 
- * @param {string} location - Query search term.
- * @returns {Promise<object>} Mapped weather properties.
- */
-export const getCurrentWeather = async (location) => {
-  const data = await makeRequest("/current.json", { q: location, aqi: "yes" });
-  return {
-    ...mapLocation(data.location),
-    ...mapCurrent(data.current),
-    airQuality: mapAirQuality(data.current?.air_quality),
-  };
-};
-
-/**
- * 2. Fetch daily forecast summary values for 1, 3, or 7 days.
- * 
- * @param {string} location - Query search term.
- * @param {number} [days=7] - Forecast range days.
- * @returns {Promise<Array<object>>} Forecast arrays list.
- */
-export const getForecast = async (location, days = 7) => {
-  const data = await makeRequest("/forecast.json", { q: location, days, aqi: "no", alerts: "no" });
-  if (!data.forecast || !Array.isArray(data.forecast.forecastday)) {
-    return [];
-  }
-  return data.forecast.forecastday.map(mapForecastDay);
-};
-
-/**
- * 3. Fetch hourly forecasts list.
- * 
- * @param {string} location - Query search term.
- * @returns {Promise<Array<object>>} Hourly forecast array.
- */
-export const getHourlyForecast = async (location) => {
-  const data = await makeRequest("/forecast.json", { q: location, days: 1, aqi: "no", alerts: "no" });
-  const dayForecast = data.forecast?.forecastday?.[0];
-  if (!dayForecast || !Array.isArray(dayForecast.hour)) {
-    return [];
-  }
-  return dayForecast.hour.map(mapHour);
-};
-
-/**
- * 4. Search cities and coordinate references.
- * 
- * @param {string} query - Target search term.
- * @returns {Promise<Array<object>>} Match locations lists.
- */
-export const searchLocation = async (query) => {
-  const results = await makeRequest("/search.json", { q: query });
-  if (!Array.isArray(results)) return [];
-  return results.map((loc) => ({
-    city: loc.name,
-    state: loc.region,
-    country: loc.country,
-    latitude: loc.lat,
-    longitude: loc.lon,
-  }));
-};
-
-/**
- * 5. Fetch specific air quality metrics.
- * 
- * @param {string} location - Query search term.
- * @returns {Promise<object>} Mapped AQI values.
- */
-export const getAirQuality = async (location) => {
-  const data = await makeRequest("/current.json", { q: location, aqi: "yes" });
-  return mapAirQuality(data.current?.air_quality);
-};
-
-/**
- * 6. Fetch astronomy values (sunrise, sunset, moon details).
- * 
- * @param {string} location - Query search term.
- * @returns {Promise<object>} Mapped astronomy object.
- */
-export const getAstronomy = async (location) => {
-  const data = await makeRequest("/astronomy.json", { q: location });
-  return {
-    sunrise: data.astronomy?.astro?.sunrise || "",
-    sunset: data.astronomy?.astro?.sunset || "",
-    moonrise: data.astronomy?.astro?.moonrise || "",
-    moonset: data.astronomy?.astro?.moonset || "",
-    moonPhase: data.astronomy?.astro?.moon_phase || "",
-  };
-};
-
-/**
- * 7. Fetch active climate alerts.
- * 
- * @param {string} location - Query search term.
- * @returns {Promise<Array<object>>} Alert lists or empty array.
- */
-export const getWeatherAlerts = async (location) => {
-  const data = await makeRequest("/forecast.json", { q: location, days: 1, aqi: "no", alerts: "yes" });
-  return mapAlerts(data.alerts);
+  return map[code] || "Clear sky";
 };
 
 /**
  * 8. Combine current, forecast, hourly, air quality, astronomy, and alerts.
- * Optimizes performance by making a single, aggregated request to WeatherAPI.com.
+ * We are now using Open-Meteo which is 100% free and requires no API key!
  * 
- * @param {string} location - Query location search.
+ * @param {string} location - Query location search. (Usually "lat,lon")
  * @returns {Promise<object>} Combined weather report object.
  */
 export const getCompleteWeather = async (location) => {
-  const data = await makeRequest("/forecast.json", { q: location, days: 7, aqi: "yes", alerts: "yes" });
-  
-  const loc = mapLocation(data.location);
-  const current = mapCurrent(data.current);
-  const airQuality = mapAirQuality(data.current?.air_quality);
-  
-  let forecast = [];
-  let hourly = [];
-  let astronomy = {};
-  
-  if (data.forecast && Array.isArray(data.forecast.forecastday)) {
-    forecast = data.forecast.forecastday.map(mapForecastDay);
-    
-    // FIX: declare firstDay before using it
-    const firstDay = data.forecast.forecastday[0];
-    
-    // Map hourly forecasts from all available forecast days to allow rolling lists
-    hourly = [];
-    data.forecast.forecastday.forEach((day) => {
-      if (day && Array.isArray(day.hour)) {
-        hourly.push(...day.hour.map(mapHour));
+  try {
+    let lat = 23.0225; // Default Ahmedabad
+    let lon = 72.5714;
+    let state = "";
+    let country = "";
+    let cityName = location;
+
+    // ── STEP 1: Resolve coordinates from city name ────────────────────────────
+    if (location && location.includes(",")) {
+      const parts = location.split(",");
+      if (!isNaN(parseFloat(parts[0])) && !isNaN(parseFloat(parts[1]))) {
+        lat = parseFloat(parts[0]);
+        lon = parseFloat(parts[1]);
+      } else {
+        // "City, State" format — keep as text query
+        cityName = location;
       }
-    });
-    
-    // Map astronomy from first day
-    if (firstDay && firstDay.astro) {
-      astronomy = {
-        sunrise: firstDay.astro.sunrise,
-        sunset: firstDay.astro.sunset,
-        moonrise: firstDay.astro.moonrise,
-        moonset: firstDay.astro.moonset,
-        moonPhase: firstDay.astro.moon_phase,
-      };
     }
+
+    if (location && !location.match(/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/) && location.trim().length > 0) {
+      // --- Primary: Nominatim OpenStreetMap (most accurate, sorts by importance) ---
+      try {
+        const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=5&addressdetails=1&countrycodes=`;
+        const nomRes = await axios.get(nomUrl, {
+          headers: { "User-Agent": "SmartKrishiMitra/2.0 (contact@smartkrishimitra.org)" },
+          timeout: 6000
+        });
+        if (nomRes.data && nomRes.data.length > 0) {
+          // Nominatim sorts by importance by default (most prominent city first)
+          const best = nomRes.data[0];
+          lat = parseFloat(best.lat);
+          lon = parseFloat(best.lon);
+          state = best.address?.state || "";
+          country = best.address?.country || "";
+          cityName = best.address?.city || best.address?.town || best.address?.village || best.address?.county || best.name || location;
+          console.log(`[WeatherService] Nominatim resolved "${location}" → ${cityName}, ${state} (${lat}, ${lon})`);
+        }
+      } catch (nomErr) {
+        console.warn(`[WeatherService] Nominatim failed: ${nomErr.message}. Trying Open-Meteo geocoder...`);
+        // --- Fallback: Open-Meteo Geocoding API ---
+        try {
+          const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=5&language=en&format=json`;
+          const geoRes = await axios.get(geoUrl, { timeout: 6000 });
+          if (geoRes.data.results && geoRes.data.results.length > 0) {
+            // Pick best match by population (highest = most prominent city)
+            const sorted = [...geoRes.data.results].sort((a, b) => (b.population || 0) - (a.population || 0));
+            const best = sorted[0];
+            lat = best.latitude;
+            lon = best.longitude;
+            state = best.admin1 || "";
+            country = best.country || "";
+            cityName = best.name || location;
+            console.log(`[WeatherService] Open-Meteo Geocoder resolved "${location}" → ${cityName}, ${state} (${lat}, ${lon})`);
+          }
+        } catch (geoErr) {
+          console.warn(`[WeatherService] Open-Meteo geocoder also failed: ${geoErr.message}. Using default.`);
+        }
+      }
+    }
+
+    // ── STEP 2: Fetch Weather from Open-Meteo Forecast API ───────────────────
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max&timezone=auto`;
+    const weatherRes = await axios.get(weatherUrl, { timeout: 10000 });
+    const wData = weatherRes.data;
+
+    // ── STEP 3: Fetch Air Quality Data ────────────────────────────────────────
+    const aqiUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone`;
+    let aqiData = {};
+    try {
+      const aqiRes = await axios.get(aqiUrl, { timeout: 6000 });
+      if (aqiRes.data && aqiRes.data.current) {
+        aqiData = aqiRes.data.current;
+      }
+    } catch (e) {
+      console.error("Failed to fetch AQI", e.message);
+    }
+
+    // ── STEP 4: Format current weather ───────────────────────────────────────
+    const current = {
+      temp: wData.current.temperature_2m,
+      feelsLike: wData.current.apparent_temperature,
+      humidity: wData.current.relative_humidity_2m,
+      windSpeed: wData.current.wind_speed_10m,
+      windDirection: wData.current.wind_direction_10m,
+      pressure: wData.current.surface_pressure,
+      visibility: 10, // Default visibility (not in free tier)
+      uvIndex: wData.daily.uv_index_max?.[0] || 0,
+      condition: getConditionText(wData.current.weather_code),
+      lastUpdated: wData.current.time
+    };
+
+    // ── STEP 5: Format Air Quality ────────────────────────────────────────────
+    const airQuality = {
+      aqi: aqiData.us_aqi || null,
+      pm25: aqiData.pm2_5 || 0,
+      pm10: aqiData.pm10 || 0,
+      co: aqiData.carbon_monoxide || 0,
+      no2: aqiData.nitrogen_dioxide || 0,
+      o3: aqiData.ozone || 0,
+      so2: aqiData.sulphur_dioxide || 0
+    };
+
+    // ── STEP 6: Format daily forecast (7 days) ────────────────────────────────
+    const forecast = wData.daily.time.map((timeStr, idx) => ({
+      date: timeStr,
+      sunrise: wData.daily.sunrise[idx] || "",
+      sunset: wData.daily.sunset[idx] || "",
+      maxTemp: wData.daily.temperature_2m_max[idx],
+      minTemp: wData.daily.temperature_2m_min[idx],
+      chanceOfRain: wData.daily.precipitation_probability_max?.[idx] || 0,
+      condition: getConditionText(wData.daily.weather_code[idx]),
+      windSpeed: 0
+    }));
+
+    // ── STEP 7: Format hourly forecast ────────────────────────────────────────
+    const hourly = wData.hourly.time.map((timeStr, idx) => ({
+      time: timeStr,
+      temperature: wData.hourly.temperature_2m[idx],
+      humidity: wData.hourly.relative_humidity_2m[idx],
+      rainChance: wData.hourly.precipitation_probability[idx] || 0,
+      windSpeed: wData.hourly.wind_speed_10m[idx],
+      condition: getConditionText(wData.hourly.weather_code[idx])
+    }));
+
+    // ── STEP 8: Astronomy ─────────────────────────────────────────────────────
+    const astronomy = {
+      sunrise: forecast[0]?.sunrise || "",
+      sunset: forecast[0]?.sunset || ""
+    };
+
+    // ── STEP 9: Build Response ────────────────────────────────────────────────
+    return {
+      location: { city: cityName, state, country, latitude: lat, longitude: lon },
+      current,
+      forecast,
+      hourly,
+      airQuality,
+      astronomy,
+      alerts: []
+    };
+  } catch (error) {
+    console.error("Open-Meteo weather fetch error:", error.message);
+    throw new Error("Weather service is temporarily unavailable.");
   }
+};
 
-  const alerts = mapAlerts(data.alerts);
 
-  return {
-    location: loc,
-    current,
-    forecast,
-    hourly,
-    airQuality,
-    astronomy,
-    alerts,
-  };
+export const getCurrentWeather = async (loc) => getCompleteWeather(loc);
+export const getForecast = async (loc) => getCompleteWeather(loc);
+export const getHourlyForecast = async (loc) => getCompleteWeather(loc);
+export const getAirQuality = async (loc) => getCompleteWeather(loc);
+export const getAstronomy = async (loc) => getCompleteWeather(loc);
+export const getWeatherAlerts = async (loc) => [];
+export const searchLocation = async (query) => {
+  // Using open meteo geocoding
+  try {
+    const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`;
+    const geoRes = await axios.get(geoUrl);
+    if (!geoRes.data.results) return [];
+    return geoRes.data.results.map((loc) => ({
+      city: loc.name,
+      state: loc.admin1 || "",
+      country: loc.country || "",
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+    }));
+  } catch (err) {
+    return [];
+  }
 };
 
 export default {

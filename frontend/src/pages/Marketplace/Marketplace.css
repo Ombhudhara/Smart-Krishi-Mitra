@@ -15,7 +15,6 @@
 /* ─── Layout Body (Sidebar + Main) ─────────────────────────────────────── */
 .mkt-layout {
   display: flex;
-  margin-top: 70px; /* matches --nav-height */
   flex: 1;
 }
 

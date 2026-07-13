@@ -237,16 +237,6 @@ function ChatHeader({
 
   return (
     <header className="ai-chat-header" role="banner">
-      {/* Sidebar toggle (visible on desktop when collapsed, and on mobile always) */}
-      <button
-        className={`ai-header-toggle ${isSidebarCollapsed ? "collapsed-visible" : ""}`}
-        onClick={onToggleSidebar}
-        aria-label="Toggle conversation sidebar"
-        title="Toggle Sidebar"
-      >
-        <SidebarToggleIcon />
-      </button>
-
       {/* AI Avatar with online status */}
       <div className="ai-header-avatar">
         <div className="ai-header-avatar-inner" role="img" aria-label="Krishi AI">
@@ -260,10 +250,6 @@ function ChatHeader({
         <h1 className="ai-header-title">Smart Krishi AI Assistant</h1>
         <div className="ai-header-subtitle">
           <span className="ai-header-status-text">Online</span>
-          <span className="ai-header-dot-separator">&middot;</span>
-          <span className="ai-header-powered-text">{strings.headerPoweredBy || "Powered by"}</span>
-          <span className="ai-header-gemini-badge">{strings.headerGemini || "Gemini"}</span>
-          <span className="ai-header-coming-soon-badge">{strings.headerComingSoon || "(Coming Soon)"}</span>
         </div>
       </div>
 

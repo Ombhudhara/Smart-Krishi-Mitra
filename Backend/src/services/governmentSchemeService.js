@@ -12,11 +12,25 @@ const dataGovClient = axios.create({
 
 // Resource IDs specified for the schemes
 const RESOURCES = {
-  PM_KISAN: process.env.PM_KISAN_RESOURCE_ID || "YOUR_PM_KISAN_RESOURCE_ID_PLACEHOLDER",
-  PMKBY: process.env.PMKBY_RESOURCE_ID || "YOUR_PMKBY_RESOURCE_ID_PLACEHOLDER",
-  SOIL_HEALTH: process.env.SOIL_HEALTH_RESOURCE_ID || "YOUR_SOIL_HEALTH_RESOURCE_ID_PLACEHOLDER",
-  AGRICULTURE: process.env.AGRICULTURE_RESOURCE_ID || "YOUR_AGRICULTURE_RESOURCE_ID_PLACEHOLDER",
+  PM_KISAN: (process.env.PM_KISAN_RESOURCE_ID || "YOUR_PM_KISAN_RESOURCE_ID_PLACEHOLDER").replace(/^\/?resource\//i, ""),
+  PMKBY: (process.env.PMKBY_RESOURCE_ID || "YOUR_PMKBY_RESOURCE_ID_PLACEHOLDER").replace(/^\/?resource\//i, ""),
+  SOIL_HEALTH: (process.env.SOIL_HEALTH_RESOURCE_ID || "YOUR_SOIL_HEALTH_RESOURCE_ID_PLACEHOLDER").replace(/^\/?resource\//i, ""),
+  AGRICULTURE: (process.env.AGRICULTURE_RESOURCE_ID || "YOUR_AGRICULTURE_RESOURCE_ID_PLACEHOLDER").replace(/^\/?resource\//i, ""),
 };
+
+const AGRICULTURE_KEYWORDS = [
+  "agriculture", "farmer", "farmers", "farming", "crop", "crops",
+  "kisan", "seed", "seeds", "fertilizer", "pesticides", "irrigation",
+  "horticulture", "dairy", "livestock", "fisheries", "organic farming",
+  "soil", "harvest", "agriculture ministry", "ministry of agriculture",
+  "pm-kisan", "enam", "mandi", "msp", "krishi", "rural development"
+];
+
+const IRRELEVANT_KEYWORDS = [
+  "railways", "elections", "parliament", "defence", "sports",
+  "entertainment", "tourism", "education", "urban development",
+  "police", "courts"
+];
 
 // In-memory cache for API schemes list
 const schemeCache = {
@@ -361,7 +375,25 @@ const fetchResourceData = async (resourceId) => {
 
   return records
     .map(record => formatSchemeData(record, resourceId))
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter(scheme => {
+      const textToSearch = [
+        scheme.title,
+        scheme.description,
+        scheme.category,
+        scheme.ministry
+      ].join(" ").toLowerCase();
+
+      // Only keep records that contain one or more agriculture-related keywords
+      const isAgriRelated = AGRICULTURE_KEYWORDS.some(kw => textToSearch.includes(kw));
+      if (!isAgriRelated) return false;
+
+      // Exclude irrelevant news unless it contains an agriculture keyword
+      const isIrrelevant = IRRELEVANT_KEYWORDS.some(kw => textToSearch.includes(kw));
+      if (isIrrelevant) return false;
+
+      return true;
+    });
 };
 
 /**

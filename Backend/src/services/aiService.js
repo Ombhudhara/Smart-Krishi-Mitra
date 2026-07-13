@@ -9,7 +9,7 @@ import governmentSchemeService from "./governmentSchemeService.js";
 import mapService from "./mapService.js";
 
 // Retrieve configuration parameters
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 const CHROMA_URL = (process.env.CHROMA_URL || "http://localhost:8000").replace(/\/+$/, "");
 
@@ -158,7 +158,7 @@ export const generateText = async (prompt, systemInstruction = "") => {
   try {
     const apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error("Router API Key (GEMINI_API_KEY or OPENROUTER_API_KEY) is not configured.");
+      throw new Error("OPENROUTER_API_KEY is not configured in environment variables.");
     }
 
     const response = await axios.post(
@@ -581,7 +581,7 @@ export const analyzeImage = async (imageBuffer, mimeType, prompt) => {
   try {
     const apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error("Router API Key (GEMINI_API_KEY or OPENROUTER_API_KEY) is not configured.");
+      throw new Error("OPENROUTER_API_KEY is not configured in environment variables.");
     }
 
     let base64Data = "";

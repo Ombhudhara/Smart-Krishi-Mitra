@@ -1,72 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import './VendorView.css';
 import SearchBar from './SearchBar';
 import SummaryCards from './SummaryCards';
 import VendorTransactionHistory from './VendorTransactionHistory';
+import CropCard from './CropCard';
 import { getListings } from '../../services/marketplaceService';
 import { createTransaction as createTransactionApi } from '../../services/transactionService';
 
-// ============================================================================
-// REALISTIC DUMMY DATA FOR THE VENDOR DESK
-// ============================================================================
-
-// INITIAL_FARMER_LISTINGS removed — now loaded from API via getListings()
-
 const INITIAL_INVENTORY = [
-  {
-    id: 'inv-1',
-    cropImage: '🌾',
-    cropName: 'Sharbati Wheat',
-    purchasedQty: 300,
-    remainingStock: 180,
-    purchasePrice: 2200,
-    sellingPrice: 2600,
-    supplierName: 'Raj Patel',
-    purchaseDate: '2026-06-15'
-  },
-  {
-    id: 'inv-2',
-    cropImage: '🍚',
-    cropName: 'Basmati Rice',
-    purchasedQty: 150,
-    remainingStock: 120,
-    purchasePrice: 4500,
-    sellingPrice: 5200,
-    supplierName: 'Mahesh Chauhan',
-    purchaseDate: '2026-06-20'
-  },
-  {
-    id: 'inv-3',
-    cropImage: '☁️',
-    cropName: 'Bt Cotton',
-    purchasedQty: 400,
-    remainingStock: 400,
-    purchasePrice: 6200,
-    sellingPrice: 7100,
-    supplierName: 'Om Bhudhara',
-    purchaseDate: '2026-06-28'
-  }
+  { id: 'inv-1', cropImage: '🌾', cropName: 'Sharbati Wheat', purchasedQty: 300, remainingStock: 180, purchasePrice: 2200, sellingPrice: 2600, supplierName: 'Raj Patel', purchaseDate: '2026-06-15' },
+  { id: 'inv-2', cropImage: '🍚', cropName: 'Basmati Rice', purchasedQty: 150, remainingStock: 120, purchasePrice: 4500, sellingPrice: 5200, supplierName: 'Mahesh Chauhan', purchaseDate: '2026-06-20' },
+  { id: 'inv-3', cropImage: '☁️', cropName: 'Bt Cotton', purchasedQty: 400, remainingStock: 400, purchasePrice: 6200, sellingPrice: 7100, supplierName: 'Om Bhudhara', purchaseDate: '2026-06-28' }
 ];
 
 const INITIAL_PURCHASE_REQUESTS = [
-  {
-    id: 'req-1',
-    cropName: 'Sharbati Wheat',
-    cropImage: '🌾',
-    qty: 150,
-    price: 2300,
-    farmerName: 'Raj Patel',
-    status: 'Pending'
-  },
-  {
-    id: 'req-2',
-    cropName: 'Kharif Groundnut',
-    cropImage: '🥜',
-    qty: 100,
-    price: 5100,
-    farmerName: 'Ramesh Solanki',
-    status: 'Approved'
-  }
+  { id: 'req-1', cropName: 'Sharbati Wheat', cropImage: '🌾', qty: 150, price: 2300, farmerName: 'Raj Patel', status: 'Pending' },
+  { id: 'req-2', cropName: 'Kharif Groundnut', cropImage: '🥜', qty: 100, price: 5100, farmerName: 'Ramesh Solanki', status: 'Approved' }
 ];
 
 const RECENT_PURCHASES = [
@@ -76,21 +24,16 @@ const RECENT_PURCHASES = [
 ];
 
 const ACTIVITIES = [
-  { id: 1, text: 'Purchased 100 Q Bt Cotton from Om Bhudhara.', time: '2 hours ago', type: 'purchase' },
-  { id: 2, text: 'Farmer Ramesh Solanki listed a new Groundnut batch.', time: '4 hours ago', type: 'listing' },
-  { id: 3, text: 'Inventory stock for Basmati Rice updated by system.', time: '1 day ago', type: 'system' },
-  { id: 4, text: 'Customer Neha Patel bought 10 Q Sharbati Wheat from your stock.', time: '2 days ago', type: 'sale' }
+  { id: 1, text: 'Purchased 100 Q Bt Cotton from Om Bhudhara.', time: '2 hours ago', type: 'purchase', icon: '🛒' },
+  { id: 2, text: 'Farmer Ramesh Solanki listed a new Groundnut batch.', time: '4 hours ago', type: 'listing', icon: '🌾' },
+  { id: 3, text: 'Inventory stock for Basmati Rice updated by system.', time: '1 day ago', type: 'system', icon: '⚙️' },
+  { id: 4, text: 'Customer Neha Patel bought 10 Q Sharbati Wheat from your stock.', time: '2 days ago', type: 'sale', icon: '✅' }
 ];
 
 const CATEGORIES = ['All', 'Cotton', 'Wheat', 'Rice', 'Groundnut', 'Maize'];
 const SORT_OPTIONS = ['Latest', 'Lowest Price', 'Highest Rating', 'Most Stock'];
 
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
-
 export default function VendorView() {
-  // States
   const [farmersList, setFarmersList] = useState([]);
   const [inventory, setInventory] = useState(INITIAL_INVENTORY);
   const [purchaseRequests, setPurchaseRequests] = useState(INITIAL_PURCHASE_REQUESTS);
@@ -104,7 +47,6 @@ export default function VendorView() {
   const [sortBy, setSortBy] = useState('Latest');
   const [toast, setToast] = useState(null);
 
-  // Modals
   const [buyModal, setBuyModal] = useState(null);
   const [buyForm, setBuyForm] = useState({ quantity: '', message: '' });
   const [editInventoryModal, setEditInventoryModal] = useState(null);
@@ -113,10 +55,7 @@ export default function VendorView() {
   const [reviewModal, setReviewModal] = useState(null);
   const [reviewForm, setReviewForm] = useState({ rating: 5, reviewText: '' });
 
-  const showToast = useCallback((msg, type = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  }, []);
+  const showToast = useCallback((msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(null), 3000); }, []);
 
   const fetchFarmersList = async () => {
     try {
@@ -125,152 +64,66 @@ export default function VendorView() {
         const mapped = res.data.listings
           .filter((l) => l.seller?.role === 'Farmer')
           .map((l) => ({
-            id: l._id,
-            _id: l._id,
-            farmerName: l.seller?.fullName || 'Farmer',
+            id: l._id, _id: l._id, farmerName: l.seller?.fullName || 'Farmer',
             farmerAvatar: l.seller?.fullName ? l.seller.fullName.split(' ').map((n) => n[0]).join('') : 'OB',
-            farmerVerified: true,
-            farmerRating: 4.8,
-            farmerReviews: 64,
-            cropName: l.title || l.cropName,
-            cropImage: l.category === 'Rice' ? '🍚' : (l.category === 'Cotton' ? '☁️' : '🌾'),
-            category: l.category || 'Wheat',
-            stock: l.quantity || 0,
-            unit: l.unit || 'Quintal',
-            price: l.price || 0,
-            location: l.location || '',
-            harvestDate: l.harvestDate ? new Date(l.harvestDate).toISOString().split('T')[0] : '',
-            organic: l.isOrganic || false,
-            delivery: l.deliveryAvailable || false,
-            phone: l.seller?.phone || '',
-            seller: l.seller,
-            sellerId: l.seller?._id,
+            farmerVerified: true, farmerRating: 4.8, farmerReviews: 64,
+            cropName: l.title || l.cropName, name: l.title || l.cropName,
+            cropImage: l.category === 'Rice' ? '🍚' : (l.category === 'Cotton' ? '☁️' : '🌾'), emoji: l.category === 'Rice' ? '🍚' : (l.category === 'Cotton' ? '☁️' : '🌾'),
+            category: l.category || 'Wheat', stock: l.quantity || 0, unit: l.unit || 'Quintal', price: l.price || 0,
+            location: l.location || '', harvestDate: l.harvestDate ? new Date(l.harvestDate).toISOString().split('T')[0] : '',
+            organic: l.isOrganic || false, delivery: l.deliveryAvailable || false, phone: l.seller?.phone || '',
+            seller: l.seller, sellerId: l.seller?._id,
           }));
         setFarmersList(mapped);
       }
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
-  useEffect(() => {
-    fetchFarmersList();
-  }, []);
+  useEffect(() => { fetchFarmersList(); }, []);
 
-  // Handlers
-  const handleBuyClick = (listing) => {
-    setBuyModal(listing);
-    setBuyForm({ quantity: '', message: '' });
-  };
-
+  const handleBuyClick = (listing) => { setBuyModal(listing); setBuyForm({ quantity: '', message: '' }); };
+  
   const handleBuySubmit = async () => {
-    if (!buyForm.quantity || Number(buyForm.quantity) <= 0) {
-      showToast('Please enter a valid quantity.', 'error');
-      return;
-    }
-    if (Number(buyForm.quantity) > buyModal.stock) {
-      showToast('Requested quantity exceeds available stock.', 'error');
-      return;
-    }
-
+    if (!buyForm.quantity || Number(buyForm.quantity) <= 0) return showToast('Please enter a valid quantity.', 'error');
+    if (Number(buyForm.quantity) > buyModal.stock) return showToast('Requested quantity exceeds available stock.', 'error');
     try {
-      const payload = {
-        sellerId: buyModal.seller?._id || buyModal.sellerId,
-        cropName: buyModal.cropName,
-        quantity: Number(buyForm.quantity),
-        price: Number(buyModal.price),
-        listingId: buyModal._id || buyModal.id,
-      };
-
-      const res = await createTransactionApi(payload);
+      const res = await createTransactionApi({ sellerId: buyModal.seller?._id || buyModal.sellerId, cropName: buyModal.cropName, quantity: Number(buyForm.quantity), price: Number(buyModal.price), listingId: buyModal._id || buyModal.id });
       if (res.data?.success) {
         showToast(`Purchase request for ${buyForm.quantity} Q of ${buyModal.cropName} sent!`);
         setFarmersList(prev => prev.map(f => f.id === buyModal.id ? { ...f, stock: f.stock - Number(buyForm.quantity) } : f));
         setBuyModal(null);
         fetchFarmersList();
       }
-    } catch (err) {
-      console.error(err);
-      showToast('Failed to submit purchase request.', 'error');
-    }
+    } catch (err) { showToast('Failed to submit purchase request.', 'error'); }
   };
 
-  const handleCancelRequest = (reqId) => {
-    setPurchaseRequests(prev => prev.filter(r => r.id !== reqId));
-    showToast('Purchase request cancelled.', 'error');
-  };
+  const handleCancelRequest = (reqId) => { setPurchaseRequests(prev => prev.filter(r => r.id !== reqId)); showToast('Purchase request cancelled.', 'error'); };
 
-  const handleEditInventoryClick = (item) => {
-    setEditInventoryModal(item);
-    setEditInventoryForm({
-      remainingStock: item.remainingStock,
-      sellingPrice: item.sellingPrice
-    });
-  };
-
+  const handleEditInventoryClick = (item) => { setEditInventoryModal(item); setEditInventoryForm({ remainingStock: item.remainingStock, sellingPrice: item.sellingPrice }); };
   const handleEditInventorySubmit = () => {
-    if (Number(editInventoryForm.remainingStock) < 0 || Number(editInventoryForm.sellingPrice) <= 0) {
-      showToast('Please enter valid stock and price details.', 'error');
-      return;
-    }
-    setInventory(prev => prev.map(item => item.id === editInventoryModal.id ? {
-      ...item,
-      remainingStock: Number(editInventoryForm.remainingStock),
-      sellingPrice: Number(editInventoryForm.sellingPrice)
-    } : item));
-    setEditInventoryModal(null);
-    showToast('Inventory updated successfully!');
+    if (Number(editInventoryForm.remainingStock) < 0 || Number(editInventoryForm.sellingPrice) <= 0) return showToast('Please enter valid details.', 'error');
+    setInventory(prev => prev.map(item => item.id === editInventoryModal.id ? { ...item, remainingStock: Number(editInventoryForm.remainingStock), sellingPrice: Number(editInventoryForm.sellingPrice) } : item));
+    setEditInventoryModal(null); showToast('Inventory updated successfully!');
   };
+  const handleRemoveInventory = (itemId) => { setInventory(prev => prev.filter(item => item.id !== itemId)); showToast('Inventory item removed.', 'error'); };
 
-  const handleRemoveInventory = (itemId) => {
-    setInventory(prev => prev.filter(item => item.id !== itemId));
-    showToast('Inventory item removed.', 'error');
-  };
+  const handleReviewClick = (listing) => { setReviewModal(listing); setReviewForm({ rating: 5, reviewText: '' }); };
+  const handleReviewSubmit = () => { if (!reviewForm.reviewText.trim()) return showToast('Please write a review.', 'error'); showToast(`Review submitted!`); setReviewModal(null); };
 
-  const handleReviewClick = (listing) => {
-    setReviewModal(listing);
-    setReviewForm({ rating: 5, reviewText: '' });
-  };
+  const filteredListings = farmersList.filter(l => {
+    const q = searchTerm.toLowerCase();
+    return (l.cropName.toLowerCase().includes(q) || l.farmerName.toLowerCase().includes(q) || l.location.toLowerCase().includes(q)) &&
+           (activeCategory === 'All' || l.category === activeCategory) &&
+           (!locationFilter || l.location.toLowerCase().includes(locationFilter.toLowerCase())) &&
+           (!organicFilter || l.organic) && (!deliveryFilter || l.delivery) && (!verifiedFilter || l.farmerVerified);
+  }).sort((a, b) => {
+    if (sortBy === 'Lowest Price') return a.price - b.price;
+    if (sortBy === 'Highest Rating') return b.farmerRating - a.farmerRating;
+    if (sortBy === 'Most Stock') return b.stock - a.stock;
+    return b.id.localeCompare(a.id);
+  });
 
-  const handleReviewSubmit = () => {
-    if (!reviewForm.reviewText.trim()) {
-      showToast('Please write a review.', 'error');
-      return;
-    }
-    showToast(`Review submitted to ${reviewModal.farmerName}!`);
-    setReviewModal(null);
-  };
-
-  // Filter / Sort logic
-  const filteredListings = farmersList
-    .filter(listing => {
-      const query = searchTerm.toLowerCase();
-      const matchesSearch = 
-        listing.cropName.toLowerCase().includes(query) ||
-        listing.farmerName.toLowerCase().includes(query) ||
-        listing.location.toLowerCase().includes(query);
-
-      const matchesCategory = activeCategory === 'All' || listing.category === activeCategory;
-      const matchesLocation = !locationFilter || listing.location.toLowerCase().includes(locationFilter.toLowerCase());
-      const matchesOrganic = !organicFilter || listing.organic;
-      const matchesDelivery = !deliveryFilter || listing.delivery;
-      const matchesVerified = !verifiedFilter || listing.farmerVerified;
-
-      return matchesSearch && matchesCategory && matchesLocation && matchesOrganic && matchesDelivery && matchesVerified;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'Lowest Price') return a.price - b.price;
-      if (sortBy === 'Highest Rating') return b.farmerRating - a.farmerRating;
-      if (sortBy === 'Most Stock') return b.stock - a.stock;
-      return b.id.localeCompare(a.id); // Latest
-    });
-
-  // Totals calculations
-  const totalPurchasesAmount = RECENT_PURCHASES.reduce((acc, curr) => {
-    const val = parseInt(curr.price.replace(/[^\d]/g, ''), 10);
-    return acc + val;
-  }, 0);
-
+  const totalPurchasesAmount = RECENT_PURCHASES.reduce((acc, curr) => acc + parseInt(curr.price.replace(/[^\d]/g, ''), 10), 0);
   const inventoryValue = inventory.reduce((acc, curr) => acc + (curr.remainingStock * curr.sellingPrice), 0);
 
   const summaryCardsData = [
@@ -281,217 +134,90 @@ export default function VendorView() {
   ];
 
   return (
-    <div className="vv-root">
-      {/* Toast Alert */}
-      {toast && (
-        <div className={`vv-toast vv-toast--${toast.type}`}>
-          {toast.type === 'success' ? '✅' : '❌'} {toast.msg}
-        </div>
-      )}
+    <div>
+      {toast && <div style={{ position: 'fixed', bottom: '20px', right: '20px', background: toast.type === 'error' ? '#f44336' : '#4CAF50', color: '#fff', padding: '12px 24px', borderRadius: '8px', zIndex: 9999 }}>{toast.msg}</div>}
 
-      {/* Page Header Area */}
-      <div className="vv-hero-section">
-        <div className="vv-hero-content">
-          <div className="vv-hero-text">
-            <div className="vv-hero-tag">🏪 Partner Portal</div>
-            <h1 className="vv-hero-title">Vendor Marketplace</h1>
-            <p className="vv-hero-subtitle">
-              Purchase crops directly from farmers, manage your agricultural inventory, fulfill customer demand, and grow your business.
-            </p>
-          </div>
-          <div className="vv-hero-illustration">
-            <div className="vv-illus-scene">
-              <span className="vv-illus-sun">☀️</span>
-              <span className="vv-illus-cloud">☁️</span>
-              <span className="vv-illus-barn">🏪</span>
-              <span className="vv-illus-truck">🚚</span>
-              <span className="vv-illus-plant">🌱</span>
-            </div>
-          </div>
+      {/* HERO */}
+      <section className="skm-welcome-card" style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <span className="skm-text-muted" style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>🏪 Partner Portal</span>
+          <h1 className="skm-title" style={{ fontSize: '28px', margin: 0 }}>Vendor Marketplace</h1>
+          <p className="skm-text-muted" style={{ margin: '8px 0', fontSize: '13px' }}>Purchase crops directly from farmers, manage your agricultural inventory, fulfill customer demand, and grow your business.</p>
         </div>
-        <div className="vv-hero-wave" />
-      </div>
+      </section>
 
-      {/* Statistics Block */}
       <SummaryCards cards={summaryCardsData} />
 
-      {/* Tabs */}
-      <div className="vv-tabs-bar">
-        <button className={`vv-tab-btn ${activeTab === 'farmers' ? 'active' : ''}`} onClick={() => setActiveTab('farmers')}>
-          🌾 Farmer Crop Listings
-        </button>
-        <button className={`vv-tab-btn ${activeTab === 'inventory' ? 'active' : ''}`} onClick={() => setActiveTab('inventory')}>
-          📦 My Inventory
-        </button>
-        <button className={`vv-tab-btn ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => setActiveTab('requests')}>
-          ⏳ Purchase Requests ({purchaseRequests.length})
-        </button>
-        <button className={`vv-tab-btn ${activeTab === 'recent' ? 'active' : ''}`} onClick={() => setActiveTab('recent')}>
-          📜 Transaction History
-        </button>
-        <button className={`vv-tab-btn ${activeTab === 'activity' ? 'active' : ''}`} onClick={() => setActiveTab('activity')}>
-          ⚡ Activity Center
-        </button>
+      {/* TABS */}
+      <div style={{ display: 'flex', gap: '12px', borderBottom: '1.5px solid var(--skm-border)', marginBottom: '20px', paddingBottom: '10px', overflowX: 'auto' }}>
+        {[
+          { id: 'farmers', label: `🌾 Farmer Crop Listings` },
+          { id: 'inventory', label: `📦 My Inventory` },
+          { id: 'requests', label: `⏳ Purchase Requests (${purchaseRequests.length})` },
+          { id: 'recent', label: `📜 Transaction History` },
+          { id: 'activity', label: `⚡ Activity Center` }
+        ].map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ background: activeTab === t.id ? '#E8F5E9' : 'transparent', color: activeTab === t.id ? '#2E7D32' : 'var(--skm-text-muted)', border: 'none', padding: '8px 16px', borderRadius: '20px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>{t.label}</button>
+        ))}
       </div>
 
-      {/* SEARCH AND FILTERS */}
       {activeTab === 'farmers' && (
-        <div className="vv-filters-wrapper">
-          <SearchBar 
-            searchTerm={searchTerm} 
-            setSearchTerm={setSearchTerm} 
-            placeholder="Search crops, farmers or locations..." 
-          />
-
-          <div className="vv-additional-filters">
-            <input 
-              type="text" 
-              placeholder="Filter by Location..." 
-              className="vv-input-filter"
-              value={locationFilter}
-              onChange={e => setLocationFilter(e.target.value)}
-            />
-
-            <select className="vv-select-filter" value={sortBy} onChange={e => setSortBy(e.target.value)}>
-              {SORT_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
-
-            <label className="vv-checkbox-filter">
-              <input type="checkbox" checked={organicFilter} onChange={e => setOrganicFilter(e.target.checked)} />
-              🌿 Organic
-            </label>
-
-            <label className="vv-checkbox-filter">
-              <input type="checkbox" checked={deliveryFilter} onChange={e => setDeliveryFilter(e.target.checked)} />
-              🚚 Delivery
-            </label>
-
-            <label className="vv-checkbox-filter">
-              <input type="checkbox" checked={verifiedFilter} onChange={e => setVerifiedFilter(e.target.checked)} />
-              ✓ Verified Only
-            </label>
+        <div style={{ background: 'var(--skm-bg)', padding: '16px', borderRadius: '12px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} placeholder="Search crops, farmers or locations..." />
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+            <input style={{ padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px' }} placeholder="Location" value={locationFilter} onChange={e => setLocationFilter(e.target.value)} />
+            <select style={{ padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px' }} value={sortBy} onChange={e => setSortBy(e.target.value)}>{SORT_OPTIONS.map(o=><option key={o}>{o}</option>)}</select>
+            <label><input type="checkbox" checked={organicFilter} onChange={e=>setOrganicFilter(e.target.checked)}/> 🌿 Organic</label>
+            <label><input type="checkbox" checked={verifiedFilter} onChange={e=>setVerifiedFilter(e.target.checked)}/> ✓ Verified</label>
+            <label><input type="checkbox" checked={deliveryFilter} onChange={e=>setDeliveryFilter(e.target.checked)}/> 🚚 Delivery</label>
           </div>
-
-          <div className="vv-category-row">
-            {CATEGORIES.map(cat => (
-              <button 
-                key={cat} 
-                className={`vv-cat-chip ${activeCategory === cat ? 'active' : ''}`}
-                onClick={() => setActiveCategory(cat)}
-              >
-                {cat}
-              </button>
-            ))}
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
+            {CATEGORIES.map(c => <button key={c} onClick={() => setActiveCategory(c)} style={{ padding: '4px 12px', borderRadius: '16px', border: '1px solid var(--skm-border)', background: activeCategory === c ? '#2E7D32' : '#fff', color: activeCategory === c ? '#fff' : '#333' }}>{c}</button>)}
           </div>
         </div>
       )}
 
-      {/* TAB SUBSECTIONS */}
-      <div className="vv-tab-content-area">
+      {/* CONTENT */}
+      <div>
         {activeTab === 'farmers' && (
           <div>
-            <div className="vv-section-info">
-              <h2>🌾 Farmer Crop Listings</h2>
-              <p>{filteredListings.length} matching lists available</p>
+            <div className="skm-section-header" style={{ marginBottom: '16px' }}>
+              <h2 className="skm-section-title">🌾 Farmer Crop Listings</h2>
             </div>
-
-            {filteredListings.length === 0 ? (
-              <div className="vv-empty-container">
-                <span>🌾</span>
-                <p>No agricultural listings found matching your search.</p>
-              </div>
-            ) : (
-              <div className="vv-farmers-listings-grid">
-                {filteredListings.map(listing => (
-                  <div key={listing.id} className="vv-farmer-listing-card">
-                    <div className="vv-farmer-card-top">
-                      <div className="vv-farmer-avatar-circle">{listing.farmerAvatar}</div>
-                      <div className="vv-farmer-desc-block">
-                        <div className="vv-farmer-row-name">
-                          <span className="vv-farmer-name">{listing.farmerName}</span>
-                          {listing.farmerVerified && <span className="vv-verified-stamp">✓ Verified</span>}
-                        </div>
-                        <div className="vv-farmer-stars">⭐ {listing.farmerRating} ({listing.farmerReviews} reviews)</div>
-                      </div>
-                      <span className="vv-crop-avatar-icon">{listing.cropImage}</span>
-                    </div>
-
-                    <h3 className="vv-crop-title-name">{listing.cropName}</h3>
-                    <span className="vv-category-pill">{listing.category}</span>
-
-                    <div className="vv-crop-numbers">
-                      <div className="vv-crop-price-val">₹{listing.price.toLocaleString()}<span>/Quintal</span></div>
-                      <div className="vv-crop-stock-val">Available: <strong>{listing.stock} Q</strong></div>
-                    </div>
-
-                    <div className="vv-crop-extra-details">
-                      <div>📍 {listing.location}</div>
-                      <div>🗓️ Harvest: {listing.harvestDate}</div>
-                    </div>
-
-                    <div className="vv-crop-card-badges">
-                      {listing.organic && <span className="badge-org">🌿 Organic</span>}
-                      {listing.delivery && <span className="badge-del">🚚 Delivery</span>}
-                    </div>
-
-                    <div className="vv-listing-action-buttons">
-                      <button className="btn-buy" onClick={() => handleBuyClick(listing)}>🛒 Buy Crop</button>
-                      <button className="btn-sub" onClick={() => showToast(`Negotiations opened with ${listing.farmerName}`)}>💬 Message</button>
-                      <button className="btn-sub" onClick={() => showToast(`Call details: ${listing.phone}`)}>📞 Contact</button>
-                      <button className="btn-sub" onClick={() => showToast('Opening farmer details... (Stub)')}>👤 Profile</button>
-                      <button className="btn-sub" onClick={() => handleReviewClick(listing)}>⭐ Review</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="skm-grid">
+              {filteredListings.map(item => (
+                <CropCard key={item.id} crop={item} role="Customer" onBuy={() => handleBuyClick(item)} onReview={() => handleReviewClick(item)} />
+              ))}
+            </div>
           </div>
         )}
 
-        {/* INVENTORY */}
         {activeTab === 'inventory' && (
           <div>
-            <div className="vv-section-info">
-              <h2>📦 Vendor Inventory Management</h2>
-              <p>Commercial stock holdings & pricing matrix</p>
+            <div className="skm-section-header" style={{ marginBottom: '16px' }}>
+              <h2 className="skm-section-title">📦 Vendor Inventory Management</h2>
             </div>
-
-            <div className="vv-farmers-listings-grid">
+            <div className="skm-grid">
               {inventory.map(item => (
-                <div key={item.id} className="vv-inventory-card">
-                  <div className="vv-inventory-top">
-                    <span className="vv-inventory-img">{item.cropImage}</span>
-                    <h3>{item.cropName}</h3>
+                <div key={item.id} className="skm-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '32px' }}>{item.cropImage}</span>
+                    <h3 className="skm-card-title">{item.cropName}</h3>
                   </div>
-
-                  <div className="vv-inventory-stats">
-                    <div className="vv-inv-stat">
-                      <span className="label">Remaining Stock</span>
-                      <span className="val">{item.remainingStock} Q</span>
-                    </div>
-                    <div className="vv-inv-stat">
-                      <span className="label">Procured Quantity</span>
-                      <span className="val">{item.purchasedQty} Q</span>
-                    </div>
-                    <div className="vv-inv-stat">
-                      <span className="label">Buy Cost</span>
-                      <span className="val">₹{item.purchasePrice}/Q</span>
-                    </div>
-                    <div className="vv-inv-stat">
-                      <span className="label">Sell Price</span>
-                      <span className="val highlight">₹{item.sellingPrice}/Q</span>
-                    </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', background: 'var(--skm-bg)', padding: '10px', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}><span className="skm-text-muted">Remaining Stock</span><strong>{item.remainingStock} Q</strong></div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}><span className="skm-text-muted">Procured Quantity</span><strong>{item.purchasedQty} Q</strong></div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}><span className="skm-text-muted">Buy Cost</span><strong>₹{item.purchasePrice}/Q</strong></div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}><span className="skm-text-muted">Sell Price</span><strong style={{ color: 'var(--skm-primary)' }}>₹{item.sellingPrice}/Q</strong></div>
                   </div>
-
-                  <div className="vv-inv-meta">
+                  <div className="skm-text-muted" style={{ fontSize: '12px' }}>
                     <div>👤 Supplier: {item.supplierName}</div>
                     <div>📅 Bought on: {item.purchaseDate}</div>
                   </div>
-
-                  <div className="vv-inventory-actions">
-                    <button className="btn-edit" onClick={() => handleEditInventoryClick(item)}>✏️ Edit Stock</button>
-                    <button className="btn-remove" onClick={() => handleRemoveInventory(item.id)}>🗑️ Remove</button>
-                    <button className="btn-details" onClick={() => setViewDetailsModal(item)}>👁️ View Details</button>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
+                    <button className="skm-action-btn" style={{ flex: 1, padding: '6px', fontSize: '12px', background: 'transparent', border: '1px solid var(--skm-border)', color: 'var(--skm-text-main)' }} onClick={() => handleEditInventoryClick(item)}>✏️ Edit</button>
+                    <button className="skm-action-btn" style={{ flex: 1, padding: '6px', fontSize: '12px', background: '#ffebee', color: '#c62828' }} onClick={() => handleRemoveInventory(item.id)}>🗑️ Remove</button>
+                    <button className="skm-action-btn" style={{ flex: 1, padding: '6px', fontSize: '12px' }} onClick={() => setViewDetailsModal(item)}>👁️ Details</button>
                   </div>
                 </div>
               ))}
@@ -499,253 +225,129 @@ export default function VendorView() {
           </div>
         )}
 
-        {/* REQUESTS */}
         {activeTab === 'requests' && (
           <div>
-            <div className="vv-section-info">
-              <h2>⏳ Procurement Requests</h2>
-              <p>Outstanding procurement offers sent to growers</p>
+            <div className="skm-section-header" style={{ marginBottom: '16px' }}>
+              <h2 className="skm-section-title">⏳ Procurement Requests</h2>
             </div>
-
-            <div className="vv-requests-grid-list">
+            <div className="skm-preview-list">
               {purchaseRequests.map(req => (
-                <div key={req.id} className="vv-request-row-card">
-                  <span className="crop-img">{req.cropImage}</span>
-                  <div className="req-core-info">
-                    <h4>{req.cropName}</h4>
-                    <p>Offer: <strong>₹{req.price}/Q</strong> for <strong>{req.qty} Quintals</strong></p>
+                <div key={req.id} className="skm-preview-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <span style={{ fontSize: '24px' }}>{req.cropImage}</span>
+                    <div>
+                      <h4 style={{ margin: 0 }}>{req.cropName}</h4>
+                      <div className="skm-text-muted" style={{ fontSize: '12px' }}>Offer: <strong>₹{req.price}/Q</strong> for <strong>{req.qty} Q</strong> | Farmer: {req.farmerName}</div>
+                    </div>
                   </div>
-                  <div className="req-party">
-                    <span>Farmer:</span>
-                    <strong>{req.farmerName}</strong>
-                  </div>
-                  <span className={`req-status-pill status-${req.status.toLowerCase()}`}>{req.status}</span>
-                  <div className="req-row-actions">
-                    <button className="btn-details" onClick={() => showToast('Opening details... (Stub)')}>View Details</button>
-                    <button className="btn-cancel" onClick={() => handleCancelRequest(req.id)}>Cancel Request</button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span className={`skm-status-badge ${req.status === 'Approved' ? 'success' : 'warning'}`}>{req.status}</span>
+                    <button className="skm-action-btn" style={{ background: '#ffebee', color: '#c62828', border: 'none', padding: '6px 12px' }} onClick={() => handleCancelRequest(req.id)}>Cancel Request</button>
                   </div>
                 </div>
               ))}
-              {purchaseRequests.length === 0 && (
-                <div className="vv-empty-container">
-                  <span>⏳</span>
-                  <p>No active purchase requests.</p>
-                </div>
-              )}
             </div>
           </div>
         )}
 
-        {/* HISTORIC PURCHASES */}
-        {/* HISTORIC PURCHASES / SALES TRANSACTION DESK */}
-        {activeTab === 'recent' && (
-          <VendorTransactionHistory />
-        )}
+        {activeTab === 'recent' && <VendorTransactionHistory />}
 
-        {/* ACTIVITY FEED */}
         {activeTab === 'activity' && (
           <div>
-            <div className="vv-section-info">
-              <h2>⚡ System Activity Log</h2>
-              <p>Real-time ecosystem updates & actions</p>
+            <div className="skm-section-header" style={{ marginBottom: '16px' }}>
+              <h2 className="skm-section-title">⚡ System Activity Log</h2>
             </div>
-
-            <div className="vv-activity-list-container">
+            <div className="skm-preview-list">
               {ACTIVITIES.map(act => (
-                <div key={act.id} className={`vv-activity-row-item type-${act.type}`}>
-                  <span className="bullet">🔵</span>
-                  <div className="info">
-                    <p className="text">{act.text}</p>
-                    <span className="time">{act.time}</span>
+                <div key={act.id} className="skm-preview-item" style={{ gap: '12px' }}>
+                  <span style={{ fontSize: '20px' }}>{act.icon}</span>
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: '13px' }}>{act.text}</div>
+                    <div className="skm-text-muted" style={{ fontSize: '11px' }}>{act.time}</div>
                   </div>
                 </div>
               ))}
             </div>
-
-            {/* Quick stats on the activity page */}
-            <div className="vv-quick-stats-bottom">
-              <h3>📊 Quick Performance Stats</h3>
-              <div className="vv-quick-stats-grid">
-                <div className="vv-quick-item">
-                  <span className="label">Today's Purchases</span>
-                  <span className="val">120 Q</span>
-                </div>
-                <div className="vv-quick-item">
-                  <span className="label">Total Inventory Value</span>
-                  <span className="val">₹{inventoryValue.toLocaleString()}</span>
-                </div>
-                <div className="vv-quick-item">
-                  <span className="label">Pending Requests</span>
-                  <span className="val">{purchaseRequests.filter(r=>r.status==='Pending').length}</span>
-                </div>
-                <div className="vv-quick-item">
-                  <span className="label">Completed Deals</span>
-                  <span className="val">28</span>
-                </div>
+            <div className="skm-card" style={{ marginTop: '24px' }}>
+              <h3 className="skm-card-title">📊 Quick Performance Stats</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: '16px' }}>
+                <div className="skm-stat-card"><span className="skm-stat-label">Today's Purchases</span><span className="skm-stat-value">120 Q</span></div>
+                <div className="skm-stat-card"><span className="skm-stat-label">Total Inventory Value</span><span className="skm-stat-value">₹{inventoryValue.toLocaleString()}</span></div>
+                <div className="skm-stat-card"><span className="skm-stat-label">Pending Requests</span><span className="skm-stat-value">{purchaseRequests.filter(r=>r.status==='Pending').length}</span></div>
+                <div className="skm-stat-card"><span className="skm-stat-label">Completed Deals</span><span className="skm-stat-value">28</span></div>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* BUY MODAL */}
+      {/* MODALS */}
       {buyModal && (
-        <div className="vv-modal-backdrop" onClick={() => setBuyModal(null)}>
-          <div className="vv-modal-box" onClick={e => e.stopPropagation()}>
-            <div className="vv-modal-header-row">
-              <h3>🛒 Order Crop Procurement</h3>
-              <button className="close-btn" onClick={() => setBuyModal(null)}>✕</button>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="skm-card" style={{ width: '400px', maxWidth: '90%' }}>
+            <h3 className="skm-card-title">🛒 Order Crop Procurement</h3>
+            <div style={{ margin: '16px 0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>{buyModal.cropImage} <strong>{buyModal.cropName}</strong> (₹{buyModal.price}/Q) - {buyModal.farmerName}</div>
+              <input type="number" placeholder="Quantity (Q)" style={{ padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px' }} value={buyForm.quantity} onChange={e=>setBuyForm(p=>({...p, quantity: e.target.value}))}/>
+              <span className="skm-text-muted" style={{ fontSize: '11px' }}>Available: {buyModal.stock} Q</span>
+              <textarea placeholder="Negotiation Message (Optional)" style={{ padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px' }} value={buyForm.message} onChange={e=>setBuyForm(p=>({...p, message: e.target.value}))}/>
+              {buyForm.quantity && <div>Estimated Total: <strong>₹{(buyModal.price * Number(buyForm.quantity)).toLocaleString()}</strong></div>}
             </div>
-            <div className="vv-modal-body-section">
-              <div className="vv-modal-item-preview">
-                <span className="emoji">{buyModal.cropImage}</span>
-                <div>
-                  <h4>{buyModal.cropName}</h4>
-                  <p>Listed by: <strong>{buyModal.farmerName}</strong></p>
-                  <p>Rate: <strong>₹{buyModal.price}/Q</strong></p>
-                </div>
-              </div>
-
-              <div className="modal-input-field">
-                <label>Procurement Quantity (Quintals) *</label>
-                <input 
-                  type="number"
-                  placeholder="e.g. 50"
-                  value={buyForm.quantity}
-                  onChange={e => setBuyForm(prev => ({ ...prev, quantity: e.target.value }))}
-                />
-                <span className="input-hint">Available: {buyModal.stock} Q</span>
-              </div>
-
-              <div className="modal-input-field">
-                <label>Negotiation Message (Optional)</label>
-                <textarea 
-                  rows={3}
-                  placeholder="Ask for bulk discounts, logistics terms..."
-                  value={buyForm.message}
-                  onChange={e => setBuyForm(prev => ({ ...prev, message: e.target.value }))}
-                />
-              </div>
-
-              {buyForm.quantity && (
-                <div className="total-calculation-box">
-                  Estimated Total: <strong>₹{(buyModal.price * Number(buyForm.quantity)).toLocaleString()}</strong>
-                </div>
-              )}
-            </div>
-            <div className="vv-modal-footer-row">
-              <button className="btn-cancel" onClick={() => setBuyModal(null)}>Cancel</button>
-              <button className="btn-confirm" onClick={handleBuySubmit}>Place Procurement Order</button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button className="skm-action-btn" style={{ flex: 1, background: 'transparent', border: '1px solid var(--skm-border)', color: 'var(--skm-text-main)' }} onClick={() => setBuyModal(null)}>Cancel</button>
+              <button className="skm-action-btn" style={{ flex: 1 }} onClick={handleBuySubmit}>Place Order</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* EDIT INVENTORY MODAL */}
       {editInventoryModal && (
-        <div className="vv-modal-backdrop" onClick={() => setEditInventoryModal(null)}>
-          <div className="vv-modal-box" onClick={e => e.stopPropagation()}>
-            <div className="vv-modal-header-row">
-              <h3>✏️ Edit Inventory Stock</h3>
-              <button className="close-btn" onClick={() => setEditInventoryModal(null)}>✕</button>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="skm-card" style={{ width: '400px', maxWidth: '90%' }}>
+            <h3 className="skm-card-title">✏️ Edit Inventory</h3>
+            <div style={{ margin: '16px 0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>{editInventoryModal.cropImage} <strong>{editInventoryModal.cropName}</strong> (Buy Cost: ₹{editInventoryModal.purchasePrice}/Q)</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}><label>Remaining Stock (Q)</label><input type="number" style={{ padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px' }} value={editInventoryForm.remainingStock} onChange={e=>setEditInventoryForm(p=>({...p, remainingStock: e.target.value}))}/></div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}><label>Selling Price (₹)</label><input type="number" style={{ padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px' }} value={editInventoryForm.sellingPrice} onChange={e=>setEditInventoryForm(p=>({...p, sellingPrice: e.target.value}))}/></div>
             </div>
-            <div className="vv-modal-body-section">
-              <div className="vv-modal-item-preview">
-                <span className="emoji">{editInventoryModal.cropImage}</span>
-                <div>
-                  <h4>{editInventoryModal.cropName}</h4>
-                  <p>Procured Price: <strong>₹{editInventoryModal.purchasePrice}/Q</strong></p>
-                </div>
-              </div>
-
-              <div className="modal-input-field">
-                <label>Remaining Stock (Quintals) *</label>
-                <input 
-                  type="number"
-                  value={editInventoryForm.remainingStock}
-                  onChange={e => setEditInventoryForm(prev => ({ ...prev, remainingStock: e.target.value }))}
-                />
-              </div>
-
-              <div className="modal-input-field">
-                <label>Retail Selling Price per Quintal (₹) *</label>
-                <input 
-                  type="number"
-                  value={editInventoryForm.sellingPrice}
-                  onChange={e => setEditInventoryForm(prev => ({ ...prev, sellingPrice: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div className="vv-modal-footer-row">
-              <button className="btn-cancel" onClick={() => setEditInventoryModal(null)}>Cancel</button>
-              <button className="btn-confirm" onClick={handleEditInventorySubmit}>Save Updates</button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button className="skm-action-btn" style={{ flex: 1, background: 'transparent', border: '1px solid var(--skm-border)', color: 'var(--skm-text-main)' }} onClick={() => setEditInventoryModal(null)}>Cancel</button>
+              <button className="skm-action-btn" style={{ flex: 1 }} onClick={handleEditInventorySubmit}>Save</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* VIEW DETAILS MODAL */}
       {viewDetailsModal && (
-        <div className="vv-modal-backdrop" onClick={() => setViewDetailsModal(null)}>
-          <div className="vv-modal-box" onClick={e => e.stopPropagation()}>
-            <div className="vv-modal-header-row">
-              <h3>👁️ Inventory Details</h3>
-              <button className="close-btn" onClick={() => setViewDetailsModal(null)}>✕</button>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="skm-card" style={{ width: '400px', maxWidth: '90%' }}>
+            <h3 className="skm-card-title">👁️ Details</h3>
+            <div style={{ margin: '16px 0', display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="skm-text-muted">Crop</span><strong>{viewDetailsModal.cropImage} {viewDetailsModal.cropName}</strong></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="skm-text-muted">Supplier Farmer</span><strong>{viewDetailsModal.supplierName}</strong></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="skm-text-muted">Purchase Quantity</span><strong>{viewDetailsModal.purchasedQty} Q</strong></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="skm-text-muted">Remaining Stock</span><strong>{viewDetailsModal.remainingStock} Q</strong></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="skm-text-muted">Procurement Cost</span><strong>₹{viewDetailsModal.purchasePrice}/Q</strong></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="skm-text-muted">Retail Selling Price</span><strong>₹{viewDetailsModal.sellingPrice}/Q</strong></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="skm-text-muted">Purchase Date</span><strong>{viewDetailsModal.purchaseDate}</strong></div>
             </div>
-            <div className="vv-modal-body-section details-grid">
-              <div className="detail-item"><span className="label">Crop</span><strong>{viewDetailsModal.cropImage} {viewDetailsModal.cropName}</strong></div>
-              <div className="detail-item"><span className="label">Supplier Farmer</span><strong>{viewDetailsModal.supplierName}</strong></div>
-              <div className="detail-item"><span className="label">Purchase Quantity</span><strong>{viewDetailsModal.purchasedQty} Q</strong></div>
-              <div className="detail-item"><span className="label">Remaining Stock</span><strong>{viewDetailsModal.remainingStock} Q</strong></div>
-              <div className="detail-item"><span className="label">Procurement Cost</span><strong>₹{viewDetailsModal.purchasePrice}/Q</strong></div>
-              <div className="detail-item"><span className="label">Retail Selling Price</span><strong>₹{viewDetailsModal.sellingPrice}/Q</strong></div>
-              <div className="detail-item"><span className="label">Purchase Date</span><strong>{viewDetailsModal.purchaseDate}</strong></div>
-            </div>
-            <div className="vv-modal-footer-row">
-              <button className="btn-cancel" onClick={() => setViewDetailsModal(null)}>Close</button>
-            </div>
+            <button className="skm-action-btn" style={{ width: '100%' }} onClick={() => setViewDetailsModal(null)}>Close</button>
           </div>
         </div>
       )}
 
-      {/* WRITE REVIEW MODAL */}
       {reviewModal && (
-        <div className="vv-modal-backdrop" onClick={() => setReviewModal(null)}>
-          <div className="vv-modal-box" onClick={e => e.stopPropagation()}>
-            <div className="vv-modal-header-row">
-              <h3>⭐ Rate Farmer Supplier</h3>
-              <button className="close-btn" onClick={() => setReviewModal(null)}>✕</button>
-            </div>
-            <div className="vv-modal-body-section">
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="skm-card" style={{ width: '400px', maxWidth: '90%' }}>
+            <h3 className="skm-card-title">⭐ Rate Farmer Supplier</h3>
+            <div style={{ margin: '16px 0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <p>How was your procurement experience with <strong>{reviewModal.farmerName}</strong>?</p>
-              
-              <div className="modal-input-field">
-                <label>Rating (1 to 5 Stars)</label>
-                <select 
-                  value={reviewForm.rating}
-                  onChange={e => setReviewForm(prev => ({ ...prev, rating: Number(e.target.value) }))}
-                >
-                  <option value={5}>⭐⭐⭐⭐⭐ (5/5)</option>
-                  <option value={4}>⭐⭐⭐⭐ (4/5)</option>
-                  <option value={3}>⭐⭐⭐ (3/5)</option>
-                  <option value={2}>⭐⭐ (2/5)</option>
-                  <option value={1}>⭐ (1/5)</option>
-                </select>
-              </div>
-
-              <div className="modal-input-field">
-                <label>Review Remarks *</label>
-                <textarea 
-                  rows={3}
-                  placeholder="Share details about crop quality, sorting, and delivery timing..."
-                  value={reviewForm.reviewText}
-                  onChange={e => setReviewForm(prev => ({ ...prev, reviewText: e.target.value }))}
-                />
-              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}><label>Rating</label><select style={{ padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px' }} value={reviewForm.rating} onChange={e=>setReviewForm(p=>({...p, rating: Number(e.target.value)}))}><option value={5}>⭐⭐⭐⭐⭐ (5/5)</option><option value={4}>⭐⭐⭐⭐ (4/5)</option><option value={3}>⭐⭐⭐ (3/5)</option><option value={2}>⭐⭐ (2/5)</option><option value={1}>⭐ (1/5)</option></select></div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}><label>Review Remarks</label><textarea style={{ padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px' }} rows={3} value={reviewForm.reviewText} onChange={e=>setReviewForm(p=>({...p, reviewText: e.target.value}))}/></div>
             </div>
-            <div className="vv-modal-footer-row">
-              <button className="btn-cancel" onClick={() => setReviewModal(null)}>Cancel</button>
-              <button className="btn-confirm" onClick={handleReviewSubmit}>Submit Review</button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button className="skm-action-btn" style={{ flex: 1, background: 'transparent', border: '1px solid var(--skm-border)', color: 'var(--skm-text-main)' }} onClick={() => setReviewModal(null)}>Cancel</button>
+              <button className="skm-action-btn" style={{ flex: 1 }} onClick={handleReviewSubmit}>Submit</button>
             </div>
           </div>
         </div>

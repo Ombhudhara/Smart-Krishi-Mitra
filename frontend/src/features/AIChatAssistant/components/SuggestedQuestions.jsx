@@ -15,7 +15,8 @@ import { getSuggestedQuestions } from "../utils/languages";
  * }} props
  */
 function SuggestedQuestions({ onSelect, langCode = "en", label = "✨ Quick Questions" }) {
-  const questions = getSuggestedQuestions(langCode);
+  const allQuestions = getSuggestedQuestions(langCode);
+  const questions = allQuestions.slice(0, 4);
 
   return (
     <div className="ai-suggested-wrapper">

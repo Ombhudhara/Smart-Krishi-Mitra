@@ -46,6 +46,7 @@ import calculatorRoutes from "./routes/calculatorRoutes.js";
 import bookmarkRoutes from "./routes/bookmarkRoutes.js";
 import marketPriceRoutes from "./routes/marketPriceRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import cropRoutes from "./routes/cropRoutes.js";
 
 // Mount routes
 app.use("/api/auth", authRoutes);
@@ -62,5 +63,6 @@ app.use("/api/calculator", calculatorRoutes);
 app.use("/api/bookmarks", bookmarkRoutes);
 app.use("/api/market-prices", marketPriceRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/crops", cropRoutes);
 
 export { app };

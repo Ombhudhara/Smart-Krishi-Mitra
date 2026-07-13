@@ -6,6 +6,9 @@ import notificationSocket from "./notificationSocket.js";
 
 let io;
 
+// Map to track online users: Map<userId, socketId>
+export const onlineUsers = new Map();
+
 /**
  * Initializes the Socket.io server instance.
  * @param {object} server - HTTP server instance.
@@ -57,12 +60,22 @@ export const initSocket = (server) => {
     const userId = socket.user._id.toString();
     console.log(`⚡ Socket connected: ${socket.user.fullName} (${userId})`);
 
+    // Track user online status
+    onlineUsers.set(userId, socket.id);
+    // Broadcast to all clients that this user is online
+    io.emit("userOnline", userId);
+
     // Join a room named after the userId for targeted notifications & direct messages
     socket.join(userId);
 
-    // Track user online status
+    // Send the current list of online users to the newly connected user
+    socket.emit("onlineUsers", Array.from(onlineUsers.keys()));
+
     socket.on("disconnect", () => {
       console.log(`🔌 Socket disconnected: ${socket.user.fullName} (${userId})`);
+      onlineUsers.delete(userId);
+      // Broadcast to all clients that this user is offline
+      io.emit("userOffline", userId);
     });
 
     // Initialize sub-socket routers

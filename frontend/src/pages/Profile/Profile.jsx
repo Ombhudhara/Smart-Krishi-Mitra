@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
+
+import Navbar from '../../components/Navbar/Navbar';
+import Sidebar from '../../components/Sidebar/Sidebar';
+import NotificationBell from '../../components/NotificationBell/NotificationBell';
+
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getNotifications, markAsRead, markAllAsRead } from '../../services/notificationService';
 
 // Reusable Layout Components
-import Navbar from '../../components/Navbar/Navbar';
-import Sidebar from '../../components/Sidebar/Sidebar';
-import Footer from '../../components/Footer/Footer';
-import NotificationBell from '../../components/NotificationBell/NotificationBell';
 
 // Role-based Profile Views
 import FarmerProfile from '../../components/Profile/FarmerProfile';
@@ -17,11 +18,9 @@ import CustomerProfile from '../../components/Profile/CustomerProfile';
 import './Profile.css';
 
 export default function Profile() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const navigate = useNavigate();
+  const { user } = useAuth();  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -74,8 +73,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="pr-root">
-      {/* ── REUSABLE NAVBAR ── */}
+    <div className="skm-root">
       <Navbar
         user={user}
         onToggleSidebar={() => setSidebarCollapsed((c) => !c)}
@@ -90,9 +88,7 @@ export default function Profile() {
         }
       />
 
-      {/* ── LAYOUT BODY ── */}
-      <div className="pr-layout">
-        {/* ── REUSABLE SIDEBAR ── */}
+      <div className="skm-layout">
         <Sidebar
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
@@ -101,12 +97,10 @@ export default function Profile() {
           onLogout={() => navigate('/login')}
         />
 
-        {/* ── MAIN CONTENT ── */}
-        <main className="pr-main">
-          {renderProfileContent()}
-
-          {/* ── REUSABLE FOOTER ── */}
-          <Footer />
+        <main className="skm-main">
+          <div className="skm-content-area">
+            {renderProfileContent()}
+          </div>
         </main>
       </div>
     </div>

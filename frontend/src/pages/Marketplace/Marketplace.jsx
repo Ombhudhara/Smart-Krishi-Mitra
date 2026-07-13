@@ -71,7 +71,7 @@ const Marketplace = () => {
   };
 
   return (
-    <div className="mkt-page-root">
+    <div className="skm-root">
       {/* ── REUSABLE NAVBAR ── */}
       <Navbar
         user={user}
@@ -88,7 +88,7 @@ const Marketplace = () => {
       />
 
       {/* ── LAYOUT BODY ── */}
-      <div className="mkt-layout">
+      <div className="skm-layout">
         {/* ── REUSABLE SIDEBAR ── */}
         <Sidebar
           collapsed={sidebarCollapsed}
@@ -99,25 +99,27 @@ const Marketplace = () => {
         />
 
         {/* ── MAIN CONTENT ── */}
-        <main className="mkt-main">
-          {/* Welcome Header */}
-          <section className="mkt-welcome-section">
-            <div className="mkt-welcome-left">
-              <span className="mkt-time-greeting">Trading Desk &amp; Center</span>
-              <h1 className="mkt-welcome-title">Marketplace Center</h1>
-              <div className="mkt-header-metadata">
-                <span className="mkt-meta-badge">Role: {role}</span>
-                <span className="mkt-meta-divider">|</span>
-                <span className="mkt-meta-time">{currentTime}</span>
-                <span className="mkt-meta-divider">|</span>
-                <span className="mkt-meta-date">{currentDate}</span>
+        <main className="skm-main">
+          <div className="skm-content-area" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Welcome Header */}
+            <section style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span className="skm-text-muted" style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Trading Desk &amp; Center</span>
+                <h1 className="skm-title" style={{ fontSize: '28px', margin: 0 }}>Marketplace Center</h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', fontWeight: 500 }} className="skm-text-muted">
+                  <span className="skm-badge" style={{ fontSize: '12px' }}>Role: {role}</span>
+                  <span>|</span>
+                  <span>{currentTime}</span>
+                  <span>|</span>
+                  <span>{currentDate}</span>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          {/* ── ACTIVE VIEW RENDERING ── */}
-          <div className="mkt-active-view-wrap">
-            {renderActiveView()}
+            {/* ── ACTIVE VIEW RENDERING ── */}
+            <div>
+              {renderActiveView()}
+            </div>
           </div>
 
           {/* ── REUSABLE FOOTER ── */}

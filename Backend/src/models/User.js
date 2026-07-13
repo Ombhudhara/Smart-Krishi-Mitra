@@ -127,6 +127,11 @@ const UserSchema = new mongoose.Schema(
       smsAlerts: { type: Boolean, default: true },
       weatherAlerts: { type: Boolean, default: true },
     },
+    privacySettings: {
+      allowMessages: { type: Boolean, default: true },
+      showPhoneNumber: { type: Boolean, default: true },
+      showEmail: { type: Boolean, default: true },
+    },
     lastLogin: {
       type: Date,
       default: null,

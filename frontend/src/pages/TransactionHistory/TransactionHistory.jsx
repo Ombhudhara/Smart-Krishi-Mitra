@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../../context/AuthContext';
+
 import Navbar from '../../components/Navbar/Navbar';
 import Sidebar from '../../components/Sidebar/Sidebar';
-import Footer from '../../components/Footer/Footer';
-import Card from '../../components/Card/Card';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
+
+import { useAuth } from '../../context/AuthContext';
+
 import VendorTransactionHistory from '../../components/Marketplace/VendorTransactionHistory';
 import { getTransactions as getTransactionsApi, downloadInvoice } from '../../services/transactionService';
 import './TransactionHistory.css';
@@ -25,16 +26,6 @@ const TABLE_HEADERS = [
    SUB-COMPONENTS
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-// ── Skeleton loader row ──────────────────────────────────────────────────────
-function SkeletonRow() {
-  return (
-    <div className="tx-skel-row">
-      {['sm', 'md', 'sm', 'sm', 'md', 'md', 'sm'].map((size, i) => (
-        <div key={i} className={`tx-skel-cell tx-skel-cell--${size} tx-shimmer`} />
-      ))}
-    </div>
-  );
-}
 
 // ── Notes block inside modal ─────────────────────────────────────────────────
 function TransactionNotes({ notes }) {
@@ -187,54 +178,6 @@ function TransactionDetailModal({ txn, onClose, currentUser }) {
   );
 }
 
-// ── Stats summary cards ──────────────────────────────────────────────────────
-function StatCard({ icon, value, label, trend }) {
-  return (
-    <Card className="tx-stat-card">
-      <div className="tx-stat-card-top">
-        <span className="tx-stat-icon-wrap">{icon}</span>
-        <span className="tx-stat-trend">{trend}</span>
-      </div>
-      <div className="tx-stat-value">{value}</div>
-      <div className="tx-stat-label">{label}</div>
-    </Card>
-  );
-}
-
-// ── Page header illustration ─────────────────────────────────────────────────
-function HeaderIllustration() {
-  return (
-    <svg viewBox="0 0 220 160" className="tx-illus-svg" aria-hidden="true">
-      <defs>
-        <linearGradient id="txSky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#E8F5E9" />
-          <stop offset="100%" stopColor="#C8E6C9" />
-        </linearGradient>
-        <linearGradient id="txField" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#43A047" />
-          <stop offset="100%" stopColor="#2E7D32" />
-        </linearGradient>
-      </defs>
-      <rect width="220" height="160" fill="url(#txSky)" rx="16" />
-      <circle cx="190" cy="36" r="18" fill="#FFD54F" opacity="0.9" />
-      <ellipse cx="60" cy="30" rx="24" ry="10" fill="white" opacity="0.8" />
-      <ellipse cx="120" cy="40" rx="20" ry="8" fill="white" opacity="0.65" />
-      <rect x="0" y="110" width="220" height="50" fill="url(#txField)" />
-    </svg>
-  );
-}
-
-// ── Empty state ──────────────────────────────────────────────────────────────
-function EmptyState({ onReset }) {
-  return (
-    <div className="tx-empty-state">
-      <span className="tx-empty-icon">🔍</span>
-      <h3>No records found</h3>
-      <p>Try modifying your search or reset the filters.</p>
-      <button className="tx-btn tx-btn--primary" onClick={onReset}>Reset All Filters</button>
-    </div>
-  );
-}
 
 // ── Table row ────────────────────────────────────────────────────────────────
 function TransactionRow({ t, onView, currentUser }) {
@@ -412,25 +355,22 @@ export default function TransactionHistory() {
   /* ── Vendor view ── */
   if (role === 'Vendor') {
     return (
-      <div className="tx-root">
+      <div className="skm-root">
         {notification && <ToastNotification notification={notification} />}
-        <Navbar
-          user={currentUser}
-          onToggleSidebar={() => setSidebarOpen(o => !o)}
-          notificationSlot={<NotificationBell notifications={[]} />}
-        />
-        <div className="tx-layout">
+        <Navbar user={currentUser} onToggleSidebar={() => setSidebarOpen(o => !o)} notificationSlot={<NotificationBell notifications={[]} />} />
+        <div className="skm-layout">
           <Sidebar collapsed={!sidebarOpen} onToggleCollapse={() => setSidebarOpen(o => !o)} activeItem="transactions" />
-          <main className="tx-main">
-            <header className="tx-header" style={{ padding: '24px 32px 10px' }}>
-              <h1 className="tx-header-title" style={{ margin: 0, fontSize: '26px', fontWeight: 800 }}>
-                📜 Vendor Transaction History
-              </h1>
-              <p className="tx-header-subtitle" style={{ margin: '4px 0 0', color: '#6B8C6B', fontSize: '14px' }}>
-                Manage and audit your commercial purchases from farmers and fulfillment sales to customers.
-              </p>
-            </header>
-            <VendorTransactionHistory />
+          <main className="skm-main">
+            <div className="skm-content-area">
+              <div className="skm-welcome-card" style={{ marginBottom: '24px' }}>
+                <div>
+                  <span className="skm-text-muted" style={{ fontSize: '12px' }}>💳 Financial Log</span>
+                  <h1 className="skm-title" style={{ margin: '4px 0' }}>📜 Vendor Transaction History</h1>
+                  <p className="skm-text-muted" style={{ fontSize: '13px', margin: '8px 0 0' }}>Manage and audit your commercial purchases from farmers and fulfillment sales to customers.</p>
+                </div>
+              </div>
+              <VendorTransactionHistory />
+            </div>
           </main>
         </div>
       </div>
@@ -439,183 +379,138 @@ export default function TransactionHistory() {
 
   /* ── Farmer / Customer view ── */
   return (
-    <div className="tx-root">
-
-      {/* Toast */}
+    <div className="skm-root">
       {notification && <ToastNotification notification={notification} />}
 
-      {/* Details Modal */}
       {selectedTxn && (
         <TransactionDetailModal txn={selectedTxn} onClose={() => setSelectedTxn(null)} currentUser={user} />
       )}
 
-      {/* Navbar */}
-      <Navbar
-        user={currentUser}
-        onToggleSidebar={() => setSidebarOpen(o => !o)}
-        notificationSlot={<NotificationBell notifications={[]} />}
-      />
+      <Navbar user={currentUser} onToggleSidebar={() => setSidebarOpen(o => !o)} notificationSlot={<NotificationBell notifications={[]} />} />
 
-      {/* Layout */}
-      <div className="tx-layout">
+      <div className="skm-layout">
+        <Sidebar collapsed={!sidebarOpen} onToggleCollapse={() => setSidebarOpen(o => !o)} activeItem="transactions" />
 
-        {/* Sidebar */}
-        <Sidebar
-          collapsed={!sidebarOpen}
-          onToggleCollapse={() => setSidebarOpen(o => !o)}
-          activeItem="transactions"
-        />
+        <main className="skm-main">
+          <div className="skm-content-area">
 
-        {/* Main */}
-        <main className="tx-main">
-
-          {/* Page header banner */}
-          <div className="tx-page-header">
-            <div className="tx-header-content">
-              <div className="tx-header-text">
-                <div className="tx-breadcrumb">Marketplace / <span>Transaction History</span></div>
-                <h1 className="tx-page-title">📜 Transaction History</h1>
-                <p className="tx-page-subtitle">
-                  Track all crop buying and selling transactions, invoice details, payments, and delivery log records.
-                </p>
-              </div>
-              <div className="tx-header-illustration">
-                <HeaderIllustration />
+            {/* Page Header */}
+            <div className="skm-welcome-card" style={{ marginBottom: '24px' }}>
+              <div>
+                <span className="skm-text-muted" style={{ fontSize: '12px' }}>💳 Financial Log</span>
+                <h1 className="skm-title" style={{ margin: '4px 0' }}>Transaction History</h1>
+                <p className="skm-text-muted" style={{ fontSize: '13px', margin: '8px 0 0' }}>Track all crop buying and selling transactions, invoice details, payments, and delivery log records.</p>
               </div>
             </div>
-          </div>
 
-          {/* Summary stat cards */}
-          <div className="tx-stats-grid">
-            {STAT_CARDS.map((card, i) => (
-              <StatCard key={i} {...card} />
-            ))}
-          </div>
-
-          {/* Payment summary + Actions row */}
-          <div className="tx-summary-details-row">
-
-            <Card className="tx-card tx-summary-card">
-              <h2 className="tx-card-title">💵 Payment Summary</h2>
-              <p className="tx-card-desc">Current financial breakdowns for your farm accounts</p>
-              <div className="tx-payment-grid">
-                {PAYMENT_BREAKDOWN.map((p, i) => (
-                  <div key={i} className="tx-payment-item" style={{ background: p.color }}>
-                    <span className="tx-payment-val" style={{ color: p.text }}>{p.value}</span>
-                    <span className="tx-payment-lbl">{p.label}</span>
+            {/* Summary Stat Cards */}
+            <div className="skm-grid" style={{ marginBottom: '24px' }}>
+              {STAT_CARDS.map((card, i) => (
+                <div key={i} className="skm-stat-card">
+                  <div className="skm-stat-header">
+                    <span className="skm-stat-label">{card.label}</span>
+                    <span className="skm-stat-icon" style={{ fontSize: '20px', background: '#F5F5F5' }}>{card.icon}</span>
                   </div>
-                ))}
-              </div>
-            </Card>
-
-            <Card className="tx-card tx-action-card">
-              <h2 className="tx-card-title">⚡ Actions &amp; Reporting</h2>
-              <p className="tx-card-desc">Download financial log sheets and statements</p>
-              <div className="tx-btn-group">
-                {[
-                  { label: '📄 Download PDF Invoice', type: 'PDF' },
-                  { label: '📊 Download Excel Sheet', type: 'Excel' },
-                  { label: '📈 Export CSV Report',    type: 'CSV' },
-                ].map((btn) => (
-                  <button key={btn.type} className="tx-btn tx-btn--outline" onClick={() => handleExport(btn.type)}>
-                    {btn.label}
-                  </button>
-                ))}
-                <button className="tx-btn tx-btn--primary" onClick={() => window.print()}>
-                  🖨️ Print Statement
-                </button>
-              </div>
-            </Card>
-
-          </div>
-
-          {/* Search & Filters */}
-          <Card className="tx-card tx-filters-section">
-            <div className="tx-filters-top">
-              <div className="tx-search-bar">
-                <span className="tx-search-icon">🔍</span>
-                <input
-                  type="text"
-                  placeholder="Search by ID, crop name, buyer or seller..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="tx-search-input"
-                />
-                {searchQuery && (
-                  <button className="tx-search-clear" onClick={() => setSearchQuery('')}>✕</button>
-                )}
-              </div>
-              <button className="tx-reset-btn" onClick={handleResetFilters}>🔄 Clear Filters</button>
-            </div>
-
-            <div className="tx-filters-grid">
-              {FILTER_FIELDS.map((field) => (
-                <div key={field.label} className="tx-filter-field">
-                  <label className="tx-filter-label">{field.label}</label>
-                  {field.type === 'date' ? (
-                    <input
-                      type="date"
-                      className="tx-input-date"
-                      value={field.value}
-                      onChange={(e) => field.onChange(e.target.value)}
-                    />
-                  ) : (
-                    <select
-                      className="tx-select"
-                      value={field.value}
-                      onChange={(e) => field.onChange(e.target.value)}
-                    >
-                      {field.options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                  )}
+                  <div className="skm-stat-value" style={{ fontSize: '22px' }}>{card.value}</div>
+                  <div className="skm-stat-footer">
+                    <span className="skm-text-muted" style={{ fontSize: '11px' }}>{card.trend}</span>
+                  </div>
                 </div>
               ))}
             </div>
-          </Card>
 
-          {/* Transaction Table */}
-          <Card className="tx-card tx-table-card">
-            <div className="tx-table-header">
-              <h2 className="tx-card-title">📜 Transaction Log</h2>
-              <span className="tx-results-badge">{filteredTxns.length} records found</span>
+            {/* Payment Summary + Actions */}
+            <div className="skm-dual-row" style={{ marginBottom: '24px' }}>
+              <div className="skm-card">
+                <h2 className="skm-section-title" style={{ marginBottom: '12px' }}>💵 Payment Summary</h2>
+                <p className="skm-text-muted" style={{ fontSize: '12px', marginBottom: '16px' }}>Current financial breakdowns for your farm accounts</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  {PAYMENT_BREAKDOWN.map((p, i) => (
+                    <div key={i} style={{ background: p.color, padding: '14px 16px', borderRadius: '10px' }}>
+                      <div style={{ fontWeight: 900, fontSize: '16px', color: p.text }}>{p.value}</div>
+                      <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>{p.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="skm-card">
+                <h2 className="skm-section-title" style={{ marginBottom: '12px' }}>⚡ Actions & Reporting</h2>
+                <p className="skm-text-muted" style={{ fontSize: '12px', marginBottom: '16px' }}>Download financial log sheets and statements</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[
+                    { label: '📄 Download PDF Invoice', type: 'PDF' },
+                    { label: '📊 Download Excel Sheet', type: 'Excel' },
+                    { label: '📈 Export CSV Report', type: 'CSV' },
+                  ].map((btn) => (
+                    <button key={btn.type} className="skm-action-btn" style={{ background: 'transparent', border: '1px solid var(--skm-border)' }} onClick={() => handleExport(btn.type)}>{btn.label}</button>
+                  ))}
+                  <button className="skm-action-btn" onClick={() => window.print()}>🖨️ Print Statement</button>
+                </div>
+              </div>
             </div>
 
-            {/* Loading */}
-            {isLoading && (
-              <div className="tx-skeleton-table">
-                {[...Array(5)].map((_, i) => <SkeletonRow key={i} />)}
+            {/* Search & Filters */}
+            <div className="skm-card" style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px', padding: '8px 12px' }}>
+                  <span>🔍</span>
+                  <input type="text" placeholder="Search by ID, crop name, buyer or seller..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '13px' }} />
+                  {searchQuery && <button onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>×</button>}
+                </div>
+                <button className="skm-action-btn" style={{ background: 'transparent', border: '1px solid var(--skm-border)' }} onClick={handleResetFilters}>🔄 Clear</button>
               </div>
-            )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
+                {FILTER_FIELDS.map((field) => (
+                  <div key={field.label} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--skm-text-muted)' }}>{field.label}</label>
+                    {field.type === 'date' ? (
+                      <input type="date" value={field.value} onChange={(e) => field.onChange(e.target.value)} style={{ padding: '7px', border: '1px solid var(--skm-border)', borderRadius: '8px', fontSize: '12px' }} />
+                    ) : (
+                      <select value={field.value} onChange={(e) => field.onChange(e.target.value)} style={{ padding: '7px', border: '1px solid var(--skm-border)', borderRadius: '8px', fontSize: '12px' }}>
+                        {field.options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                      </select>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
 
-            {/* Empty */}
-            {!isLoading && filteredTxns.length === 0 && (
-              <EmptyState onReset={handleResetFilters} />
-            )}
+            {/* Transaction Table */}
+            <div className="skm-table-card">
+              <div className="skm-section-header" style={{ padding: '16px 20px' }}>
+                <h2 className="skm-section-title">📜 Transaction Log</h2>
+                <span className="skm-badge">{filteredTxns.length} records</span>
+              </div>
 
-            {/* Table */}
-            {!isLoading && filteredTxns.length > 0 && (
-              <div className="tx-table-responsive">
-                <table className="tx-table">
+              {isLoading && (
+                <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {[...Array(5)].map((_, i) => <div key={i} style={{ height: '40px', background: '#F5F5F5', borderRadius: '6px', animation: 'pulse 1.5s infinite' }} />)}
+                </div>
+              )}
+
+              {!isLoading && filteredTxns.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '48px 0' }}>
+                  <span style={{ fontSize: '48px' }}>🔍</span>
+                  <h3>No records found</h3>
+                  <p className="skm-text-muted">Try modifying your search or reset the filters.</p>
+                  <button className="skm-action-btn" onClick={handleResetFilters}>Reset All Filters</button>
+                </div>
+              )}
+
+              {!isLoading && filteredTxns.length > 0 && (
+                <table className="skm-table">
                   <thead>
-                    <tr>
-                      {TABLE_HEADERS.map((h) => (
-                        <th key={h} className={h === 'Action' ? 'tx-text-center' : ''}>{h}</th>
-                      ))}
-                    </tr>
+                    <tr>{TABLE_HEADERS.map((h) => <th key={h}>{h}</th>)}</tr>
                   </thead>
                   <tbody>
-                    {filteredTxns.map((t) => (
-                      <TransactionRow key={t._id} t={t} onView={setSelectedTxn} currentUser={user} />
-                    ))}
+                    {filteredTxns.map((t) => <TransactionRow key={t._id} t={t} onView={setSelectedTxn} currentUser={user} />)}
                   </tbody>
                 </table>
-              </div>
-            )}
-          </Card>
+              )}
+            </div>
 
-          {/* Footer */}
-          <Footer />
-
+          </div>
         </main>
       </div>
     </div>

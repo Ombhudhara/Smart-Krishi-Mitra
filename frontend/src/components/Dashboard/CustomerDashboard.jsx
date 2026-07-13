@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import './CustomerDashboard.css';
 
 // =============================================================================
 // REALISTIC DUMMY DATA FOR THE CUSTOMER DASHBOARD DESK
@@ -59,45 +58,45 @@ export default function CustomerDashboard() {
   }, []);
 
   return (
-    <div className="cd-container">
+    <div className="skm-container">
       {/* Welcome Section */}
-      <section className="cd-welcome-section">
-        <div className="cd-welcome-left">
-          <span className="cd-time-greeting">Customer Procurement Desk</span>
-          <h1 className="cd-welcome-title">{user?.fullName || "Buyer"} 👋</h1>
-          <div className="cd-header-metadata">
-            <span className="cd-meta-badge">Role: {user?.role || "Customer"}</span>
-            <span className="cd-meta-divider">|</span>
-            <span className="cd-meta-time">{currentTime}</span>
-            <span className="cd-meta-divider">|</span>
-            <span className="cd-meta-date">{currentDate}</span>
+      <section className="skm-welcome-card" style={{ flexDirection: window.innerWidth < 768 ? 'column' : 'row', alignItems: window.innerWidth < 768 ? 'stretch' : 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <span className="skm-text-muted" style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Customer Procurement Desk</span>
+          <h1 className="skm-title" style={{ fontSize: '28px', margin: 0 }}>{user?.fullName || "Buyer"} 👋</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', fontWeight: 500 }} className="skm-text-muted">
+            <span className="skm-badge" style={{ background: '#FCE4EC', color: '#C2185B', fontSize: '12px' }}>Role: {user?.role || "Customer"}</span>
+            <span>|</span>
+            <span>{currentTime}</span>
+            <span>|</span>
+            <span>{currentDate}</span>
           </div>
         </div>
-        <div className="cd-welcome-right">
-          <div className="cd-welcome-stats-summary">
+        <div>
+          <div style={{ background: 'var(--skm-bg)', border: '1.5px solid var(--skm-border)', padding: '10px 18px', borderRadius: '16px', fontSize: '13px' }}>
             🛒 <strong>Direct Agricultural Sourcing</strong>
           </div>
         </div>
       </section>
 
       {/* Quick Statistics */}
-      <section className="cd-stats-section">
-        <div className="cd-section-header">
-          <h2 className="cd-section-title">📊 Key Metrics</h2>
+      <section className="skm-section">
+        <div className="skm-section-header">
+          <h2 className="skm-section-title">📊 Key Metrics</h2>
         </div>
-        <div className="cd-stats-grid">
+        <div className="skm-grid">
           {STATS_DATA.map((stat) => (
-            <div key={stat.id} className="cd-stat-card" style={{ borderTop: `4px solid ${stat.color}` }}>
-              <div className="cd-stat-card-header">
-                <span className="cd-stat-label">{stat.label}</span>
-                <span className="cd-stat-icon" style={{ background: stat.bg, color: stat.color }}>
+            <div key={stat.id} className="skm-stat-card" style={{ borderTop: `4px solid ${stat.color}` }}>
+              <div className="skm-stat-header">
+                <span className="skm-stat-label">{stat.label}</span>
+                <span className="skm-stat-icon" style={{ background: stat.bg, color: stat.color }}>
                   {stat.icon}
                 </span>
               </div>
-              <div className="cd-stat-value">{stat.value}</div>
-              <div className="cd-stat-card-footer">
-                <span className="cd-stat-desc">{stat.desc}</span>
-                <span className={`cd-stat-trend trend-${stat.trendType}`}>{stat.trend}</span>
+              <div className="skm-stat-value">{stat.value}</div>
+              <div className="skm-stat-footer">
+                <span className="skm-stat-desc">{stat.desc}</span>
+                <span className={`skm-stat-trend ${stat.trendType}`}>{stat.trend}</span>
               </div>
             </div>
           ))}
@@ -105,35 +104,35 @@ export default function CustomerDashboard() {
       </section>
 
       {/* Quick Actions */}
-      <section className="cd-quick-section">
-        <div className="cd-section-header">
-          <h2 className="cd-section-title">⚡ Quick Actions</h2>
+      <section className="skm-section">
+        <div className="skm-section-header">
+          <h2 className="skm-section-title">⚡ Quick Actions</h2>
         </div>
-        <div className="cd-quick-grid">
+        <div className="skm-grid">
           {QUICK_ACTIONS.map((action) => (
-            <div key={action.id} className="cd-quick-card" onClick={() => navigate(action.path)}>
-              <div className="cd-quick-icon-wrap">{action.icon}</div>
-              <h3 className="cd-quick-title">{action.title}</h3>
-              <p className="cd-quick-desc">{action.desc}</p>
+            <div key={action.id} className="skm-action-card" onClick={() => navigate(action.path)}>
+              <div className="skm-action-icon">{action.icon}</div>
+              <h3 className="skm-action-title">{action.title}</h3>
+              <p className="skm-action-desc">{action.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Recommended Crops Section */}
-      <section className="cd-widget-card">
-        <h3 className="cd-widget-title">🌟 Recommended Crops For You</h3>
-        <div className="cd-rec-grid">
+      <section className="skm-card">
+        <h3 className="skm-card-title">🌟 Recommended Crops For You</h3>
+        <div className="skm-preview-list">
           {RECOMMENDED_CROPS.map((item, idx) => (
-            <div key={idx} className="cd-rec-item">
-              <span className="cd-rec-icon">{item.bg}</span>
-              <div className="cd-rec-meta">
-                <strong>{item.crop}</strong>
-                <span>Seller: {item.seller}</span>
+            <div key={idx} className="skm-preview-item">
+              <span style={{ fontSize: '24px' }}>{item.bg}</span>
+              <div style={{ flex: 1, marginLeft: '12px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <strong style={{ fontSize: '13px' }}>{item.crop}</strong>
+                <span className="skm-text-muted" style={{ fontSize: '11px' }}>Seller: {item.seller}</span>
               </div>
-              <div className="cd-rec-stats">
-                <strong>{item.price}</strong>
-                <span>⭐ {item.rating}</span>
+              <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <strong style={{ fontSize: '14px', color: 'var(--skm-primary)' }}>{item.price}</strong>
+                <span className="skm-text-muted" style={{ fontSize: '11px' }}>⭐ {item.rating}</span>
               </div>
             </div>
           ))}
@@ -141,25 +140,25 @@ export default function CustomerDashboard() {
       </section>
 
       {/* Farmer vs Vendor Previews */}
-      <section className="cd-dual-row">
+      <section className="skm-dual-row">
         {/* Farmer Marketplace Preview */}
-        <div className="cd-widget-card">
-          <div className="cd-widget-header-row">
-            <h3 className="cd-widget-title">👨‍🌾 Farmer Mandi Listings</h3>
-            <button className="cd-text-link-btn" onClick={() => navigate('/marketplace')}>
+        <div className="skm-card">
+          <div className="skm-section-header">
+            <h3 className="skm-card-title">👨‍🌾 Farmer Mandi Listings</h3>
+            <button className="skm-text-link-btn" onClick={() => navigate('/marketplace')}>
               Browse All
             </button>
           </div>
-          <div className="cd-previews-list">
+          <div className="skm-preview-list">
             {FARMER_MARKET_PREVIEW.map((item) => (
-              <div key={item.id} className="cd-preview-item">
-                <div className="cd-preview-info">
-                  <strong>{item.name}</strong>
-                  <span>Grower: {item.seller}</span>
+              <div key={item.id} className="skm-preview-item">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <strong style={{ fontSize: '13px' }}>{item.name}</strong>
+                  <span className="skm-text-muted" style={{ fontSize: '11px' }}>Grower: {item.seller}</span>
                 </div>
-                <div className="cd-preview-price">
-                  <strong>{item.price}</strong>
-                  <span>📍 {item.location}</span>
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <strong style={{ fontSize: '14px', color: 'var(--skm-primary)' }}>{item.price}</strong>
+                  <span className="skm-text-muted" style={{ fontSize: '10px' }}>📍 {item.location}</span>
                 </div>
               </div>
             ))}
@@ -167,23 +166,23 @@ export default function CustomerDashboard() {
         </div>
 
         {/* Vendor Marketplace Preview */}
-        <div className="cd-widget-card">
-          <div className="cd-widget-header-row">
-            <h3 className="cd-widget-title">🏪 Vendor Wholesale Shops</h3>
-            <button className="cd-text-link-btn" onClick={() => navigate('/marketplace')}>
+        <div className="skm-card">
+          <div className="skm-section-header">
+            <h3 className="skm-card-title">🏪 Vendor Wholesale Shops</h3>
+            <button className="skm-text-link-btn" onClick={() => navigate('/marketplace')}>
               Browse All
             </button>
           </div>
-          <div className="cd-previews-list">
+          <div className="skm-preview-list">
             {VENDOR_MARKET_PREVIEW.map((item) => (
-              <div key={item.id} className="cd-preview-item">
-                <div className="cd-preview-info">
-                  <strong>{item.name}</strong>
-                  <span>Supplier: {item.vendor}</span>
+              <div key={item.id} className="skm-preview-item">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <strong style={{ fontSize: '13px' }}>{item.name}</strong>
+                  <span className="skm-text-muted" style={{ fontSize: '11px' }}>Supplier: {item.vendor}</span>
                 </div>
-                <div className="cd-preview-price">
-                  <strong>{item.price}</strong>
-                  <span>📍 {item.location}</span>
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <strong style={{ fontSize: '14px', color: 'var(--skm-primary)' }}>{item.price}</strong>
+                  <span className="skm-text-muted" style={{ fontSize: '10px' }}>📍 {item.location}</span>
                 </div>
               </div>
             ))}
@@ -192,44 +191,44 @@ export default function CustomerDashboard() {
       </section>
 
       {/* Weather & AI Assistant */}
-      <section className="cd-dual-row">
+      <section className="skm-dual-row">
         {/* Weather Widget */}
-        <div className="cd-widget-card">
-          <h3 className="cd-widget-title">🌦️ Regional Weather Outlook</h3>
-          <div className="cd-weather-outlook">
-            <span className="weather-icon">🌤️</span>
+        <div className="skm-card">
+          <h3 className="skm-card-title">🌦️ Regional Weather Outlook</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--skm-bg)', padding: '14px', borderRadius: '12px', border: '1px solid var(--skm-border)' }}>
+            <span style={{ fontSize: '28px' }}>🌤️</span>
             <div>
-              <div className="temp">31°C</div>
-              <div className="desc">Mostly Sunny · Wind: 14 km/h</div>
+              <div style={{ fontSize: '20px', fontWeight: 800 }}>31°C</div>
+              <div className="skm-text-muted" style={{ fontSize: '11px' }}>Mostly Sunny · Wind: 14 km/h</div>
             </div>
           </div>
-          <button className="cd-widget-action-btn" onClick={() => navigate('/weather')}>
+          <button className="skm-action-btn" onClick={() => navigate('/weather')}>
             Check Forecast
           </button>
         </div>
 
         {/* AI Assistant */}
-        <div className="cd-widget-card">
-          <h3 className="cd-widget-title">🤖 Agri AI Assistant</h3>
+        <div className="skm-card">
+          <h3 className="skm-card-title">🤖 Agri AI Assistant</h3>
           <p style={{ margin: 0, fontSize: '12px', color: '#555', lineHeight: 1.6 }}>
             Ask our smart assistant for recommendation updates, pricing comparisons, crop freshness indices, and cargo details.
           </p>
-          <button className="cd-widget-action-btn" onClick={() => navigate('/crop-knowledge')}>
+          <button className="skm-action-btn" onClick={() => navigate('/crop-knowledge')}>
             Consult AI
           </button>
         </div>
       </section>
 
       {/* Notifications */}
-      <section className="cd-widget-card">
-        <h3 className="cd-widget-title">🔔 Notifications</h3>
-        <div className="cd-notif-list">
+      <section className="skm-card">
+        <h3 className="skm-card-title">🔔 Notifications</h3>
+        <div className="skm-preview-list">
           {NOTIFICATIONS.map((notif) => (
-            <div key={notif.id} className="cd-notif-item">
-              <span className="bullet">🔵</span>
-              <div className="info">
-                <p>{notif.text}</p>
-                <span className="time">{notif.time}</span>
+            <div key={notif.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '12px', background: 'var(--skm-bg)', border: '1px solid var(--skm-border)', padding: '12px 16px', borderRadius: '12px' }}>
+              <span style={{ fontSize: '8px', marginTop: '4px' }}>🔵</span>
+              <div>
+                <p style={{ margin: '0 0 2px 0', color: 'var(--skm-text-main)', fontWeight: 500 }}>{notif.text}</p>
+                <span className="skm-text-muted">{notif.time}</span>
               </div>
             </div>
           ))}
@@ -237,15 +236,15 @@ export default function CustomerDashboard() {
       </section>
 
       {/* Recent Transactions Table */}
-      <section className="cd-transactions-section">
-        <div className="cd-widget-header-row">
-          <h2 className="cd-section-title">📜 Recent Transactions</h2>
-          <button className="cd-text-link-btn" onClick={() => navigate('/transactions')}>
+      <section className="skm-section" style={{ marginTop: '10px' }}>
+        <div className="skm-section-header">
+          <h2 className="skm-section-title">📜 Recent Transactions</h2>
+          <button className="skm-text-link-btn" onClick={() => navigate('/transactions')}>
             View All Order Ledger &rarr;
           </button>
         </div>
-        <div className="cd-table-card">
-          <table className="cd-transactions-table">
+        <div className="skm-table-card">
+          <table className="skm-table">
             <thead>
               <tr>
                 <th>Order ID</th>
@@ -263,21 +262,21 @@ export default function CustomerDashboard() {
                 { id: 'TXN-O-10030', crop: 'Basmati Rice', seller: 'AgroMart Gujarat', type: 'Vendor', amount: '₹24,500', status: 'Paid', date: '2026-06-25' }
               ].map((txn) => (
                 <tr key={txn.id}>
-                  <td className="mono">{txn.id}</td>
-                  <td className="cd-table-cell-bold">{txn.crop}</td>
+                  <td style={{ fontFamily: 'monospace', fontSize: '11px' }} className="skm-text-muted">{txn.id}</td>
+                  <td style={{ fontWeight: 700 }}>{txn.crop}</td>
                   <td>{txn.seller}</td>
                   <td>
-                    <span className={`seller-type-badge type-${txn.type.toLowerCase()}`}>
+                    <span className="skm-badge" style={txn.type === 'Farmer' ? {} : { background: '#E3F2FD', color: '#1565C0' }}>
                       {txn.type}
                     </span>
                   </td>
-                  <td className="cd-table-cell-amount">{txn.amount}</td>
+                  <td style={{ fontWeight: 800, color: 'var(--skm-primary)' }}>{txn.amount}</td>
                   <td>
-                    <span className={`cd-table-status-badge status-${txn.status.toLowerCase()}`}>
+                    <span className="skm-status-badge success">
                       {txn.status}
                     </span>
                   </td>
-                  <td className="cd-table-cell-date">{txn.date}</td>
+                  <td className="skm-text-muted">{txn.date}</td>
                 </tr>
               ))}
             </tbody>

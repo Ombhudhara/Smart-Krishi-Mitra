@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+
 import Navbar from '../../components/Navbar/Navbar';
 import Sidebar from '../../components/Sidebar/Sidebar';
-import Footer from '../../components/Footer/Footer';
+import NotificationBell from '../../components/NotificationBell/NotificationBell';
+
 import Button from '../../components/Button/Button';
 import Card from '../../components/Card/Card';
 import Loader from '../../components/Loader/Loader';
-import NotificationBell from '../../components/NotificationBell/NotificationBell';
+import { getAllCrops } from '../../services/cropService';
 import './CropKnowledge.css';
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -412,7 +414,7 @@ const CROP_DATABASE = [
 ];
 
 const SEASONS = ['All', 'Kharif', 'Rabi', 'Annual', 'Year-round'];
-const CATEGORIES = ['All', 'Cereal', 'Cash Crop', 'Oilseed', 'Vegetable', 'Spice'];
+const CATEGORIES = ["All", "Cereal", "Cash Crop", "Oilseed", "Vegetable", "Spice", "Pulse", "Fruit", "Medicinal", "Flower", "Plantation", "Fodder", "Forest", "Herb"];
 const SOIL_TYPES_FILTER = ['All', 'Alluvial', 'Black', 'Loamy', 'Sandy Loam', 'Red', 'Clay', 'Laterite'];
 const SORT_OPTIONS = ['Relevance', 'Name (A-Z)', 'Name (Z-A)', 'Season', 'Yield (High)', 'Yield (Low)'];
 
@@ -586,6 +588,7 @@ export default function CropKnowledge() {
   const [sortBy, setSortBy] = useState('Relevance');
 
   // UI State
+  const [cropsList, setCropsList] = useState([]);
   const [selectedCrop, setSelectedCrop] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notification, setNotification] = useState(null);
@@ -593,10 +596,31 @@ export default function CropKnowledge() {
   // Carousel
   const carouselRef = useRef(null);
 
-  // Simulate loading
+  // Fetch crops on mount
   useEffect(() => {
-    const t = setTimeout(() => setIsLoading(false), 1200);
-    return () => clearTimeout(t);
+    let active = true;
+    getAllCrops()
+      .then((res) => {
+        if (active) {
+          if (res.data && res.data.success) {
+            setCropsList(res.data.crops || []);
+          } else {
+            setCropsList(CROP_DATABASE);
+          }
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch crop data from API:", err);
+        if (active) {
+          setCropsList(CROP_DATABASE);
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const showNotify = useCallback((msg, type = 'info') => {
@@ -605,9 +629,16 @@ export default function CropKnowledge() {
   }, []);
 
   // Filter & Sort crops
-  const filteredCrops = CROP_DATABASE
+  const filteredCrops = cropsList
     .filter((c) => {
-      if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase()) && !c.scientificName.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesName = c.name.toLowerCase().includes(query);
+        const matchesSci = c.scientificName.toLowerCase().includes(query);
+        const matchesCat = c.category.toLowerCase().includes(query);
+        const matchesDesc = c.shortDesc ? c.shortDesc.toLowerCase().includes(query) : false;
+        if (!matchesName && !matchesSci && !matchesCat && !matchesDesc) return false;
+      }
       if (seasonFilter !== 'All' && !c.season.includes(seasonFilter)) return false;
       if (categoryFilter !== 'All' && c.category !== categoryFilter) return false;
       if (soilFilter !== 'All' && !c.soilType.includes(soilFilter)) return false;
@@ -619,7 +650,7 @@ export default function CropKnowledge() {
       return 0;
     });
 
-  const featuredCrops = CROP_DATABASE.filter((c) => c.featured);
+  const featuredCrops = cropsList.filter((c) => c.featured);
 
   const scrollCarousel = (dir) => {
     if (carouselRef.current) {
@@ -637,7 +668,7 @@ export default function CropKnowledge() {
   };
 
   return (
-    <div className="ck-root">
+    <div className="skm-root">
       {/* ── Toast ───────────────────────────────────── */}
       {notification && (
         <div className={`ck-toast ck-toast--${notification.type}`}>
@@ -659,8 +690,8 @@ export default function CropKnowledge() {
       />
 
       {/* ═══ LAYOUT ═══════════════════════════════════ */}
-      <div className="ck-layout">
-        {/* ── Sidebar ────────────────────────────── */}
+      <div className="skm-layout">
+        {/* ── Sidebar ──────────────────────────────────────────────── */}
         <Sidebar 
           collapsed={collapsed}
           onToggleCollapse={() => setCollapsed(!collapsed)}
@@ -668,14 +699,14 @@ export default function CropKnowledge() {
         />
 
         {/* ═══ MAIN ═══════════════════════════════════ */}
-        <main className="ck-main">
+        <main className="skm-main">
 
           {/* ── Page Header ────────────────────── */}
           <div className="ck-page-header">
             <div className="ck-header-content">
               <div className="ck-header-text">
-                <div className="ck-breadcrumb">Dashboard / <span>Crop Knowledge</span></div>
-                <h1 className="ck-page-title">🌾 Crop Knowledge Center</h1>
+                <div className="ck-hero-tag">🌾 Crop Database</div>
+                <h1 className="ck-page-title">Crop Knowledge Center</h1>
                 <p className="ck-page-subtitle">
                   Discover detailed information about crops, cultivation methods, soil conditions, irrigation, fertilizers, diseases, harvesting techniques, and market insights.
                 </p>
@@ -720,7 +751,7 @@ export default function CropKnowledge() {
                     </g>
                   ))}
                   <rect x="140" y="112" width="70" height="34" rx="8" fill="white" opacity="0.92" />
-                  <text x="152" y="127" fontSize="8" fill="#388E3C" fontWeight="700" fontFamily="Poppins,sans-serif">12 Crops</text>
+                  <text x="152" y="127" fontSize="8" fill="#388E3C" fontWeight="700" fontFamily="Poppins,sans-serif">{cropsList.length || 150}+ Crops</text>
                   <text x="152" y="139" fontSize="7" fill="#66BB6A" fontFamily="Poppins,sans-serif">Full Database →</text>
                 </svg>
               </div>
@@ -730,7 +761,7 @@ export default function CropKnowledge() {
           {/* ── Stats ──────────────────────────── */}
           <div className="ck-stats-row">
             {[
-              { icon: '🌾', value: '12', label: 'Crops in Database', trend: 'Growing' },
+              { icon: '🌾', value: cropsList.length ? `${cropsList.length}` : '150+', label: 'Crops in Database', trend: 'Growing' },
               { icon: '📖', value: '60+', label: 'Farming Tips', trend: 'Updated' },
               { icon: '🤖', value: '4', label: 'AI Suggestions', trend: 'Live' },
               { icon: '📥', value: '4', label: 'PDF Guides', trend: 'Free' },
@@ -816,7 +847,7 @@ export default function CropKnowledge() {
             </div>
 
             <div className="ck-filter-summary">
-              Showing <strong>{filteredCrops.length}</strong> of {CROP_DATABASE.length} crops
+              Showing <strong>{filteredCrops.length}</strong> of {cropsList.length} crops
               {(seasonFilter !== 'All' || categoryFilter !== 'All' || soilFilter !== 'All' || searchQuery) && (
                 <span className="ck-filter-active-badge">Filters Active</span>
               )}
@@ -1015,7 +1046,7 @@ export default function CropKnowledge() {
           </Card>
 
           {/* ═══ FOOTER ══════════════════════════════ */}
-          <Footer />
+          
 
         </main>
       </div>

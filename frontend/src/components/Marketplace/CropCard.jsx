@@ -1,5 +1,4 @@
 import React from 'react';
-import './CropCard.css';
 
 const CropCard = ({ 
   crop, 
@@ -17,22 +16,21 @@ const CropCard = ({
   const isSoldOut = crop.stock === 0 || crop.status === 'Sold Out';
 
   return (
-    <div className={`mkt-crop-card ${isSoldOut ? 'mkt-crop-card--soldout' : ''}`}>
-      <div className="mkt-crop-card-top">
-        <div className="mkt-crop-emoji-wrap">
-          <span className="mkt-crop-emoji">{crop.emoji || crop.image || '🌾'}</span>
+    <div className="skm-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', opacity: isSoldOut ? 0.7 : 1 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ fontSize: '32px' }}>
+          {crop.emoji || crop.image || '🌾'}
         </div>
-        <div className="mkt-crop-badges">
-          {crop.organic && <span className="mkt-badge mkt-badge--organic">🌿 Organic</span>}
-          {crop.delivery && <span className="mkt-badge mkt-badge--delivery">🚚 Delivery</span>}
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {crop.organic && <span className="skm-badge" style={{ background: '#E8F5E9', color: '#2E7D32' }}>🌿 Organic</span>}
+          {crop.delivery && <span className="skm-badge" style={{ background: '#E3F2FD', color: '#1565C0' }}>🚚 Delivery</span>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className={`mkt-crop-status-pill ${isSoldOut ? 'mkt-status--soldout' : 'mkt-status--active'}`}>
-            {isSoldOut ? '🔴 Sold Out' : '🟢 Active'}
+          <span className={`skm-status-badge ${isSoldOut ? 'danger' : 'success'}`}>
+            {isSoldOut ? 'Sold Out' : 'Active'}
           </span>
           {onLike && (
             <button
-              className="mkt-like-btn"
               onClick={() => onLike(crop.id)}
               style={{ color: crop.liked ? '#E91E63' : '#ccc', border: 'none', background: 'none', cursor: 'pointer', fontSize: '18px' }}
             >
@@ -42,61 +40,65 @@ const CropCard = ({
         </div>
       </div>
 
-      <h3 className="mkt-crop-name">{crop.name}</h3>
-      <span className="mkt-crop-category-chip">{crop.category}</span>
+      <div>
+        <h3 className="skm-card-title" style={{ margin: 0, fontSize: '16px' }}>{crop.name}</h3>
+        <span className="skm-text-muted" style={{ fontSize: '12px' }}>{crop.category}</span>
+      </div>
 
       {/* Farmer details for buyers */}
       {role !== 'Farmer' && (crop.farmerName || crop.farmerRating) && (
-        <div className="mkt-crop-farmer-row">
-          <span className="mkt-farmer-avatar-sm">{crop.farmerAvatar || '👨‍🌾'}</span>
-          <span className="mkt-farmer-name">{crop.farmerName || 'Farmer'}</span>
-          {crop.farmerVerified && <span className="mkt-verified-sm">✓</span>}
-          <span className="mkt-farmer-rating">⭐ {crop.farmerRating || '4.5'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+          <span>{crop.farmerAvatar || '👨‍🌾'}</span>
+          <span style={{ fontWeight: 600 }}>{crop.farmerName || 'Farmer'}</span>
+          {crop.farmerVerified && <span style={{ color: '#2E7D32' }}>✓</span>}
+          <span className="skm-text-muted">⭐ {crop.farmerRating || '4.5'}</span>
         </div>
       )}
 
-      <div className="mkt-crop-price-row">
-        <span className="mkt-crop-price">₹{(crop.price || 0).toLocaleString()}</span>
-        <span className="mkt-crop-unit">/{crop.unit || 'Quintal'}</span>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+        <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--skm-primary)' }}>₹{(crop.price || 0).toLocaleString()}</span>
+        <span className="skm-text-muted" style={{ fontSize: '12px' }}>/{crop.unit || 'Quintal'}</span>
       </div>
 
-      <div className="mkt-crop-info-grid">
-        <div className="mkt-crop-info-item"><span>📦</span>{crop.stock > 0 ? `${crop.stock} Q` : 'Sold Out'}</div>
-        <div className="mkt-crop-info-item"><span>⭐</span>{crop.quality || 'Grade A'}</div>
-        <div className="mkt-crop-info-item"><span>🗓️</span>{crop.harvestDate || 'Fresh'}</div>
-        <div className="mkt-crop-info-item"><span>📍</span>{crop.location || 'Maharashtra'}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', background: 'var(--skm-bg)', padding: '10px', borderRadius: '8px' }}>
+        <div style={{ display: 'flex', gap: '6px' }}><span>📦</span><span style={{ fontWeight: 600 }}>{crop.stock > 0 ? `${crop.stock} Q` : 'Sold Out'}</span></div>
+        <div style={{ display: 'flex', gap: '6px' }}><span>⭐</span><span style={{ fontWeight: 600 }}>{crop.quality || 'Grade A'}</span></div>
+        <div style={{ display: 'flex', gap: '6px' }}><span>🗓️</span><span style={{ fontWeight: 600 }}>{crop.harvestDate || 'Fresh'}</span></div>
+        <div style={{ display: 'flex', gap: '6px' }}><span>📍</span><span style={{ fontWeight: 600 }}>{crop.location || 'Maharashtra'}</span></div>
       </div>
 
-      <div className="mkt-crop-engagement">
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--skm-text-muted)' }}>
         <span>👁️ {crop.views || 0} views</span>
         <span>❤️ {crop.likes || 0} likes</span>
       </div>
 
-      <div className="mkt-crop-actions">
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: 'auto' }}>
         {role === 'Farmer' ? (
           <>
-            <button className="mkt-btn mkt-btn--outline mkt-btn--sm" onClick={() => onEdit && onEdit(crop)}>✏️ Edit</button>
-            <button className="mkt-btn mkt-btn--danger mkt-btn--sm" onClick={() => onDelete && onDelete(crop.id)}>🗑️ Delete</button>
-            <button className="mkt-btn mkt-btn--primary mkt-btn--sm" onClick={() => onView && onView(crop)}>👁️ Details</button>
+            <button className="skm-action-btn" style={{ flex: 1, padding: '6px', fontSize: '12px', background: 'transparent', color: 'var(--skm-text-main)', border: '1px solid var(--skm-border)' }} onClick={() => onEdit && onEdit(crop)}>✏️ Edit</button>
+            <button className="skm-action-btn" style={{ flex: 1, padding: '6px', fontSize: '12px', background: '#ffebee', color: '#c62828' }} onClick={() => onDelete && onDelete(crop.id)}>🗑️ Delete</button>
+            <button className="skm-action-btn" style={{ flex: 1, padding: '6px', fontSize: '12px' }} onClick={() => onView && onView(crop)}>👁️ Details</button>
           </>
         ) : (
           <>
             <button 
-              className="mkt-btn mkt-btn--primary mkt-btn--sm" 
+              className="skm-action-btn"
+              style={{ flex: '1 1 100%' }}
               onClick={() => onBuy && onBuy(crop)}
               disabled={isSoldOut}
             >
               🛒 Buy Now
             </button>
             <button 
-              className={`mkt-btn mkt-btn--sm ${isWishlisted ? 'mkt-btn--danger' : 'mkt-btn--outline'}`}
+              className="skm-action-btn"
+              style={{ flex: 1, padding: '6px', fontSize: '12px', background: isWishlisted ? '#ffebee' : 'transparent', color: isWishlisted ? '#c62828' : 'var(--skm-text-main)', border: '1px solid var(--skm-border)' }}
               onClick={() => onWishlist && onWishlist(crop)}
             >
               ❤️ {isWishlisted ? 'Wishlisted' : 'Wishlist'}
             </button>
-            <button className="mkt-btn mkt-btn--outline mkt-btn--sm" onClick={() => onMessage && onMessage(crop)}>💬 Message</button>
+            <button className="skm-action-btn" style={{ flex: 1, padding: '6px', fontSize: '12px', background: 'transparent', color: 'var(--skm-text-main)', border: '1px solid var(--skm-border)' }} onClick={() => onMessage && onMessage(crop)}>💬 Message</button>
             {onReview && (
-              <button className="mkt-btn mkt-btn--outline mkt-btn--sm" onClick={() => onReview(crop)}>⭐ Review</button>
+              <button className="skm-action-btn" style={{ flex: 1, padding: '6px', fontSize: '12px', background: 'transparent', color: 'var(--skm-text-main)', border: '1px solid var(--skm-border)' }} onClick={() => onReview(crop)}>⭐ Review</button>
             )}
           </>
         )}

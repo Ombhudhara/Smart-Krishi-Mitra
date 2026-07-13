@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+
 import Navbar from '../../components/Navbar/Navbar';
 import Sidebar from '../../components/Sidebar/Sidebar';
-import Footer from '../../components/Footer/Footer';
-import Button from '../../components/Button/Button';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
+
+import { useParams, useNavigate } from 'react-router-dom';
+import Button from '../../components/Button/Button';
 import { useAuth } from '../../context/AuthContext';
 import { getNewsById, getNews, bookmarkItem, getBookmarks } from '../../services/newsService';
 import './NewsDetails.css';
@@ -394,7 +395,7 @@ export default function NewsDetails() {
             </section>
           )}
 
-          <Footer />
+          
         </main>
       </div>
     </div>

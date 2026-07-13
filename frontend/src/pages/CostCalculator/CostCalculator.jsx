@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+
 import Navbar from '../../components/Navbar/Navbar';
 import Sidebar from '../../components/Sidebar/Sidebar';
-import Footer from '../../components/Footer/Footer';
-import Button from '../../components/Button/Button';
-import Card from '../../components/Card/Card';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
+
 import { saveCalculation as saveCalculationApi } from '../../services/calculatorService';
 import './CostCalculator.css';
 
@@ -71,8 +70,6 @@ const EXPENSE_FIELDS = [
   { key: 'miscellaneous', label: 'Miscellaneous', icon: '📦', placeholder: '1500', color: '#8D6E63' },
 ];
 
-// ─── Animated Number Component ─────────────────────────────────────────────
-
 function AnimatedNumber({ value, prefix = '₹', decimals = 0 }) {
   const [displayValue, setDisplayValue] = useState(0);
   const animRef = useRef(null);
@@ -91,41 +88,23 @@ function AnimatedNumber({ value, prefix = '₹', decimals = 0 }) {
       const eased = 1 - Math.pow(1 - progress, 3);
       const current = start + (end - start) * eased;
       setDisplayValue(current);
-      if (progress < 1) {
-        animRef.current = requestAnimationFrame(animate);
-      } else {
-        prevValueRef.current = end;
-      }
+      if (progress < 1) animRef.current = requestAnimationFrame(animate);
+      else prevValueRef.current = end;
     };
     animRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animRef.current);
   }, [value]);
 
-  const formatted = displayValue.toLocaleString('en-IN', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
-
+  const formatted = displayValue.toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   return <span>{prefix}{formatted}</span>;
 }
 
-// ─── Pie Chart Component ───────────────────────────────────────────────────
-
 function PieChart({ expenses }) {
   const total = Object.values(expenses).reduce((s, v) => s + (parseFloat(v) || 0), 0);
-  if (total === 0) {
-    return (
-      <div className="cc-pie-empty">
-        <span>🌾</span>
-        <p>Enter expense values to see the breakdown chart</p>
-      </div>
-    );
-  }
+  if (total === 0) return <div className="cc-pie-empty"><span>🌾</span><p>Enter expense values to see the breakdown chart</p></div>;
 
   let cumulativeAngle = -90;
-  const radius = 80;
-  const cx = 110;
-  const cy = 110;
+  const radius = 80, cx = 110, cy = 110;
 
   const segments = EXPENSE_FIELDS.map(({ key, label, color }) => {
     const val = parseFloat(expenses[key]) || 0;
@@ -137,10 +116,8 @@ function PieChart({ expenses }) {
     cumulativeAngle = endAngle;
 
     const toRad = (deg) => (deg * Math.PI) / 180;
-    const x1 = cx + radius * Math.cos(toRad(startAngle));
-    const y1 = cy + radius * Math.sin(toRad(startAngle));
-    const x2 = cx + radius * Math.cos(toRad(endAngle));
-    const y2 = cy + radius * Math.sin(toRad(endAngle));
+    const x1 = cx + radius * Math.cos(toRad(startAngle)), y1 = cy + radius * Math.sin(toRad(startAngle));
+    const x2 = cx + radius * Math.cos(toRad(endAngle)), y2 = cy + radius * Math.sin(toRad(endAngle));
     const largeArc = angle > 180 ? 1 : 0;
     const pathD = `M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
 
@@ -148,25 +125,21 @@ function PieChart({ expenses }) {
   }).filter(Boolean);
 
   return (
-    <div className="cc-pie-wrapper">
-      <svg viewBox="0 0 220 220" className="cc-pie-svg">
+    <div className="cc-pie-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+      <svg viewBox="0 0 220 220" style={{ width: '220px', height: '220px' }}>
         {segments.map((s) => (
-          <path key={s.key} d={s.pathD} fill={s.color} className="cc-pie-segment">
-            <title>{s.label}: ₹{s.val.toLocaleString('en-IN')} ({s.pct.toFixed(1)}%)</title>
-          </path>
+          <path key={s.key} d={s.pathD} fill={s.color}><title>{s.label}: ₹{s.val.toLocaleString('en-IN')} ({s.pct.toFixed(1)}%)</title></path>
         ))}
         <circle cx={cx} cy={cy} r={52} fill="white" />
-        <text x={cx} y={cy - 8} textAnchor="middle" fontSize="10" fill="#78909C" fontFamily="Poppins, sans-serif">Total</text>
-        <text x={cx} y={cy + 12} textAnchor="middle" fontSize="16" fill="#1B5E20" fontFamily="Poppins, sans-serif" fontWeight="700">
-          ₹{total >= 1000 ? `${(total / 1000).toFixed(0)}K` : total}
-        </text>
+        <text x={cx} y={cy - 8} textAnchor="middle" fontSize="10" fill="#78909C">Total</text>
+        <text x={cx} y={cy + 12} textAnchor="middle" fontSize="16" fill="#1B5E20" fontWeight="700">₹{total >= 1000 ? `${(total / 1000).toFixed(0)}K` : total}</text>
       </svg>
-      <div className="cc-pie-legend">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {segments.map((s) => (
-          <div key={s.key} className="cc-legend-item">
-            <span className="cc-legend-dot" style={{ background: s.color }} />
-            <span className="cc-legend-name">{s.label}</span>
-            <span className="cc-legend-pct">{s.pct.toFixed(1)}%</span>
+          <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+            <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: s.color }} />
+            <span style={{ flex: 1 }}>{s.label}</span>
+            <span style={{ fontWeight: 'bold' }}>{s.pct.toFixed(1)}%</span>
           </div>
         ))}
       </div>
@@ -174,15 +147,9 @@ function PieChart({ expenses }) {
   );
 }
 
-// ─── Line Chart Component ──────────────────────────────────────────────────
-
 function LineChart({ data }) {
-  const W = 580;
-  const H = 200;
-  const pad = { top: 20, right: 20, bottom: 38, left: 52 };
-  const iW = W - pad.left - pad.right;
-  const iH = H - pad.top - pad.bottom;
-
+  const W = 580, H = 200, pad = { top: 20, right: 20, bottom: 38, left: 52 };
+  const iW = W - pad.left - pad.right, iH = H - pad.top - pad.bottom;
   const allValues = data.flatMap((d) => [d.cost, d.revenue]);
   const maxVal = Math.max(...allValues, 1);
   const xStep = iW / (data.length - 1);
@@ -193,92 +160,45 @@ function LineChart({ data }) {
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(maxVal * f));
 
   return (
-    <div className="cc-line-chart-wrap">
-      <svg viewBox={`0 0 ${W} ${H}`} className="cc-line-svg">
+    <div style={{ width: '100%', overflowX: 'auto' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', minWidth: '500px' }}>
         <defs>
-          <linearGradient id="lg-cost" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#EF5350" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#EF5350" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="lg-rev" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#43A047" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#43A047" stopOpacity="0" />
-          </linearGradient>
+          <linearGradient id="lg-cost" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#EF5350" stopOpacity="0.25" /><stop offset="100%" stopColor="#EF5350" stopOpacity="0" /></linearGradient>
+          <linearGradient id="lg-rev" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#43A047" stopOpacity="0.25" /><stop offset="100%" stopColor="#43A047" stopOpacity="0" /></linearGradient>
         </defs>
-
         {yTicks.map((t, i) => {
           const y = pad.top + yS(t);
           return (
             <g key={i}>
-              <line x1={pad.left} y1={y} x2={pad.left + iW} y2={y} stroke="#E8F5E9" strokeWidth="1" />
-              <text x={pad.left - 6} y={y + 4} textAnchor="end" fontSize="9" fill="#90A4AE" fontFamily="Poppins, sans-serif">
-                {t >= 1000 ? `${(t / 1000).toFixed(0)}K` : t}
-              </text>
+              <line x1={pad.left} y1={y} x2={pad.left + iW} y2={y} stroke="#E8F5E9" />
+              <text x={pad.left - 6} y={y + 4} textAnchor="end" fontSize="9" fill="#90A4AE">{t >= 1000 ? `${(t / 1000).toFixed(0)}K` : t}</text>
             </g>
           );
         })}
-
-        {data.map((d, i) => (
-          <text key={i} x={pad.left + i * xStep} y={H - 8} textAnchor="middle" fontSize="9" fill="#90A4AE" fontFamily="Poppins, sans-serif">
-            {d.month}
-          </text>
-        ))}
-
-        <polygon
-          points={`${pad.left},${pad.top + iH} ${costPts} ${pad.left + (data.length - 1) * xStep},${pad.top + iH}`}
-          fill="url(#lg-cost)"
-        />
-        <polygon
-          points={`${pad.left},${pad.top + iH} ${revPts} ${pad.left + (data.length - 1) * xStep},${pad.top + iH}`}
-          fill="url(#lg-rev)"
-        />
-
-        <polyline points={costPts} fill="none" stroke="#EF5350" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        <polyline points={revPts} fill="none" stroke="#43A047" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-
+        {data.map((d, i) => <text key={i} x={pad.left + i * xStep} y={H - 8} textAnchor="middle" fontSize="9" fill="#90A4AE">{d.month}</text>)}
+        <polygon points={`${pad.left},${pad.top + iH} ${costPts} ${pad.left + (data.length - 1) * xStep},${pad.top + iH}`} fill="url(#lg-cost)" />
+        <polygon points={`${pad.left},${pad.top + iH} ${revPts} ${pad.left + (data.length - 1) * xStep},${pad.top + iH}`} fill="url(#lg-rev)" />
+        <polyline points={costPts} fill="none" stroke="#EF5350" strokeWidth="2.5" />
+        <polyline points={revPts} fill="none" stroke="#43A047" strokeWidth="2.5" />
         {data.map((d, i) => (
           <g key={i}>
             <circle cx={pad.left + i * xStep} cy={pad.top + yS(d.cost)} r="3.5" fill="white" stroke="#EF5350" strokeWidth="2" />
-            {d.revenue > 0 && (
-              <circle cx={pad.left + i * xStep} cy={pad.top + yS(d.revenue)} r="3.5" fill="white" stroke="#43A047" strokeWidth="2" />
-            )}
+            {d.revenue > 0 && <circle cx={pad.left + i * xStep} cy={pad.top + yS(d.revenue)} r="3.5" fill="white" stroke="#43A047" strokeWidth="2" />}
           </g>
         ))}
       </svg>
-
-      <div className="cc-line-legend">
-        <span className="cc-line-leg-item">
-          <span className="cc-line-dot" style={{ background: '#EF5350' }} />Monthly Cost
-        </span>
-        <span className="cc-line-leg-item">
-          <span className="cc-line-dot" style={{ background: '#43A047' }} />Monthly Revenue
-        </span>
+      <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '10px', fontSize: '12px' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#EF5350' }}/> Monthly Cost</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#43A047' }}/> Monthly Revenue</span>
       </div>
     </div>
   );
 }
 
-// ─── Main CostCalculator Component ────────────────────────────────────────
-
 export default function CostCalculator() {
   const [collapsed, setCollapsed] = useState(false);
-
-  const [formData, setFormData] = useState({
-    crop: 'wheat',
-    landArea: '',
-    areaUnit: 'Acres',
-    soilType: 'Alluvial',
-    irrigationType: 'Drip',
-    expectedYield: '',
-    marketPrice: '',
-    yieldUnit: 'Quintals',
-  });
-
-  const [expenses, setExpenses] = useState({
-    seed: '', fertilizer: '', pesticide: '', machinery: '',
-    labor: '', irrigation: '', transportation: '', miscellaneous: '',
-  });
-
+  const [formData, setFormData] = useState({ crop: 'wheat', landArea: '', areaUnit: 'Acres', soilType: 'Alluvial', irrigationType: 'Drip', expectedYield: '', marketPrice: '', yieldUnit: 'Quintals' });
+  const [expenses, setExpenses] = useState({ seed: '', fertilizer: '', pesticide: '', machinery: '', labor: '', irrigation: '', transportation: '', miscellaneous: '' });
   const [results, setResults] = useState(null);
   const [hasCalculated, setHasCalculated] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -286,552 +206,263 @@ export default function CostCalculator() {
 
   const selectedCrop = CROPS.find((c) => c.value === formData.crop);
 
-  const showNotification = useCallback((msg, type = 'success') => {
-    setNotification({ msg, type });
-    setTimeout(() => setNotification(null), 3000);
-  }, []);
-
-  const handleFormChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleExpenseChange = (key, value) => {
-    setExpenses((prev) => ({ ...prev, [key]: value }));
-  };
-
+  const showNotification = useCallback((msg, type = 'success') => { setNotification({ msg, type }); setTimeout(() => setNotification(null), 3000); }, []);
+  const handleFormChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleExpenseChange = (key, value) => setExpenses((prev) => ({ ...prev, [key]: value }));
   const handleCropChange = (value) => {
     const crop = CROPS.find((c) => c.value === value);
-    setFormData((prev) => ({
-      ...prev,
-      crop: value,
-      marketPrice: crop ? String(crop.avgPrice) : prev.marketPrice,
-    }));
+    setFormData((prev) => ({ ...prev, crop: value, marketPrice: crop ? String(crop.avgPrice) : prev.marketPrice }));
   };
 
   const handleCalculate = () => {
     const totalExpenses = Object.values(expenses).reduce((s, v) => s + (parseFloat(v) || 0), 0);
-    const yieldAmt = parseFloat(formData.expectedYield) || 0;
-    const price = parseFloat(formData.marketPrice) || 0;
-    const revenue = yieldAmt * price;
+    const revenue = (parseFloat(formData.expectedYield) || 0) * (parseFloat(formData.marketPrice) || 0);
     const profit = revenue - totalExpenses;
-    const margin = revenue > 0 ? ((profit / revenue) * 100).toFixed(1) : '0.0';
-    setResults({ totalExpenses, revenue, profit, margin });
-    setHasCalculated(true);
-    setIsSaved(false);
+    setResults({ totalExpenses, revenue, profit, margin: revenue > 0 ? ((profit / revenue) * 100).toFixed(1) : '0.0' });
+    setHasCalculated(true); setIsSaved(false);
     showNotification('Calculation completed successfully!', 'success');
   };
 
   const handleReset = () => {
     setFormData({ crop: 'wheat', landArea: '', areaUnit: 'Acres', soilType: 'Alluvial', irrigationType: 'Drip', expectedYield: '', marketPrice: '', yieldUnit: 'Quintals' });
     setExpenses({ seed: '', fertilizer: '', pesticide: '', machinery: '', labor: '', irrigation: '', transportation: '', miscellaneous: '' });
-    setResults(null);
-    setHasCalculated(false);
-    setIsSaved(false);
+    setResults(null); setHasCalculated(false); setIsSaved(false);
     showNotification('Form has been reset.', 'info');
   };
 
   const handleSave = async () => {
-    if (!hasCalculated) { showNotification('Please calculate first before saving.', 'warning'); return; }
+    if (!hasCalculated) return showNotification('Please calculate first before saving.', 'warning');
     try {
-      const otherExpenses = (parseFloat(expenses.pesticide) || 0) +
-                            (parseFloat(expenses.transportation) || 0) +
-                            (parseFloat(expenses.miscellaneous) || 0);
-
-      const payload = {
-        cropName: formData.crop,
-        landArea: parseFloat(formData.landArea) || 1,
-        seedCost: parseFloat(expenses.seed) || 0,
-        fertilizerCost: parseFloat(expenses.fertilizer) || 0,
-        labourCost: parseFloat(expenses.labor) || 0,
-        machineryCost: parseFloat(expenses.machinery) || 0,
-        irrigationCost: parseFloat(expenses.irrigation) || 0,
-        otherCost: otherExpenses,
-        totalCost: results.totalExpenses,
-        expectedYield: parseFloat(formData.expectedYield) || 0,
-        expectedRevenue: results.revenue || 0,
-        expectedProfit: results.profit || 0,
-        season: formData.irrigationType || "",
-        cropVariety: formData.soilType || "",
-      };
-
-      const res = await saveCalculationApi(payload);
-      if (res.data?.success) {
-        setIsSaved(true);
-        showNotification('Calculation saved successfully to MongoDB!', 'success');
-      }
-    } catch (err) {
-      console.error(err);
-      showNotification('Failed to save calculation to backend.', 'error');
-    }
+      const otherExpenses = (parseFloat(expenses.pesticide) || 0) + (parseFloat(expenses.transportation) || 0) + (parseFloat(expenses.miscellaneous) || 0);
+      const res = await saveCalculationApi({
+        cropName: formData.crop, landArea: parseFloat(formData.landArea) || 1,
+        seedCost: parseFloat(expenses.seed) || 0, fertilizerCost: parseFloat(expenses.fertilizer) || 0,
+        labourCost: parseFloat(expenses.labor) || 0, machineryCost: parseFloat(expenses.machinery) || 0,
+        irrigationCost: parseFloat(expenses.irrigation) || 0, otherCost: otherExpenses, totalCost: results.totalExpenses,
+        expectedYield: parseFloat(formData.expectedYield) || 0, expectedRevenue: results.revenue || 0,
+        expectedProfit: results.profit || 0, season: formData.irrigationType || "", cropVariety: formData.soilType || "",
+      });
+      if (res.data?.success) { setIsSaved(true); showNotification('Calculation saved successfully to MongoDB!', 'success'); }
+    } catch (err) { showNotification('Failed to save calculation to backend.', 'error'); }
   };
 
   useEffect(() => {
     if (formData.landArea && selectedCrop) {
-      const area = parseFloat(formData.landArea) || 1;
-      setFormData((prev) => ({
-        ...prev,
-        expectedYield: String(Math.round(selectedCrop.avgYield * area)),
-        marketPrice: String(selectedCrop.avgPrice),
-      }));
+      setFormData((prev) => ({ ...prev, expectedYield: String(Math.round(selectedCrop.avgYield * (parseFloat(formData.landArea) || 1))), marketPrice: String(selectedCrop.avgPrice) }));
     }
-  }, [formData.landArea, formData.crop]); // eslint-disable-line
-
-  // NAV_ITEMS removed (managed by Sidebar)
+  }, [formData.landArea, formData.crop, selectedCrop]);
 
   const totalExpenses = Object.values(expenses).reduce((s, v) => s + (parseFloat(v) || 0), 0);
 
   return (
-    <div className="cc-root">
-      {/* ── Toast Notification ────────────────────────────── */}
+    <div className="skm-root">
       {notification && (
-        <div className={`cc-toast cc-toast--${notification.type}`}>
-          <span className="cc-toast-icon">
-            {notification.type === 'success' ? '✅' : notification.type === 'warning' ? '⚠️' : 'ℹ️'}
-          </span>
+        <div style={{ position: 'fixed', bottom: '20px', right: '20px', background: notification.type === 'error' ? '#f44336' : notification.type === 'warning' ? '#FF9800' : '#4CAF50', color: '#fff', padding: '12px 24px', borderRadius: '8px', zIndex: 9999 }}>
           {notification.msg}
         </div>
       )}
 
-      {/* ── Fixed Navbar ──────────────────────────────────── */}
-      <Navbar 
-        user={{ name: 'OM', role: 'Farmer' }} 
-        onToggleSidebar={() => setCollapsed(!collapsed)}
-        notificationSlot={<NotificationBell notifications={[]} />}
-      />
+      <Navbar user={{ name: 'OM', role: 'Farmer' }} onToggleSidebar={() => setCollapsed(!collapsed)} notificationSlot={<NotificationBell notifications={[]} />} />
 
-      {/* ── Layout ───────────────────────────────────────── */}
-      <div className="cc-layout">
-        {/* ── Sidebar ──────────────────────────────────── */}
-        <Sidebar 
-          collapsed={collapsed}
-          onToggleCollapse={() => setCollapsed(!collapsed)}
-          activeItem="calculator"
-        />
+      <div className="skm-layout">
+        <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} activeItem="calculator" />
 
-        {/* ── Main Content ────────────────────────────── */}
-        <main className="cc-main">
-
-          {/* ── Page Header ─────────────────────────── */}
-          <div className="cc-page-header">
-            <div className="cc-header-content">
-              <div className="cc-header-text">
-                <div className="cc-breadcrumb">Dashboard / <span>Cost Calculator</span></div>
-                <h1 className="cc-page-title">🌾 Smart Farming Cost Calculator</h1>
-                <p className="cc-page-subtitle">
-                  Estimate your cultivation expenses, expected revenue, and farming profit with an easy-to-use smart calculator.
-                </p>
-              </div>
-              <div className="cc-header-illustration">
-                <svg viewBox="0 0 220 160" className="cc-illus-svg" aria-hidden="true">
-                  <defs>
-                    <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#E8F5E9" />
-                      <stop offset="100%" stopColor="#C8E6C9" />
-                    </linearGradient>
-                    <linearGradient id="fieldG" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#66BB6A" />
-                      <stop offset="100%" stopColor="#388E3C" />
-                    </linearGradient>
-                  </defs>
-                  <rect width="220" height="160" fill="url(#skyG)" rx="16" />
-                  <circle cx="182" cy="34" r="22" fill="#FFD54F" opacity="0.9" />
-                  <circle cx="182" cy="34" r="30" fill="#FFD54F" opacity="0.15" />
-                  <ellipse cx="58" cy="30" rx="28" ry="11" fill="white" opacity="0.85" />
-                  <ellipse cx="74" cy="24" rx="20" ry="9" fill="white" opacity="0.85" />
-                  <ellipse cx="128" cy="38" rx="22" ry="9" fill="white" opacity="0.7" />
-                  <rect x="0" y="106" width="220" height="54" fill="url(#fieldG)" />
-                  {[20, 50, 80, 110, 140, 168, 194].map((x, i) => (
-                    <g key={i} transform={`translate(${x},88)`}>
-                      <line x1="0" y1="20" x2="0" y2="0" stroke="#1B5E20" strokeWidth="2.5" />
-                      <ellipse cx="0" cy="-2" rx="6" ry="10" fill="#43A047" />
-                      <ellipse cx="-5" cy="8" rx="5" ry="7" fill="#66BB6A" transform="rotate(-20)" />
-                      <ellipse cx="5" cy="8" rx="5" ry="7" fill="#66BB6A" transform="rotate(20)" />
-                    </g>
-                  ))}
-                  <g transform="translate(28,108)">
-                    <rect x="0" y="8" width="38" height="18" rx="4" fill="#F57F17" />
-                    <rect x="8" y="2" width="18" height="12" rx="3" fill="#FFA000" />
-                    <circle cx="8" cy="28" r="8" fill="#37474F" />
-                    <circle cx="8" cy="28" r="4" fill="#546E7A" />
-                    <circle cx="30" cy="28" r="6" fill="#37474F" />
-                    <circle cx="30" cy="28" r="3" fill="#546E7A" />
-                  </g>
-                  <rect x="140" y="88" width="70" height="44" rx="8" fill="white" opacity="0.95" />
-                  <text x="153" y="103" fontSize="8" fill="#388E3C" fontWeight="700" fontFamily="Poppins,sans-serif">Profit ↑ 85%</text>
-                  <text x="153" y="118" fontSize="12" fill="#1B5E20" fontWeight="800" fontFamily="Poppins,sans-serif">₹43.5K</text>
-                  <text x="153" y="128" fontSize="7" fill="#66BB6A" fontFamily="Poppins,sans-serif">Net Earnings</text>
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Stats Bar ──────────────────────────── */}
-          <div className="cc-stats-bar">
-            {[
-              { label: 'Season Budget', value: '₹2.4L', icon: '💰', trend: '+12%', up: true },
-              { label: 'Avg Profit / Acre', value: '₹8,200', icon: '📈', trend: '+5%', up: true },
-              { label: 'Active Crops', value: '4', icon: '🌾', trend: 'Stable', up: true },
-              { label: 'Loan Utilization', value: '68%', icon: '🏦', trend: '-3%', up: false },
-            ].map((s, i) => (
-              <div key={i} className="cc-stat-chip">
-                <span className="cc-stat-icon">{s.icon}</span>
-                <div className="cc-stat-text">
-                  <div className="cc-stat-value">{s.value}</div>
-                  <div className="cc-stat-label">{s.label}</div>
-                </div>
-                <span className={`cc-stat-trend ${s.up ? 'cc-trend-up' : 'cc-trend-down'}`}>{s.trend}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* ═══ FORM SECTION ═══════════════════════════ */}
-          <div className="cc-form-wrapper">
-
-            {/* Step 1 – Crop Details */}
-            <Card className="cc-form-section">
-              <div className="cc-card-header">
-                <div className="cc-card-title-group">
-                  <span className="cc-card-icon-bg">🌿</span>
-                  <div>
-                    <h2 className="cc-card-title">Crop &amp; Field Details</h2>
-                    <p className="cc-card-desc">Select your crop, land size, and farming method</p>
-                  </div>
-                </div>
-                <div className="cc-step-badge">Step 1</div>
-              </div>
-              <div className="cc-form-grid-2">
-                <div className="cc-field">
-                  <label className="cc-label">Crop Selection</label>
-                  <select className="cc-select" value={formData.crop} onChange={(e) => handleCropChange(e.target.value)}>
-                    {CROPS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                  </select>
-                  {selectedCrop && (
-                    <div className="cc-field-hint">
-                      📊 Avg Yield: {selectedCrop.avgYield} Q/Acre &nbsp;·&nbsp; MSP: ₹{selectedCrop.avgPrice.toLocaleString('en-IN')}/Q
-                    </div>
-                  )}
-                </div>
-
-                <div className="cc-field">
-                  <label className="cc-label">Land Area</label>
-                  <div className="cc-input-group">
-                    <input
-                      type="number"
-                      className="cc-input cc-input--with-unit"
-                      placeholder="e.g. 5"
-                      value={formData.landArea}
-                      onChange={(e) => handleFormChange('landArea', e.target.value)}
-                      min="0"
-                    />
-                    <select className="cc-unit-select" value={formData.areaUnit} onChange={(e) => handleFormChange('areaUnit', e.target.value)}>
-                      {AREA_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="cc-field">
-                  <label className="cc-label">Soil Type</label>
-                  <select className="cc-select" value={formData.soilType} onChange={(e) => handleFormChange('soilType', e.target.value)}>
-                    {SOIL_TYPES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-
-                <div className="cc-field">
-                  <label className="cc-label">Irrigation Type</label>
-                  <select className="cc-select" value={formData.irrigationType} onChange={(e) => handleFormChange('irrigationType', e.target.value)}>
-                    {IRRIGATION_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-              </div>
-            </Card>
-
-            {/* Step 2 – Expenses */}
-            <Card className="cc-form-section">
-              <div className="cc-card-header">
-                <div className="cc-card-title-group">
-                  <span className="cc-card-icon-bg">💰</span>
-                  <div>
-                    <h2 className="cc-card-title">Expense Breakdown</h2>
-                    <p className="cc-card-desc">Enter all farming costs in Indian Rupees (₹)</p>
-                  </div>
-                </div>
-                <div className="cc-step-badge cc-step-badge--2">Step 2</div>
-              </div>
-
-              <div className="cc-expense-grid">
-                {EXPENSE_FIELDS.map(({ key, label, icon, placeholder, color }) => (
-                  <div key={key} className="cc-expense-card" style={{ '--accent': color }}>
-                    <div className="cc-expense-card-top">
-                      <span className="cc-expense-icon">{icon}</span>
-                      <span className="cc-expense-label">{label}</span>
-                    </div>
-                    <div className="cc-expense-input-wrap">
-                      <span className="cc-rupee-sign">₹</span>
-                      <input
-                        type="number"
-                        className="cc-expense-input"
-                        placeholder={placeholder}
-                        value={expenses[key]}
-                        onChange={(e) => handleExpenseChange(key, e.target.value)}
-                        min="0"
-                      />
-                    </div>
-                    {expenses[key] && (
-                      <div className="cc-expense-bar">
-                        <div
-                          className="cc-expense-bar-fill"
-                          style={{ width: `${Math.min(100, (parseFloat(expenses[key]) / 15000) * 100)}%`, background: color }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="cc-expense-total-row">
-                <span className="cc-expense-total-label">Total Expenses</span>
-                <span className="cc-expense-total-value">₹{totalExpenses.toLocaleString('en-IN')}</span>
-              </div>
-            </Card>
-
-            {/* Step 3 – Yield & Revenue */}
-            <Card className="cc-form-section">
-              <div className="cc-card-header">
-                <div className="cc-card-title-group">
-                  <span className="cc-card-icon-bg">📊</span>
-                  <div>
-                    <h2 className="cc-card-title">Yield &amp; Revenue</h2>
-                    <p className="cc-card-desc">Enter expected yield and market selling price</p>
-                  </div>
-                </div>
-                <div className="cc-step-badge cc-step-badge--3">Step 3</div>
-              </div>
-
-              <div className="cc-form-grid-3">
-                <div className="cc-field">
-                  <label className="cc-label">Expected Yield</label>
-                  <div className="cc-input-group">
-                    <input
-                      type="number"
-                      className="cc-input cc-input--with-unit"
-                      placeholder="e.g. 175"
-                      value={formData.expectedYield}
-                      onChange={(e) => handleFormChange('expectedYield', e.target.value)}
-                      min="0"
-                    />
-                    <select className="cc-unit-select" value={formData.yieldUnit} onChange={(e) => handleFormChange('yieldUnit', e.target.value)}>
-                      {YIELD_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="cc-field">
-                  <label className="cc-label">Market Price (₹ / {formData.yieldUnit.slice(0, -1)})</label>
-                  <div className="cc-input-group">
-                    <span className="cc-input-prefix">₹</span>
-                    <input
-                      type="number"
-                      className="cc-input cc-input--with-prefix"
-                      placeholder="e.g. 2200"
-                      value={formData.marketPrice}
-                      onChange={(e) => handleFormChange('marketPrice', e.target.value)}
-                      min="0"
-                    />
-                  </div>
-                  <div className="cc-field-hint">💡 MSP for {selectedCrop?.label}: ₹{selectedCrop?.avgPrice.toLocaleString('en-IN')}/Q</div>
-                </div>
-
-                <div className="cc-field">
-                  <label className="cc-label">Gross Revenue Preview</label>
-                  <div className="cc-revenue-box">
-                    <span className="cc-revenue-label">Estimated Revenue</span>
-                    <span className="cc-revenue-amount">
-                      ₹{((parseFloat(formData.expectedYield) || 0) * (parseFloat(formData.marketPrice) || 0)).toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="cc-action-buttons">
-                <Button variant="primary" onClick={handleCalculate} icon="🧮" text="Calculate" />
-                <Button variant="secondary" onClick={handleSave} icon={isSaved ? '✅' : '💾'} text={isSaved ? 'Saved!' : 'Save'} />
-                <Button variant="outline" onClick={handleReset} icon="🔄" text="Reset" />
-                <Button variant="outline" onClick={() => showNotification('PDF export coming soon!', 'info')} icon="📄" text="Download PDF" />
-                <Button variant="outline" onClick={() => showNotification('Share feature coming soon!', 'info')} icon="🔗" text="Share" />
-              </div>
-            </Card>
-          </div>
-
-          {/* ═══ RESULTS ════════════════════════════════ */}
-          {hasCalculated && results && (
-            <section className="cc-results-section">
-              <div className="cc-section-header">
-                <h2 className="cc-section-title">📊 Calculation Results</h2>
-                <span className="cc-section-badge cc-badge--live">● Live</span>
-              </div>
-              <div className="cc-results-grid">
-                <div className="cc-result-card cc-result-card--investment">
-                  <div className="cc-result-icon-wrap">💰</div>
-                  <div className="cc-result-label">Total Investment</div>
-                  <div className="cc-result-value"><AnimatedNumber value={results.totalExpenses} /></div>
-                  <div className="cc-result-sub">All farming expenses combined</div>
-                  <div className="cc-result-sparkline cc-spark--red" />
-                </div>
-
-                <div className="cc-result-card cc-result-card--revenue">
-                  <div className="cc-result-icon-wrap">📈</div>
-                  <div className="cc-result-label">Expected Revenue</div>
-                  <div className="cc-result-value"><AnimatedNumber value={results.revenue} /></div>
-                  <div className="cc-result-sub">Based on yield × market price</div>
-                  <div className="cc-result-sparkline cc-spark--blue" />
-                </div>
-
-                <div className={`cc-result-card ${results.profit >= 0 ? 'cc-result-card--profit' : 'cc-result-card--loss'}`}>
-                  <div className="cc-result-icon-wrap">{results.profit >= 0 ? '🎯' : '⚠️'}</div>
-                  <div className="cc-result-label">Estimated {results.profit >= 0 ? 'Profit' : 'Loss'}</div>
-                  <div className="cc-result-value"><AnimatedNumber value={Math.abs(results.profit)} /></div>
-                  <div className="cc-result-sub">{results.profit >= 0 ? 'Net earnings after all costs' : 'Reduce costs or increase yield'}</div>
-                  <div className={`cc-result-sparkline ${results.profit >= 0 ? 'cc-spark--green' : 'cc-spark--red'}`} />
-                </div>
-
-                <div className="cc-result-card cc-result-card--margin">
-                  <div className="cc-result-icon-wrap">📉</div>
-                  <div className="cc-result-label">Profit Margin</div>
-                  <div className="cc-result-value cc-result-value--pct">
-                    <AnimatedNumber value={parseFloat(results.margin)} prefix="" decimals={1} />%
-                  </div>
-                  <div className="cc-result-sub">
-                    {parseFloat(results.margin) >= 30 ? '✅ Healthy margin' : parseFloat(results.margin) >= 0 ? '⚠️ Low margin' : '❌ Negative margin'}
-                  </div>
-                  <svg className="cc-radial-svg" viewBox="0 0 60 60">
-                    <circle cx="30" cy="30" r="24" fill="none" stroke="#E8F5E9" strokeWidth="6" />
-                    <circle
-                      cx="30" cy="30" r="24" fill="none"
-                      stroke={parseFloat(results.margin) >= 30 ? '#43A047' : parseFloat(results.margin) >= 0 ? '#FFD54F' : '#EF5350'}
-                      strokeWidth="6"
-                      strokeDasharray={`${Math.min(Math.abs(parseFloat(results.margin)), 100) * 1.508} 150.8`}
-                      strokeLinecap="round"
-                      transform="rotate(-90 30 30)"
-                    />
-                  </svg>
-                </div>
+        <main className="skm-main">
+          <div className="skm-content-area">
+            {/* HERO */}
+            <section className="skm-welcome-card" style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div className="skm-text-muted" style={{ fontSize: '12px' }}>Dashboard / Cost Calculator</div>
+                <h1 className="skm-title" style={{ fontSize: '28px', margin: 0 }}>🌾 Smart Farming Cost Calculator</h1>
+                <p className="skm-text-muted" style={{ margin: '8px 0', fontSize: '13px' }}>Estimate your cultivation expenses, expected revenue, and farming profit with an easy-to-use smart calculator.</p>
               </div>
             </section>
-          )}
 
-          {/* ═══ CHARTS ══════════════════════════════════ */}
-          <div className="cc-charts-grid">
-            <Card className="cc-chart-section">
-              <div className="cc-card-header">
-                <div className="cc-card-title-group">
-                  <span className="cc-card-icon-bg">🥧</span>
-                  <div>
-                    <h2 className="cc-card-title">Expense Breakdown</h2>
-                    <p className="cc-card-desc">Visual distribution of all farming costs</p>
+            {/* STATS */}
+            <div className="skm-grid" style={{ marginBottom: '24px' }}>
+              {[
+                { label: 'Season Budget', value: '₹2.4L', icon: '💰', trend: '+12%', up: true },
+                { label: 'Avg Profit / Acre', value: '₹8,200', icon: '📈', trend: '+5%', up: true },
+                { label: 'Active Crops', value: '4', icon: '🌾', trend: 'Stable', up: true },
+                { label: 'Loan Utilization', value: '68%', icon: '🏦', trend: '-3%', up: false },
+              ].map((s, i) => (
+                <div key={i} className="skm-stat-card">
+                  <div className="skm-stat-header">
+                    <span className="skm-stat-label">{s.label}</span>
+                    <span className="skm-stat-icon" style={{ background: '#F5F5F5' }}>{s.icon}</span>
                   </div>
-                </div>
-              </div>
-              <PieChart expenses={expenses} />
-            </Card>
-
-            <Card className="cc-chart-section">
-              <div className="cc-card-header">
-                <div className="cc-card-title-group">
-                  <span className="cc-card-icon-bg">📈</span>
-                  <div>
-                    <h2 className="cc-card-title">Monthly Cost Trend</h2>
-                    <p className="cc-card-desc">Cost vs revenue distribution — FY 2024-25</p>
+                  <div className="skm-stat-value">{s.value}</div>
+                  <div className="skm-stat-footer">
+                    <span className={`skm-stat-trend ${s.up ? 'positive' : 'negative'}`}>{s.trend}</span>
                   </div>
-                </div>
-                <select className="cc-mini-select">
-                  <option>FY 2024-25</option>
-                  <option>FY 2023-24</option>
-                </select>
-              </div>
-              <LineChart data={MONTHLY_TREND} />
-            </Card>
-          </div>
-
-          {/* ═══ AI RECOMMENDATIONS ══════════════════════ */}
-          <section className="cc-ai-section">
-            <div className="cc-section-header">
-              <h2 className="cc-section-title">🤖 AI Recommendations</h2>
-              <span className="cc-section-badge cc-badge--ai">✨ Powered by Gemini</span>
-            </div>
-            <div className="cc-ai-grid">
-              {AI_RECOMMENDATIONS.map((rec) => (
-                <div key={rec.id} className={`cc-ai-card cc-ai-card--${rec.type}`}>
-                  <div className="cc-ai-card-top">
-                    <span className="cc-ai-icon">{rec.icon}</span>
-                    <span className={`cc-ai-badge cc-ai-badge--${rec.type}`}>{rec.badge}</span>
-                  </div>
-                  <h3 className="cc-ai-title">{rec.title}</h3>
-                  <p className="cc-ai-desc">{rec.desc}</p>
-                  <Button variant="outline" text="Learn More →" className="cc-ai-learn-btn" />
                 </div>
               ))}
             </div>
-          </section>
 
-          {/* ═══ RECENT CALCULATIONS TABLE ═══════════════ */}
-          <Card className="cc-table-section">
-            <div className="cc-card-header">
-              <div className="cc-card-title-group">
-                <span className="cc-card-icon-bg">🗂️</span>
+            {/* FORM */}
+            <div className="skm-card" style={{ marginBottom: '24px' }}>
+              <div className="skm-section-header" style={{ marginBottom: '16px' }}>
                 <div>
-                  <h2 className="cc-card-title">Recent Calculations</h2>
-                  <p className="cc-card-desc">Your last 5 farming cost calculations</p>
+                  <h2 className="skm-section-title">🌿 Crop & Field Details</h2>
+                  <p className="skm-text-muted" style={{ fontSize: '12px', margin: 0 }}>Select your crop, land size, and farming method</p>
                 </div>
               </div>
-              <Button variant="outline" text="View All →" className="cc-view-all-btn" />
+              <div className="skm-grid">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Crop Selection</label>
+                  <select style={{ padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px' }} value={formData.crop} onChange={(e) => handleCropChange(e.target.value)}>
+                    {CROPS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                  {selectedCrop && <span className="skm-text-muted" style={{ fontSize: '11px' }}>Avg Yield: {selectedCrop.avgYield} Q/Acre · MSP: ₹{selectedCrop.avgPrice}/Q</span>}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Land Area</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input type="number" style={{ flex: 1, padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px' }} value={formData.landArea} onChange={(e) => handleFormChange('landArea', e.target.value)} />
+                    <select style={{ padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px', background: '#f5f5f5' }} value={formData.areaUnit} onChange={(e) => handleFormChange('areaUnit', e.target.value)}>{AREA_UNITS.map((u) => <option key={u}>{u}</option>)}</select>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Soil Type</label>
+                  <select style={{ padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px' }} value={formData.soilType} onChange={(e) => handleFormChange('soilType', e.target.value)}>{SOIL_TYPES.map((s) => <option key={s}>{s}</option>)}</select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Irrigation Type</label>
+                  <select style={{ padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px' }} value={formData.irrigationType} onChange={(e) => handleFormChange('irrigationType', e.target.value)}>{IRRIGATION_TYPES.map((s) => <option key={s}>{s}</option>)}</select>
+                </div>
+              </div>
             </div>
-            <div className="cc-table-wrap">
-              <table className="cc-table">
+
+            <div className="skm-card" style={{ marginBottom: '24px' }}>
+              <div className="skm-section-header" style={{ marginBottom: '16px' }}>
+                <div>
+                  <h2 className="skm-section-title">💰 Expense Breakdown</h2>
+                  <p className="skm-text-muted" style={{ fontSize: '12px', margin: 0 }}>Enter all farming costs in INR (₹)</p>
+                </div>
+              </div>
+              <div className="skm-grid">
+                {EXPENSE_FIELDS.map(({ key, label, icon, placeholder }) => (
+                  <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 'bold' }}>{icon} {label}</label>
+                    <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--skm-border)', borderRadius: '8px', padding: '0 8px' }}>
+                      <span className="skm-text-muted">₹</span>
+                      <input type="number" style={{ flex: 1, padding: '8px', border: 'none', outline: 'none', background: 'transparent' }} placeholder={placeholder} value={expenses[key]} onChange={(e) => handleExpenseChange(key, e.target.value)} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: '16px', padding: '12px', background: '#F5F5F5', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 'bold' }}>Total Expenses</span>
+                <span style={{ fontSize: '18px', fontWeight: 900, color: '#c62828' }}>₹{totalExpenses.toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+
+            <div className="skm-card" style={{ marginBottom: '24px' }}>
+              <div className="skm-section-header" style={{ marginBottom: '16px' }}>
+                <div>
+                  <h2 className="skm-section-title">📊 Yield & Revenue</h2>
+                </div>
+              </div>
+              <div className="skm-grid">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Expected Yield</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input type="number" style={{ flex: 1, padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px' }} value={formData.expectedYield} onChange={(e) => handleFormChange('expectedYield', e.target.value)} />
+                    <select style={{ padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px', background: '#f5f5f5' }} value={formData.yieldUnit} onChange={(e) => handleFormChange('yieldUnit', e.target.value)}>{YIELD_UNITS.map((u) => <option key={u}>{u}</option>)}</select>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Market Price (₹)</label>
+                  <input type="number" style={{ padding: '8px', border: '1px solid var(--skm-border)', borderRadius: '8px' }} value={formData.marketPrice} onChange={(e) => handleFormChange('marketPrice', e.target.value)} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Estimated Gross Revenue</label>
+                  <div style={{ padding: '8px', background: '#E8F5E9', borderRadius: '8px', color: '#2E7D32', fontWeight: 900, fontSize: '16px' }}>
+                    ₹{((parseFloat(formData.expectedYield) || 0) * (parseFloat(formData.marketPrice) || 0)).toLocaleString('en-IN')}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                <button className="skm-action-btn" onClick={handleCalculate}>🧮 Calculate</button>
+                <button className="skm-action-btn" style={{ background: '#E3F2FD', color: '#1565C0' }} onClick={handleSave}>{isSaved ? '✅ Saved!' : '💾 Save'}</button>
+                <button className="skm-action-btn" style={{ background: 'transparent', border: '1px solid var(--skm-border)', color: 'var(--skm-text-main)' }} onClick={handleReset}>🔄 Reset</button>
+              </div>
+            </div>
+
+            {hasCalculated && results && (
+              <div className="skm-section" style={{ marginBottom: '24px' }}>
+                <h2 className="skm-section-title" style={{ marginBottom: '16px' }}>📈 Calculation Results</h2>
+                <div className="skm-grid">
+                  <div className="skm-stat-card" style={{ borderLeft: '4px solid #f44336' }}>
+                    <div className="skm-stat-header"><span className="skm-stat-label">Total Investment</span><span className="skm-stat-icon">💰</span></div>
+                    <div className="skm-stat-value"><AnimatedNumber value={results.totalExpenses} /></div>
+                  </div>
+                  <div className="skm-stat-card" style={{ borderLeft: '4px solid #2196F3' }}>
+                    <div className="skm-stat-header"><span className="skm-stat-label">Expected Revenue</span><span className="skm-stat-icon">📈</span></div>
+                    <div className="skm-stat-value"><AnimatedNumber value={results.revenue} /></div>
+                  </div>
+                  <div className="skm-stat-card" style={{ borderLeft: `4px solid ${results.profit >= 0 ? '#4CAF50' : '#f44336'}` }}>
+                    <div className="skm-stat-header"><span className="skm-stat-label">Estimated {results.profit >= 0 ? 'Profit' : 'Loss'}</span><span className="skm-stat-icon">{results.profit >= 0 ? '🎯' : '⚠️'}</span></div>
+                    <div className="skm-stat-value"><AnimatedNumber value={Math.abs(results.profit)} /></div>
+                  </div>
+                  <div className="skm-stat-card">
+                    <div className="skm-stat-header"><span className="skm-stat-label">Profit Margin</span><span className="skm-stat-icon">📉</span></div>
+                    <div className="skm-stat-value">{results.margin}%</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="skm-dual-row" style={{ marginBottom: '24px' }}>
+              <div className="skm-card">
+                <h2 className="skm-section-title" style={{ marginBottom: '16px' }}>Expense Breakdown</h2>
+                <PieChart expenses={expenses} />
+              </div>
+              <div className="skm-card">
+                <h2 className="skm-section-title" style={{ marginBottom: '16px' }}>Monthly Cost Trend</h2>
+                <LineChart data={MONTHLY_TREND} />
+              </div>
+            </div>
+
+            <div className="skm-section" style={{ marginBottom: '24px' }}>
+              <div className="skm-section-header" style={{ marginBottom: '16px' }}>
+                <h2 className="skm-section-title">🤖 AI Recommendations</h2>
+                <span className="skm-badge" style={{ background: '#E1BEE7', color: '#4A148C' }}>✨ Powered by Gemini</span>
+              </div>
+              <div className="skm-grid">
+                {AI_RECOMMENDATIONS.map(rec => (
+                  <div key={rec.id} className="skm-preview-item" style={{ gap: '12px' }}>
+                    <span style={{ fontSize: '24px' }}>{rec.icon}</span>
+                    <div>
+                      <div style={{ fontWeight: 'bold' }}>{rec.title}</div>
+                      <p className="skm-text-muted" style={{ fontSize: '12px', margin: '4px 0 0 0' }}>{rec.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="skm-table-card">
+              <div className="skm-section-header" style={{ padding: '16px' }}>
+                <h2 className="skm-section-title">🗂️ Recent Calculations</h2>
+              </div>
+              <table className="skm-table">
                 <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Crop</th>
-                    <th>Area</th>
-                    <th>Investment</th>
-                    <th>Revenue</th>
-                    <th>Profit</th>
-                    <th>ROI</th>
-                    <th>Date</th>
-                    <th></th>
-                  </tr>
+                  <tr><th>Crop</th><th>Area</th><th>Investment</th><th>Revenue</th><th>Profit</th><th>Date</th></tr>
                 </thead>
                 <tbody>
-                  {RECENT_CALCULATIONS.map((row, i) => (
-                    <tr key={row.id} className="cc-table-row">
-                      <td className="cc-td-num">{i + 1}</td>
-                      <td className="cc-td-crop">{row.crop}</td>
-                      <td>{row.area}</td>
-                      <td className="cc-td-inv">{row.investment}</td>
-                      <td className="cc-td-rev">{row.revenue}</td>
-                      <td className="cc-td-profit">{row.profit}</td>
-                      <td>
-                        <span
-                          className="cc-roi-pill"
-                          style={{ '--roi-color': row.profitPct > 80 ? '#43A047' : row.profitPct > 50 ? '#F9A825' : '#FF7043' }}
-                        >
-                          {row.profitPct}%
-                        </span>
-                      </td>
-                      <td className="cc-td-date">{row.date}</td>
-                      <td>
-                        <Button variant="outline" icon="👁️" size="small" className="cc-table-action-btn" title="View Details" />
-                      </td>
+                  {RECENT_CALCULATIONS.map(row => (
+                    <tr key={row.id}>
+                      <td>{row.crop}</td><td>{row.area}</td><td style={{ color: '#c62828', fontWeight: 600 }}>{row.investment}</td>
+                      <td style={{ color: '#2E7D32', fontWeight: 600 }}>{row.revenue}</td><td style={{ fontWeight: 800 }}>{row.profit}</td>
+                      <td className="skm-text-muted">{row.date}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </Card>
 
-          {/* ═══ FOOTER ══════════════════════════════════ */}
-          <Footer />
-
+          </div>
         </main>
       </div>
     </div>

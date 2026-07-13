@@ -17,7 +17,7 @@ const getHash = (str) => {
 // Create Axios Client Instance for GNews
 const gnewsClient = axios.create({
   baseURL: API_URL,
-  timeout: 8000, // 8-second request timeout limit
+  timeout: 15000, // Increased to 15-second request timeout limit
 });
 
 // Cache for query requests to avoid hitting GNews 100 requests/day free tier limit
@@ -224,16 +224,15 @@ const cleanCDATA = (str) => {
  */
 export const fetchRSSNews = async () => {
   try {
-    const feedUrl = "https://www.thehindu.com/sci-tech/agriculture/feeder/default.rss";
-    console.log(`[RSS Service] Fetching real-time agriculture news from RSS: ${feedUrl}`);
+    const rawFeedUrl = "https://www.thehindu.com/sci-tech/agriculture/feeder/default.rss";
+    const feedUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(rawFeedUrl);
+    console.log(`[RSS Service] Fetching real-time agriculture news from RSS via proxy: ${feedUrl}`);
     const response = await axios.get(feedUrl, {
-      timeout: 6000,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-      }
+      timeout: 15000 // Increased to 15 seconds to prevent timeout on slower connections
     });
 
-    const xml = response.data;
+    // allorigins returns the raw XML string inside `data.contents`
+    const xml = response.data.contents;
     const itemRegex = /<item>([\s\S]*?)<\/item>/g;
     const items = [];
     let match;
@@ -251,10 +250,15 @@ export const fetchRSSNews = async () => {
       const link = linkMatch ? cleanCDATA(linkMatch[1]) : "https://www.thehindu.com/sci-tech/agriculture/";
       const pubDate = dateMatch ? cleanCDATA(dateMatch[1]) : new Date().toISOString();
 
-      // Find image URL
-      const mediaMatch = itemContent.match(/<media:content[^>]*url="([^"]+)"/);
-      const enclosureMatch = itemContent.match(/<enclosure[^>]*url="([^"]+)"/);
-      const image = mediaMatch ? mediaMatch[1] : (enclosureMatch ? enclosureMatch[1] : "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=800&q=80");
+      // Find image URL more robustly (handle single/double quotes, newlines, and img tags in description)
+      const mediaMatch = itemContent.match(/<(?:media:content|media:thumbnail)[^>]+url=["']([^"']+)["']/i);
+      const enclosureMatch = itemContent.match(/<enclosure[^>]+url=["']([^"']+)["']/i);
+      const imgTagMatch = itemContent.match(/<img[^>]+src=["']([^"']+)["']/i);
+      
+      const image = mediaMatch ? mediaMatch[1] : 
+                   (enclosureMatch ? enclosureMatch[1] : 
+                   (imgTagMatch ? imgTagMatch[1] : 
+                   "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=800&q=80"));
 
       // Categorize news dynamically based on content keywords
       let category = "Agriculture";

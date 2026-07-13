@@ -190,20 +190,25 @@ export const getCurrentWeather = async (req, res) => {
     const DEFAULT_LAT = 23.0225;
     const DEFAULT_LON = 72.5714;
 
-    const parsedLat = parseFloat(lat);
-    const parsedLon = parseFloat(lon);
+    let parsedLat = parseFloat(lat);
+    let parsedLon = parseFloat(lon);
 
     if (isNaN(parsedLat) || isNaN(parsedLon)) {
-      lat = DEFAULT_LAT;
-      lon = DEFAULT_LON;
-      console.log(`[Weather Controller] Coordinates missing/invalid. Defaulting to Ahmedabad: ${lat}, ${lon}`);
+      if (q && q.trim()) {
+        lat = null;
+        lon = null;
+      } else {
+        lat = DEFAULT_LAT;
+        lon = DEFAULT_LON;
+        console.log(`[Weather Controller] Coordinates missing/invalid. Defaulting to Ahmedabad: ${lat}, ${lon}`);
+      }
     } else {
       lat = parsedLat;
       lon = parsedLon;
     }
 
     // 2. Fetch Address details via Map Service reverse geocoding
-    if (!resolvedLocation) {
+    if (!resolvedLocation && lat !== null && lon !== null) {
       console.log(`[Weather Controller] Reverse geocoding coords: ${lat}, ${lon}`);
       const revRes = await mapService.reverseGeocode(lat, lon);
       if (revRes.success && revRes.data) {
@@ -211,21 +216,26 @@ export const getCurrentWeather = async (req, res) => {
       }
     }
 
-    const city = resolvedLocation?.village || resolvedLocation?.city || resolvedLocation?.district || "Ahmedabad";
-    const state = resolvedLocation?.state || "Gujarat";
+    // 3. Fetch Weather reports via Weather Service
+    const targetLocation = (q && q.trim() && lat === null) ? q : `${lat},${lon}`;
+    console.log(`[Weather Controller] Fetching complete weather data for: ${targetLocation}`);
+    const weatherData = await weatherService.getCompleteWeather(targetLocation);
+    
+    const weatherLoc = weatherData.location || {};
+
+    const city = resolvedLocation?.village || resolvedLocation?.city || resolvedLocation?.district || weatherLoc?.city || q || "Ahmedabad";
+    const state = resolvedLocation?.state || weatherLoc?.state || "Gujarat";
     const displayName = resolvedLocation?.displayName || `${city}, ${state}`;
+
+    if (lat === null) lat = weatherLoc.latitude || DEFAULT_LAT;
+    if (lon === null) lon = weatherLoc.longitude || DEFAULT_LON;
 
     // Log the search to database if authorized
     if (req.user) {
       await logWeatherSearch(req.user._id, lat, lon, displayName);
     }
 
-    // 3. Fetch Weather reports via Weather Service
-    console.log(`[Weather Controller] Fetching complete weather data for: ${lat}, ${lon}`);
-    const weatherData = await weatherService.getCompleteWeather(`${lat},${lon}`);
-
     const current = weatherData.current;
-    const weatherLoc = weatherData.location;
 
     // 4. Map the WeatherAPI response into combined frontend DTO
     // Find index of the hour matching or closest to the location's local time

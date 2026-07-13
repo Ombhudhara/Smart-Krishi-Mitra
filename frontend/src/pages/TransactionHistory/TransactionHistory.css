@@ -13,17 +13,17 @@
   --tx-secondary: #66BB6A;
   --tx-accent: #FFD54F;
   --tx-accent-dark: #F9A825;
-  --tx-bg: #F4FBF4;
+  --tx-bg: #F8FFF8;
   --tx-white: #ffffff;
   --tx-text-dark: #1A2B1A;
   --tx-text-mid: #3D5A3D;
   --tx-text-muted: #6B8C6B;
   --tx-border: #D4EDD4;
-  --tx-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);
-  --tx-shadow-md: 0 4px 20px rgba(46, 125, 50, 0.08);
-  --tx-shadow-lg: 0 8px 40px rgba(46, 125, 50, 0.12);
-  --tx-radius: 18px;
-  --tx-radius-sm: 10px;
+  --tx-shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.04);
+  --tx-shadow-md: 0 8px 30px rgba(46, 125, 50, 0.08);
+  --tx-shadow-lg: 0 16px 48px rgba(46, 125, 50, 0.12);
+  --tx-radius: 24px;
+  --tx-radius-sm: 16px;
   --tx-navbar-h: 66px;
   --tx-sidebar-w: 240px;
   --tx-sidebar-closed-w: 68px;
@@ -165,7 +165,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    LAYOUT & SIDEBAR
    ═══════════════════════════════════════════════════════════════════════════ */
-.tx-layout { display: flex; margin-top: var(--tx-navbar-h); min-height: calc(100vh - var(--tx-navbar-h)); }
+.tx-layout { display: flex; min-height: calc(100vh - var(--tx-navbar-h)); }
 
 .tx-sidebar {
   position: fixed; top: var(--tx-navbar-h); left: 0; bottom: 0;
@@ -247,40 +247,62 @@
 }
 
 .tx-page-header {
-  background: linear-gradient(135deg, var(--tx-primary) 0%, #388E3C 50%, #1B5E20 100%);
-  border-radius: 12px;
-  padding: 20px 24px;
-  margin-bottom: 16px;
-  position: relative; overflow: hidden;
-  box-shadow: var(--tx-shadow-md);
+  background: linear-gradient(135deg, #2E7D32 0%, #388E3C 50%, #43A047 100%);
+  padding: 48px 32px;
+  border-radius: 0 0 40px 40px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
 }
-.tx-page-header::before {
-  content: ''; position: absolute; inset: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='18'/%3E%3C/g%3E%3C/svg%3E");
-  pointer-events: none;
+.tx-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  gap: 24px;
 }
-.tx-header-content { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .tx-header-text { flex: 1; }
-.tx-breadcrumb { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 4px; }
-.tx-breadcrumb span { color: var(--tx-accent); font-weight: 500; }
-.tx-page-title { font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: white; margin-bottom: 4px; line-height: 1.2; }
-.tx-page-subtitle { font-size: 12px; color: rgba(255,255,255,0.85); max-width: 560px; line-height: 1.5; }
-.tx-header-illustration { flex-shrink: 0; }
-.tx-illus-svg { width: clamp(120px, 15vw, 150px); height: auto; filter: drop-shadow(0 8px 24px rgba(0,0,0,0.25)); }
+.tx-hero-tag {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.tx-page-title {
+  font-size: 36px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 10px 0;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+.tx-page-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  line-height: 1.6;
+  max-width: 640px;
+}
+.tx-header-illustration { flex-shrink: 0; display: flex; align-items: center; }
+.tx-illus-svg { width: 150px; height: auto; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15)); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SUMMARY STATS CARDS
    ═══════════════════════════════════════════════════════════════════════════ */
 .tx-stats-grid {
   display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 12px; margin-bottom: 16px;
+  gap: 16px; margin-bottom: 24px; margin-top: -30px; position: relative; z-index: 10;
 }
 .tx-stat-card {
-  background: var(--tx-white);
-  border: 1px solid var(--tx-border);
-  border-radius: 12px;
-  padding: 14px 16px;
-  box-shadow: var(--tx-shadow-sm);
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  border-top: 4px solid #388E3C;
   transition: var(--tx-transition);
 }
 .tx-stat-card:hover {

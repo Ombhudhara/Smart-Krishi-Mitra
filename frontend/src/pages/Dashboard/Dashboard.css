@@ -42,7 +42,6 @@ body {
 /* ─── Layout Body (Sidebar + Main) ────────────────────────────────────────── */
 .db-layout {
   display: flex;
-  margin-top: var(--navbar-height);
   flex: 1;
 }
 

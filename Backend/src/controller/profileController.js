@@ -328,6 +328,35 @@ export const updateNotificationSettings = async (req, res) => {
 };
 
 /**
+ * 6.1 Update Privacy Settings
+ * PUT /api/profile/privacy
+ */
+export const updatePrivacySettings = async (req, res) => {
+  try {
+    const { allowMessages, showPhoneNumber, showEmail } = req.body;
+    
+    const currentPrivacy = req.user.privacySettings || {};
+    
+    const updatedPrivacy = {
+      allowMessages: allowMessages !== undefined ? allowMessages : currentPrivacy.allowMessages,
+      showPhoneNumber: showPhoneNumber !== undefined ? showPhoneNumber : currentPrivacy.showPhoneNumber,
+      showEmail: showEmail !== undefined ? showEmail : currentPrivacy.showEmail,
+    };
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: { privacySettings: updatedPrivacy } },
+      { new: true }
+    ).select("-password");
+
+    return sendSuccess(res, "Privacy settings updated successfully", user);
+  } catch (error) {
+    console.error("Error in updatePrivacySettings:", error);
+    return sendError(res, 500, "Server error updating privacy settings");
+  }
+};
+
+/**
  * 7. Delete Profile Image
  * DELETE /api/profile/image
  */

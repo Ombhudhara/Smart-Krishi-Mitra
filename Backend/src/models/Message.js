@@ -22,9 +22,12 @@ const MessageSchema = new mongoose.Schema(
     },
     text: {
       type: String,
-      required: [true, "Message text is required"],
       trim: true,
       maxlength: [2000, "Message cannot exceed 2000 characters"],
+      required: function() { return this.messageType === "Text"; },
+    },
+    imageUrl: {
+      type: String,
     },
     messageType: {
       type: String,

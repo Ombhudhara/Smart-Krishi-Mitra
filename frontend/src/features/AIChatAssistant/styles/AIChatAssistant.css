@@ -187,10 +187,10 @@
 /* Drawer panel matching Apple-like spacing curves */
 .ai-chat-drawer {
   position: absolute;
-  bottom: 24px;
+  bottom: 100px;
   right: 24px;
   width: min(840px, 94vw);
-  height: min(780px, 90vh);
+  height: min(780px, calc(100vh - 124px));
   background: var(--ai-surface);
   border-radius: var(--ai-radius);
   box-shadow: var(--ai-shadow-lg);

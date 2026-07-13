@@ -189,6 +189,7 @@
 /* Premium Conversation Card */
 .msg-conv-card {
   display: flex;
+  flex-direction: row !important;
   align-items: stretch;
   gap: 12px;
   padding: 12px 14px;
@@ -733,4 +734,75 @@
   .msg-input-btn { width: 36px; height: 36px; font-size: 20px; }
   .msg-input-actions { gap: 0; }
   .msg-send-btn { width: 42px; height: 42px; }
+}
+
+/* ── Image Sharing Styles ── */
+.msg-attachment-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  margin-right: 8px;
+}
+.msg-attachment-btn:hover {
+  background-color: #f0f2f5;
+}
+
+.msg-image-preview-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin-bottom: 8px;
+  margin-left: 14px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.msg-image-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.msg-image-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+.msg-image-remove:hover {
+  background: rgba(0,0,0,0.8);
+}
+
+.msg-image-wrap {
+  margin-bottom: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.msg-photo {
+  max-width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  display: block;
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

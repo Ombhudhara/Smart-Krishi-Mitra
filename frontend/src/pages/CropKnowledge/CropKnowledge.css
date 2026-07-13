@@ -13,18 +13,18 @@
   --ck-secondary: #66BB6A;
   --ck-accent: #FFD54F;
   --ck-accent-dark: #F9A825;
-  --ck-bg: #F4FBF4;
+  --ck-bg: #F8FFF8;
   --ck-white: #ffffff;
   --ck-text-dark: #1A2B1A;
   --ck-text-mid: #3D5A3D;
   --ck-text-muted: #6B8C6B;
   --ck-border: #D4EDD4;
-  --ck-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);
-  --ck-shadow-md: 0 4px 20px rgba(46, 125, 50, 0.10);
-  --ck-shadow-lg: 0 8px 40px rgba(46, 125, 50, 0.14);
-  --ck-shadow-xl: 0 20px 60px rgba(46, 125, 50, 0.18);
-  --ck-radius: 18px;
-  --ck-radius-sm: 10px;
+  --ck-shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.04);
+  --ck-shadow-md: 0 8px 30px rgba(46, 125, 50, 0.08);
+  --ck-shadow-lg: 0 16px 48px rgba(46, 125, 50, 0.12);
+  --ck-shadow-xl: 0 24px 80px rgba(46, 125, 50, 0.16);
+  --ck-radius: 24px;
+  --ck-radius-sm: 16px;
   --ck-navbar-h: 66px;
   --ck-sidebar-w: 240px;
   --ck-sidebar-closed-w: 68px;
@@ -87,57 +87,73 @@
    PAGE HEADER
    ═══════════════════════════════════════════════════════════════════════════ */
 .ck-page-header {
-  background: linear-gradient(135deg, var(--ck-primary) 0%, #388E3C 50%, #1B5E20 100%);
-  border-radius: var(--ck-radius);
-  padding: 36px 40px;
+  background: linear-gradient(135deg, #2E7D32 0%, #388E3C 50%, #43A047 100%);
+  padding: 48px 32px;
+  border-radius: 0 0 40px 40px;
   margin-bottom: 24px;
-  overflow: hidden;
   position: relative;
-}
-.ck-page-header::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  pointer-events: none;
+  overflow: hidden;
 }
 .ck-header-content {
-  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  gap: 24px;
 }
 .ck-header-text { flex: 1; }
-.ck-breadcrumb {
-  font-size: 12px; color: rgba(255,255,255,0.6);
-  margin-bottom: 10px;
+.ck-hero-tag {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 12px;
 }
-.ck-breadcrumb span { color: var(--ck-accent); font-weight: 500; }
 .ck-page-title {
-  font-size: clamp(22px, 3vw, 30px);
-  font-weight: 800; color: white;
-  margin-bottom: 10px; line-height: 1.2;
+  font-size: 36px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 10px 0;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.15);
 }
 .ck-page-subtitle {
-  font-size: 14px; color: rgba(255,255,255,0.78);
-  max-width: 560px; line-height: 1.65;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  line-height: 1.6;
+  max-width: 640px;
 }
-.ck-header-illus { flex-shrink: 0; }
+.ck-header-illus { flex-shrink: 0; display: flex; align-items: center; }
 .ck-illus-svg {
-  width: clamp(160px, 20vw, 240px); height: auto;
-  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.2));
+  width: 150px; height: auto;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    STATS ROW
    ═══════════════════════════════════════════════════════════════════════════ */
 .ck-stats-row {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 14px; margin-bottom: 24px;
+  display: grid; 
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px; 
+  margin-bottom: 24px;
+  margin-top: -30px;
+  position: relative;
+  z-index: 10;
 }
 .ck-stat-chip {
-  background: var(--ck-white);
-  border: 1px solid var(--ck-border);
-  border-radius: 14px;
-  padding: 16px 18px;
-  display: flex; align-items: center; gap: 12px;
-  box-shadow: var(--ck-shadow-sm);
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex; 
+  align-items: center; 
+  gap: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  border-top: 4px solid #388E3C;
   transition: var(--ck-transition);
 }
 .ck-stat-chip:hover { transform: translateY(-2px); box-shadow: var(--ck-shadow-md); }
